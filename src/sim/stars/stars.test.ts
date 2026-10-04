@@ -490,7 +490,8 @@ describe('nearby stars', () => {
     }
     // Under a millisecond here; a hosted CI runner's shared virtual core is about half as fast (1.15–1.23 ms measured),
     // so there the bound is two.
-    expect(perFrame).toBeLessThan(process.env.CI ? 2 : 1);
+    const ci = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.CI;
+    expect(perFrame).toBeLessThan(ci ? 2 : 1);
     sim.camera.pos.set(0, 0, 0);
     // The limit is on wall-clock time, which a busy machine stretches; the check above is on processor time.
   }, 60_000);
