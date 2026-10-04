@@ -1,8 +1,9 @@
 // The Milky Way model seen from outside: its disc's light where each pixel's line of sight crosses the midplane, from
 // the face-on maps (sim/galaxy/faceOn.ts) and the discs' laws, at the fine target's full resolution. Its particles of
-// the thin and thick discs and the young arm stars, which blur that structure over their 8th neighbours, give way to
-// it as uFaceShare rises (galaxy.vert.glsl; the glow near the camera too, galaxyGlow.frag.glsl), so the light is the
-// same: the discs' laws hold their particles' light, and the young arm stars' map is scaled to theirs (uYoungL).
+// the thin and thick discs, the young arm stars and the long bar, which blur that structure over their 8th
+// neighbours, give way to it as uFaceShare rises (galaxy.vert.glsl; the glow near the camera too,
+// galaxyGlow.frag.glsl), so the light is the same: the discs' laws hold their particles' light, and the young arm
+// stars' and the bar's maps are scaled to theirs (uYoungL, uBarL).
 //
 // Through the disc at |cos i| = μ of the midplane's normal a column S face-on is S / μ. The dust (the face-on A_V map,
 // reddened as the particles are) lies in a layer thinner than the discs: half of a disc's light is in front of it and
@@ -20,7 +21,11 @@ uniform mat3 uGalToWorld;    // heliocentric galactic → world axes
 uniform mat3 uGalToG;        // heliocentric galactic → frame G (rotation)
 uniform sampler2D uFaceYoung; // the young arm stars' surface brightness for 1 L☉ (log-encoded, one channel)
 uniform sampler2D uFaceDust;  // the face-on A_V (log-encoded, one channel)
+uniform sampler2D uFaceBar;   // the long bar's surface brightness for 1 L☉ (log-encoded, one channel)
 uniform vec4 uFaceRanges;    // young: v0, ln(1 + vmax / v0); dust: v0, ln(1 + vmax / v0)
+uniform vec2 uFaceBarRange;  // the bar's: v0, ln(1 + vmax / v0)
+uniform float uBarL;         // the bar's luminosity, L☉
+uniform vec3 uBarRgb;        // its colour (linear sRGB of luminance 1)
 uniform float uFaceExtent;   // the maps cover ±uFaceExtent kpc
 uniform vec2 uFaceShare;     // its share of the discs' light (x) and of the young arm stars' (y); 0: their particles have it
 uniform float uYoungL;       // the young arm stars' luminosity, L☉
@@ -52,6 +57,7 @@ void main() {
   vec2 uv = (q + uFaceExtent) / (2.0 * uFaceExtent);
   float young = uFaceRanges.x * (exp(texture2D(uFaceYoung, uv).r * uFaceRanges.y) - 1.0) * uYoungL;
   float av = uFaceRanges.z * (exp(texture2D(uFaceDust, uv).r * uFaceRanges.w) - 1.0);
+  float bar = uFaceBarRange.x * (exp(texture2D(uFaceBar, uv).r * uFaceBarRange.y) - 1.0) * uBarL;
   float R = length(q);
   float sT = R > uGlowThin.w ? 0.0 : uGlowThin.x * exp(-R / uGlowThin.y);
   float sK = R > uGlowThick.w ? 0.0 : uGlowThick.x * exp(-R / uGlowThick.y);
@@ -62,7 +68,7 @@ void main() {
   // image area and the exposure (as galaxyGlow.frag.glsl).
   float sigmaPsf = 0.5 * uPixelRatio * uResScale / uPxPerRad;
   float perColumn = exp(-0.921034 * (M_V_SUN - uMagZero) + uLnExposure) * 100.0 * 6.2831853 * sigmaPsf * sigmaPsf * uLumGain;
-  vec3 f = (perColumn / mu) * (uFaceShare.x * (sT * uGlowThinRgb + sK * uGlowThickRgb) * sandwich + uFaceShare.y * young * uGlowYoungRgb * mixed);
+  vec3 f = (perColumn / mu) * (uFaceShare.x * (sT * uGlowThinRgb + sK * uGlowThickRgb + bar * uBarRgb) * sandwich + uFaceShare.y * young * uGlowYoungRgb * mixed);
   f = min(f, vec3(6.0e4));
   gl_FragColor = vec4(f, dot(f, vec3(0.2126, 0.7152, 0.0722)));
 }

@@ -16,7 +16,7 @@ scope.onmessage = (e) => {
   void (async () => {
     try {
       if (req.kind === 'templates') {
-        const templates = buildTemplates();
+        const templates = buildTemplates(!!req.fine);
         scope.postMessage({ id: req.id, ok: true, kind: 'templates', templates }, templateTransfer(templates));
       } else if (req.kind === 'sky') {
         const sky = buildSkyTable();

@@ -14,7 +14,7 @@ import type { SkyTable } from './expansion';
 import { buildTemplates, templateTransfer, type Template } from './templates';
 
 export type CosmosWorkerRequest =
-  | { id: number; kind: 'templates' }
+  | { id: number; kind: 'templates'; fine?: boolean }
   | { id: number; kind: 'web'; url: string; skip: number[]; bound?: WebBound }
   | { id: number; kind: 'sky' };
 

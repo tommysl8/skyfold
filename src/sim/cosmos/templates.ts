@@ -76,13 +76,13 @@ export interface Template {
  * population but the H II regions (single objects), each splat correspondingly smaller (its 8th neighbour is nearer).
  */
 export const HD_DETAIL: Partial<Record<TemplateId, number>> = {
-  'spiral-early': 8,
-  spiral: 8,
-  'spiral-late': 8,
-  barred: 8,
-  magellanic: 8,
-  lenticular: 8,
-  irregular: 4,
+  'spiral-early': 16,
+  spiral: 16,
+  'spiral-late': 16,
+  barred: 16,
+  magellanic: 16,
+  lenticular: 16,
+  irregular: 8,
 };
 
 /** What a population of a template is made of. */
@@ -388,77 +388,108 @@ const DEFS: Record<Exclude<TemplateId, 'point'>, () => TemplateDef> = {
 
 /** The eighth-nearest-neighbour distance of every point of one population (brute force: a few thousand points). */
 /**
- * Each point's distance to its k-th nearest neighbour among points from…to − 1: exact, on a grid of cells (about two
- * points a cell) searched in growing shells until no nearer point can be left, so the fine templates' tens of
- * thousands of points take milliseconds rather than seconds.
+ * Each point's distance to its k-th nearest neighbour among points from…to − 1: exact, with a k-d tree (median
+ * splits, the axis of widest spread), so the fine templates' hundred thousand points, crowded in a galaxy's centre and
+ * sparse in its outskirts, take a fraction of a second rather than minutes.
  */
 export function neighbourDistances(p: Float32Array, from: number, to: number, k = 8): Float32Array {
   const n = to - from;
   const out = new Float32Array(n);
   if (n < 2) return out;
   const kk = Math.min(k, n - 1);
-  const lo = [Infinity, Infinity, Infinity];
-  const hi = [-Infinity, -Infinity, -Infinity];
-  for (let i = from; i < to; i++)
+  const idx = new Int32Array(n);
+  for (let i = 0; i < n; i++) idx[i] = i;
+  const coord = (i: number, c: number) => p[3 * (from + i) + c];
+  // Node j covers idx[lo..hi); its split point is idx[mid], on axis axisOf[mid] (leaves of up to LEAF points).
+  const LEAF = 8;
+  const axisOf = new Int8Array(n).fill(-1);
+  const select = (lo: number, hi: number, kth: number, c: number) => {
+    while (hi - lo > 1) {
+      const pv = coord(idx[(lo + hi) >> 1], c);
+      let i = lo;
+      let j = hi - 1;
+      while (i <= j) {
+        while (coord(idx[i], c) < pv) i++;
+        while (coord(idx[j], c) > pv) j--;
+        if (i <= j) {
+          const t = idx[i];
+          idx[i] = idx[j];
+          idx[j] = t;
+          i++;
+          j--;
+        }
+      }
+      if (kth <= j) hi = j + 1;
+      else if (kth >= i) lo = i;
+      else return;
+    }
+  };
+  const stack: number[] = [0, n];
+  while (stack.length) {
+    const hi = stack.pop()!;
+    const lo = stack.pop()!;
+    if (hi - lo <= LEAF) continue;
+    let best = 0;
+    let spread = -1;
     for (let c = 0; c < 3; c++) {
-      lo[c] = Math.min(lo[c], p[3 * i + c]);
-      hi[c] = Math.max(hi[c], p[3 * i + c]);
+      let mn = Infinity;
+      let mx = -Infinity;
+      for (let i = lo; i < hi; i++) {
+        const v = coord(idx[i], c);
+        if (v < mn) mn = v;
+        if (v > mx) mx = v;
+      }
+      if (mx - mn > spread) {
+        spread = mx - mn;
+        best = c;
+      }
     }
-  const ext = hi.map((h, c) => Math.max(h - lo[c], 1e-9));
-  // Cubic cells sized for about two points each over the bounding box (a flat disc gets one layer of cells).
-  const cell = Math.max(Math.cbrt((ext[0] * ext[1] * ext[2] * 2) / n), Math.max(...ext) / 256, 1e-9);
-  const dim = ext.map((e) => Math.max(1, Math.min(256, Math.ceil(e / cell))));
-  const cellOf = (v: number, c: number) => Math.min(dim[c] - 1, Math.floor((v - lo[c]) / cell));
-  const key = (a: number, b: number, c: number) => (c * dim[1] + b) * dim[0] + a;
-  const start = new Int32Array(dim[0] * dim[1] * dim[2] + 1);
-  const home = new Int32Array(n);
-  for (let i = 0; i < n; i++) {
-    const q = 3 * (from + i);
-    home[i] = key(cellOf(p[q], 0), cellOf(p[q + 1], 1), cellOf(p[q + 2], 2));
-    start[home[i] + 1]++;
+    const mid = (lo + hi) >> 1;
+    select(lo, hi, mid, best);
+    axisOf[mid] = best;
+    stack.push(lo, mid, mid + 1, hi);
   }
-  for (let c = 1; c < start.length; c++) start[c] += start[c - 1];
-  const fill = start.slice(0, -1);
-  const members = new Int32Array(n);
-  for (let i = 0; i < n; i++) members[fill[home[i]]++] = i;
-  const best = new Float64Array(kk);
-  for (let i = 0; i < n; i++) {
-    best.fill(Infinity);
-    const q = 3 * (from + i);
-    const xi = p[q];
-    const yi = p[q + 1];
-    const zi = p[q + 2];
-    const ci = [cellOf(xi, 0), cellOf(yi, 1), cellOf(zi, 2)];
-    for (let r = 0; ; r++) {
-      // The shell r cells out (its surface only).
-      for (let c2 = Math.max(0, ci[2] - r); c2 <= Math.min(dim[2] - 1, ci[2] + r); c2++)
-        for (let b = Math.max(0, ci[1] - r); b <= Math.min(dim[1] - 1, ci[1] + r); b++)
-          for (let a = Math.max(0, ci[0] - r); a <= Math.min(dim[0] - 1, ci[0] + r); a++) {
-            if (Math.max(Math.abs(a - ci[0]), Math.abs(b - ci[1]), Math.abs(c2 - ci[2])) !== r) continue;
-            const kc = key(a, b, c2);
-            for (let m = start[kc]; m < start[kc + 1]; m++) {
-              const j = members[m];
-              if (j === i) continue;
-              const o = 3 * (from + j);
-              const dx = p[o] - xi;
-              const dy = p[o + 1] - yi;
-              const dz = p[o + 2] - zi;
-              const d2 = dx * dx + dy * dy + dz * dz;
-              if (d2 >= best[kk - 1]) continue;
-              let s = kk - 1;
-              while (s > 0 && best[s - 1] > d2) {
-                best[s] = best[s - 1];
-                s--;
-              }
-              best[s] = d2;
-            }
-          }
-      // Every point not yet searched is at least r cells of the grid away (less the point's offset in its own cell).
-      const reach = r * cell;
-      if (best[kk - 1] <= reach * reach) break;
-      if (r > Math.max(...dim)) break;
+  const bestD = new Float64Array(kk);
+  let qx = 0;
+  let qy = 0;
+  let qz = 0;
+  let self = -1;
+  const offer = (j: number) => {
+    if (j === self) return;
+    const dx = coord(j, 0) - qx;
+    const dy = coord(j, 1) - qy;
+    const dz = coord(j, 2) - qz;
+    const d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 >= bestD[kk - 1]) return;
+    let m = kk - 1;
+    while (m > 0 && bestD[m - 1] > d2) {
+      bestD[m] = bestD[m - 1];
+      m--;
     }
-    out[i] = Math.sqrt(best[kk - 1]);
+    bestD[m] = d2;
+  };
+  const search = (lo: number, hi: number) => {
+    if (hi - lo <= LEAF) {
+      for (let i = lo; i < hi; i++) offer(idx[i]);
+      return;
+    }
+    const mid = (lo + hi) >> 1;
+    const c = axisOf[mid];
+    const j = idx[mid];
+    offer(j);
+    const d = (c === 0 ? qx : c === 1 ? qy : qz) - coord(j, c);
+    const [nearLo, nearHi, farLo, farHi] = d < 0 ? [lo, mid, mid + 1, hi] : [mid + 1, hi, lo, mid];
+    search(nearLo, nearHi);
+    if (d * d < bestD[kk - 1]) search(farLo, farHi);
+  };
+  for (let i = 0; i < n; i++) {
+    bestD.fill(Infinity);
+    self = i;
+    qx = coord(i, 0);
+    qy = coord(i, 1);
+    qz = coord(i, 2);
+    search(0, n);
+    out[i] = Math.sqrt(bestD[kk - 1]);
   }
   return out;
 }
@@ -532,11 +563,9 @@ export function buildTemplate(id: TemplateId, detail = 1): Template {
   return { id, unit: def.unit, count, position, colour, attrs, halfLightRadius: halfLight, detail };
 }
 
-/** Every plain template, and the fine ones (HD_DETAIL). */
-export const buildTemplates = (): Template[] => [
-  ...TEMPLATE_IDS.map((id) => buildTemplate(id)),
-  ...(Object.entries(HD_DETAIL) as [TemplateId, number][]).map(([id, k]) => buildTemplate(id, k)),
-];
+/** Every plain template, or (fine) the fine ones (HD_DETAIL), built after them: they take a few seconds. */
+export const buildTemplates = (fine = false): Template[] =>
+  fine ? (Object.entries(HD_DETAIL) as [TemplateId, number][]).map(([id, k]) => buildTemplate(id, k)) : TEMPLATE_IDS.map((id) => buildTemplate(id));
 
 export const templateTransfer = (ts: readonly Template[]): ArrayBuffer[] => ts.flatMap((t) => [t.position.buffer, t.colour.buffer, t.attrs.buffer] as ArrayBuffer[]);
 
