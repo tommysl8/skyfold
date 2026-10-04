@@ -316,7 +316,7 @@ export function barDensity(p, xb, yb, zb) {
   return Math.exp(-s) * Math.exp(-Math.abs(zb) / v(p.z0)) * cut((R - v(p.Rout)) / v(p.sOut)) * cut((v(p.Rin) - R) / v(p.sIn));
 }
 
-function sampleBar(model, p, n, rng) {
+export function sampleBar(model, p, n, rng) {
   const [bx, by] = model.components.longBar.sampleBox;
   // Envelope: grid maximum of the in-plane density.
   let fmax = 0;

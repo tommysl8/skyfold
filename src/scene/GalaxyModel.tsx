@@ -57,8 +57,12 @@ const RING_OPACITY = 0.5;
  */
 export const INTEGRATED_DRAW_SHARE = 0.5;
 
+/** The model's long bar's populations (scripts/build-galaxy.mjs POPULATIONS). */
+const BAR_THIN = 5;
+const BAR_SUPER_THIN = 6;
+
 /** The face-on maps (sim/galaxy/faceOn.ts), one channel each, fetched once the model takes over from the sky map. */
-const FACE_FILES = ['galaxy-face-young.png', 'galaxy-face-dust.png'] as const;
+const FACE_FILES = ['galaxy-face-young.png', 'galaxy-face-dust.png', 'galaxy-face-bar.png'] as const;
 const FACE_OPTS = { color: false, grey: true } as const;
 
 /** A three.js Matrix3 from a row-major 3 × 3. */
@@ -223,7 +227,7 @@ export function GalaxyModel() {
   const faceMat = useMemo(createGalaxyFaceMaterial, []);
   const faceMesh = useRef<Object3D | null>(null);
   const [faceWanted, setFaceWanted] = useState(false);
-  const [faceTex, setFaceTex] = useState<readonly [Texture, Texture] | null>(null);
+  const [faceTex, setFaceTex] = useState<readonly [Texture, Texture, Texture] | null>(null);
   const glowQuad = useMemo(() => new PlaneGeometry(2, 2), []);
   const glowMesh = useRef<Object3D | null>(null);
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
@@ -241,7 +245,16 @@ export function GalaxyModel() {
     modelMat.uniforms.uKpcPerUnit.value = data.particles.kpcPerUnit;
     setGlowLaws(glowMat, data.glow);
     setGlowLaws(faceMat, data.glow);
-    faceMat.uniforms.uYoungL.value = populationLuminosity(data.particles.attrs, data.particles.count)[YOUNG_ARM_STARS];
+    const lum = populationLuminosity(data.particles.attrs, data.particles.count);
+    faceMat.uniforms.uYoungL.value = lum[YOUNG_ARM_STARS];
+    // The bar's two parts in one map, with their light's colours mixed.
+    const barL = lum[BAR_THIN] + lum[BAR_SUPER_THIN];
+    faceMat.uniforms.uBarL.value = barL;
+    const thinC = populationColour(GALAXY_MODEL_JSON, 'barThin').rgb;
+    const superC = populationColour(GALAXY_MODEL_JSON, 'barSuperThin').rgb;
+    const mix = (k: number) => (barL > 0 ? (lum[BAR_THIN] * thinC[k] + lum[BAR_SUPER_THIN] * superC[k]) / barL : 1);
+    faceMat.uniforms.uBarRgb.value.set(mix(0), mix(1), mix(2));
+    faceMat.uniforms.uFaceBarRange.value.set(faceRanges.bar.v0, Math.log1p(faceRanges.bar.vmax / faceRanges.bar.v0));
     const r = faceMat.uniforms.uFaceRanges.value;
     r.set(faceRanges.young.v0, Math.log1p(faceRanges.young.vmax / faceRanges.young.v0), faceRanges.dust.v0, Math.log1p(faceRanges.dust.vmax / faceRanges.dust.v0));
     faceMat.uniforms.uFaceExtent.value = faceRanges.extentKpc;
@@ -258,12 +271,12 @@ export function GalaxyModel() {
     },
     [geo],
   );
-  // The face-on maps, once wanted (0.7 MB; 11 MB on the GPU), held from then on.
+  // The face-on maps, once wanted (2 MB; 67 MB on the GPU), held from then on.
   useEffect(() => {
     if (!faceWanted) return;
     let live = true;
-    void Promise.all(FACE_FILES.map((f) => acquireTexture(f, FACE_OPTS))).then(([young, dust]) => {
-      if (live && young && dust) setFaceTex([young, dust]);
+    void Promise.all(FACE_FILES.map((f) => acquireTexture(f, FACE_OPTS))).then(([young, dust, bar]) => {
+      if (live && young && dust && bar) setFaceTex([young, dust, bar]);
     });
     return () => {
       live = false;
@@ -308,8 +321,9 @@ export function GalaxyModel() {
     if (faceTex) {
       faceMat.uniforms.uFaceYoung.value = faceTex[0];
       faceMat.uniforms.uFaceDust.value = faceTex[1];
+      faceMat.uniforms.uFaceBar.value = faceTex[2];
     }
-    galaxyLayer.resScale = layerResolution(galaxyLayer.resScale, faceOn ? face : 0, Math.hypot(g[0], g[1], g[2]), quality.integrated);
+    galaxyLayer.resScale = layerResolution(galaxyLayer.resScale, faceOn ? face : 0, Math.hypot(g[0], g[1], g[2]));
     if (!geo) {
       if (glowMesh.current) glowMesh.current.visible = false;
       u.uGlowOn.value = 0;

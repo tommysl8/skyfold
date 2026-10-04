@@ -527,9 +527,9 @@ is drawn with a particle template of its type, scaled, tilted and brightened to 
   when seen at a grazing angle.
 - **Detail only where it shows.** A galaxy is drawn with its template once its radius on screen passes 2 CSS px
   (fully from 6 px); below that it is one splat holding all its light, as wide as its half-light radius. From 90 px
-  (fully from 180) a disc galaxy or an irregular is drawn with a fine version of its template (`HD_DETAIL`: eight
-  times the particles, four for the irregulars, as many H II regions), whose splats are correspondingly smaller; the
-  two crossfade. The 8th neighbours are found on a grid (exact), so the fine templates take milliseconds to build. One
+  (fully from 180) a disc galaxy or an irregular is drawn with a fine version of its template (`HD_DETAIL`: 16
+  times the particles, eight for the irregulars, as many H II regions), whose splats are correspondingly smaller; the
+  two crossfade. The 8th neighbours are found with a k-d tree (exact); the fine templates are built after the plain ones, in the background (a few seconds). One
   instanced draw per template and one for the single splats; each galaxy's centre and axes are sent per frame, in
   kiloparsecs relative to the camera, worked out in float64 (float32 kilometres overflow at these distances).
 - **M87's own starlight.** Inside M87 its template's particles near the camera fade out as their splats grow (they

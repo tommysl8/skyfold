@@ -58,7 +58,7 @@ uniform float uFluxCut;    // patch flux below which a splat's tail is not drawn
 // s0 and all of it beyond s1. x, y: the discs' s0, s1; z, w: the young arm stars' (kpc).
 uniform vec4 uGlowRange;
 uniform float uGlowOn;     // 1 while the glow is drawn
-// Seen from outside, the discs' light (x) and the young arm stars' (y) are drawn from face-on maps instead
+// Seen from outside, the discs' and the long bar's light (x) and the young arm stars' (y) are drawn from face-on maps instead
 // (galaxyFace.frag.glsl): their particles hold 1 − that share of it.
 uniform vec2 uFaceShare;
 // x: the nuclear star cluster's field's share w near Sgr A* (sim/galaxy/nuclearCluster.ts): the model's
@@ -78,6 +78,8 @@ const int POP_THIN_DISC = 0;
 const int POP_YOUNG = 1;
 const int POP_HII = 2;
 const int POP_THICK_DISC = 3;
+const int POP_BAR_THIN = 5;
+const int POP_BAR_SUPER_THIN = 6;
 const int POP_NUCLEAR_DISC = 7;
 const int POP_NUCLEAR_CLUSTER = 8;
 const int POP_GLOBULAR = 11;
@@ -159,7 +161,7 @@ void main() {
     else if (pop == POP_YOUNG) keep = smoothstep(uGlowRange.z, uGlowRange.w, d);
   }
   if (pop == POP_NUCLEAR_DISC || pop == POP_NUCLEAR_CLUSTER) keep *= 1.0 - uNuclearFade.x;
-  if (pop == POP_THIN_DISC || pop == POP_THICK_DISC) keep *= 1.0 - uFaceShare.x;
+  if (pop == POP_THIN_DISC || pop == POP_THICK_DISC || pop == POP_BAR_THIN || pop == POP_BAR_SUPER_THIN) keep *= 1.0 - uFaceShare.x;
   else if (pop == POP_YOUNG) keep *= 1.0 - uFaceShare.y;
   if (keep <= 0.0) {
     cull();

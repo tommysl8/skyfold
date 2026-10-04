@@ -168,9 +168,9 @@ function workerCall(req: WithoutId<CosmosWorkerRequest>): Promise<CosmosWorkerRe
   });
 }
 
-async function templates(): Promise<Template[]> {
-  const call = workerCall({ kind: 'templates' });
-  if (!call) return buildTemplates();
+async function templates(fine = false): Promise<Template[]> {
+  const call = workerCall({ kind: 'templates', fine });
+  if (!call) return buildTemplates(fine);
   const r = await call;
   if (!r.ok) throw new Error(r.error);
   if (r.kind !== 'templates') throw new Error('cosmos worker: unexpected reply');
@@ -247,6 +247,13 @@ export function loadCosmos(opts: { idle?: boolean } = {}): Promise<boolean> {
     try {
       cosmosState.templates = await templates();
       changed();
+      // The fine templates (galaxies large on screen: scene/Galaxies.tsx) after, in the background.
+      void templates(true)
+        .then((fine) => {
+          cosmosState.templates = [...(cosmosState.templates ?? []), ...fine];
+          changed();
+        })
+        .catch((err) => console.warn(`[lightspeed] the galaxies' fine shapes were not built; their plain ones are drawn (${err})`));
     } catch (err) {
       console.warn(`[lightspeed] the galaxies' shapes were not built; they are drawn as points (${err})`);
     }
