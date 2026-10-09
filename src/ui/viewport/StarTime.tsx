@@ -2,15 +2,16 @@
  * Stars in time, on their cards (docs/data/stars.md §14–15):
  *  - the Sun's: its age and stage of life, a slider over its whole life (the Sun's own age, not the clock's: the planets
  *    stay at today's date, their orbits widened as it loses mass), "Today" to bring it back, "Watch" for the journey;
- *  - a star with a measured mass: a small HR diagram, the track of a star of its mass (MIST) and the star on it;
+ *  - a star with a measured mass: a small HR diagram, the track of a star of its mass (Hurley, Pols & Tout 2000) and
+ *    the star on it;
  *  - a variable star: how it varies, and its light from Earth now.
- * The tracks (70 kB) are fetched the first time one of these cards opens.
+ * The tracks are worked out from the formulae the first time one of these cards opens (a few milliseconds each).
  *
  * Cost: the card's own re-render; the sparkline's track is worked out once per star.
  */
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { StarInfo } from '../../sim/bodies';
-import { SUN_AGE_TODAY_YR, sunAt, trackForMass, type SunState, type Track } from '../../sim/stars/evolution';
+import { SUN_AGE_TODAY_YR, sunAt, trackForMass, TRACK_MASS_RANGE, type SunState, type Track } from '../../sim/stars/evolution';
 import { ageAtLife, lifeOfAge, loadTracks, setSunAge, subscribeSunFuture, sunAgeLine, sunFuture, sunFutureVersion, sunSwallowedLine } from '../../sim/stars/sunFuture';
 import { variableNow } from '../../sim/stars/variability';
 import { starColour } from '../../sim/stars/records';
@@ -48,15 +49,10 @@ function HrSpark({ track, logT, logL, colour, label, tail }: { track: Track; log
 
 /** The track of a star with a measured mass, with the star on it (its measured temperature and luminosity). */
 export function StarTrack({ star }: { star: StarInfo }) {
-  useSunFuture();
-  const tracks = sunFuture.tracks;
-  useEffect(() => {
-    if (!tracks) void loadTracks();
-  }, [tracks]);
   const mass = star.massMsun;
-  const track = useMemo(() => (tracks && mass ? trackForMass(tracks, mass) : null), [tracks, mass]);
+  const track = useMemo(() => (mass ? trackForMass(mass) : null), [mass]);
   if (!track || !mass || !star.luminosityLsun) return null;
-  const inGrid = mass >= 0.5 && mass <= 40;
+  const inRange = mass >= TRACK_MASS_RANGE[0] && mass <= TRACK_MASS_RANGE[1];
   return (
     <div className="mt-1 flex items-center gap-2">
       <HrSpark
@@ -64,11 +60,11 @@ export function StarTrack({ star }: { star: StarInfo }) {
         logT={Math.log10(star.teffK)}
         logL={Math.log10(star.luminosityLsun)}
         colour={starColour(star.teffK)}
-        label={`Hertzsprung–Russell diagram: the life of a ${mass.toPrecision(2)} solar-mass star (MIST), and this star on it`}
+        label={`Hertzsprung–Russell diagram: the life of a ${mass.toPrecision(2)} solar-mass star (Hurley, Pols & Tout 2000), and this star on it`}
       />
       <p className="text-[10.5px] leading-snug text-fg-3">
-        The life of a star of {mass.toPrecision(2)} solar masses{inGrid ? '' : ' (the nearest track of the grid)'}, hot on the left, bright at the top; the dot is this star (MIST
-        tracks, solar metallicity).
+        The life of a star of {inRange ? mass.toPrecision(2) : track.massMsun} solar masses{inRange ? '' : ' (the nearest the formulae are drawn for)'}, hot on the left, bright at the top; the dot is this
+        star (Hurley, Pols & Tout’s formulae, solar metallicity).
       </p>
     </div>
   );
@@ -86,7 +82,7 @@ export function SunAge() {
   const age = sunFuture.ageYr;
   const s = sunFuture.state;
   const swallowed = sunSwallowedLine();
-  // The Sun's numbers are today's nominal ones; the track's are MIST's own (a shade brighter and hotter): put back on it.
+  // The Sun's numbers are today's nominal ones; the track's are the formulae's own (a shade fainter and cooler): put back on it.
   const onTrack = (x: SunState) => ({ logT: Math.log10(x.teffK) + (m ? m.today.logTeff - Math.log10(5772) : 0), logL: Math.log10(x.lsun) + (m ? m.today.logL : 0) });
   // The white dwarf's cooling after the track (the model), for the diagram.
   const tail = useMemo(() => (m ? [0.91, 0.94, 0.97, 1].map((p) => onTrack(sunAt(m, ageAtLife(m, p)))) : undefined), [m]);
@@ -103,7 +99,7 @@ export function SunAge() {
             logL={dot.logL}
             tail={tail}
             colour={starColour(s ? s.teffK : 5772)}
-            label="Hertzsprung–Russell diagram: the Sun’s life (MIST, 1 solar mass), and the Sun at the age shown"
+            label="Hertzsprung–Russell diagram: the Sun’s life (Hurley, Pols & Tout 2000), and the Sun at the age shown"
           />
           <div className="min-w-0 flex-1">
             <input

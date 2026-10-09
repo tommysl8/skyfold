@@ -1,6 +1,7 @@
 /**
  * The Sun at another age (docs/data/stars.md §14): the Sun's card and the journey "The Sun's future" show it at any
- * point of its life, from the evolution tracks (evolution.ts, public/data/stellar-tracks.json, fetched the first time).
+ * point of its life, from the stellar-evolution formulae of Hurley, Pols & Tout 2000 (evolution.ts, sse.ts), worked out
+ * the first time they are wanted.
  * The simulation's clock is not moved: only the Sun's own age is, a separate "stellar age" the card shows.
  *
  * While an age is shown, each frame: the Sun's record takes that age's radius, light, colour and mass (GM); the planets'
@@ -9,7 +10,7 @@
  * (scene/StellarNebulae.tsx). Back to today (the record's own values, no widening) when the card's "Today" is pressed,
  * when the Sun's card is closed or another body chosen, or when any scene starts (content/scenes.ts).
  *
- * The journey plays the Sun's life through keyframes in EEP (each stage gets a few seconds whatever its length in
+ * The journey plays the Sun's life through keyframes in the track's points (each stage gets a few seconds whatever its length in
  * years), easing the camera out to keep the Sun (and later its nebula) framed; any camera move by the visitor hands
  * the view back, leaving the age where it is.
  */
@@ -18,11 +19,8 @@ import { getBody } from '../bodies';
 import { solarAge } from '../bodies/world';
 import { useUI } from '../../state/ui';
 import { controller } from '../../controls/cameraController';
-import { assetUrl } from '../../render/textures';
 import { SUN_VMAG_AT_1AU } from '../../physics/constants';
 import {
-  decodeTracks,
-  EEP,
   eepAtAge,
   engulfmentAgeYr,
   PLANET_A_AU,
@@ -33,8 +31,6 @@ import {
   sunModel,
   type SunModel,
   type SunState,
-  type Track,
-  type TrackFile,
 } from './evolution';
 
 export const sunFuture = {
@@ -45,7 +41,6 @@ export const sunFuture = {
   /** Its planetary nebula at that age, outer radius km and glow 0–1 (null: none). */
   nebula: null as { radiusKm: number; glow: number } | null,
   model: null as SunModel | null,
-  tracks: null as Track[] | null,
   /** When each planet is swallowed (yr), from the model. */
   engulfed: [] as { id: string; ageYr: number }[],
   version: 0,
@@ -62,30 +57,16 @@ function changed(): void {
   listeners.forEach((f) => f());
 }
 
-let pending: Promise<Track[] | null> | null = null;
-/** The evolution tracks (fetched once, 70 kB gzipped). */
-export function loadTracks(): Promise<Track[] | null> {
-  pending ??= fetch(assetUrl('data/stellar-tracks.json'))
-    .then((r) => {
-      if (!r.ok) throw new Error(`stellar-tracks.json: HTTP ${r.status}`);
-      return r.json() as Promise<TrackFile>;
-    })
-    .then((file) => {
-      const tracks = decodeTracks(file);
-      sunFuture.tracks = tracks;
-      sunFuture.model = sunModel(tracks);
-      sunFuture.engulfed = Object.entries(PLANET_A_AU)
-        .map(([id, a]) => ({ id, ageYr: engulfmentAgeYr(sunFuture.model!, a) }))
-        .filter((e): e is { id: string; ageYr: number } => e.ageYr !== null);
-      changed();
-      return tracks;
-    })
-    .catch((err) => {
-      console.warn(`[skyfold] stellar tracks did not load (${err})`);
-      pending = null;
-      return null;
-    });
-  return pending;
+/** Work out the Sun's track (once, a few milliseconds) and when it reaches each planet. Async for its callers' sake. */
+export function loadTracks(): Promise<SunModel> {
+  if (!sunFuture.model) {
+    sunFuture.model = sunModel();
+    sunFuture.engulfed = Object.entries(PLANET_A_AU)
+      .map(([id, a]) => ({ id, ageYr: engulfmentAgeYr(sunFuture.model!, a) }))
+      .filter((e): e is { id: string; ageYr: number } => e.ageYr !== null);
+    changed();
+  }
+  return Promise.resolve(sunFuture.model);
 }
 
 /** The Sun's record as it is today, kept while another age is shown. */
@@ -105,7 +86,7 @@ export function setSunAge(ageYr: number | null): void {
   }
   const m = sunFuture.model;
   if (!m) {
-    void loadTracks().then((t) => t && setSunAge(ageYr));
+    void loadTracks().then(() => setSunAge(ageYr));
     return;
   }
   // An age chosen (the card's slider) ends the journey's play.
@@ -158,29 +139,31 @@ function apply(): void {
 
 // ─── The journey's play ──────────────────────────────────────────────────────────────────
 
-/** A keyframe: an EEP (or, past the track, years after its end), when the play reaches it (s), and the camera's distance (au). */
+/**
+ * A keyframe: a point of the track (or, in the nebula, years after the star lit it; past the track, years after its end),
+ * when the play reaches it (s), and the camera's distance (au).
+ */
 interface Key {
-  eep?: number;
-  /** Years after leaving the AGB (the nebula's stretch, where EEPs crowd), or after the track's end (the white dwarf). */
-  afterAgbYr?: number;
+  eep?: (m: SunModel) => number;
+  afterIonYr?: number;
   afterEndYr?: number;
   t: number;
   au: number;
 }
 
 const KEYS: readonly Key[] = [
-  { eep: 0, t: 0, au: 3.2 }, // today (eep 0: the Sun's present EEP)
-  { eep: EEP.tams, t: 8, au: 3.2 },
-  { eep: 560, t: 16, au: 3.4 },
-  { eep: EEP.rgbTip, t: 26, au: 3.8 },
-  { eep: EEP.zahb, t: 30, au: 3.8 },
-  { eep: EEP.tahb, t: 35, au: 3.8 },
-  { eep: EEP.tpagb, t: 40, au: 5 },
-  { eep: EEP.postAgb, t: 50, au: 6 },
-  { afterAgbYr: 14_000, t: 54, au: 40 },
-  { afterAgbYr: 40_000, t: 66, au: 260_000 },
-  { afterEndYr: 1e6, t: 72, au: 260_000 },
-  { afterEndYr: 1e9, t: 84, au: 0.0004 },
+  { eep: (m) => m.today.eep, t: 0, au: 3.2 },
+  { eep: (m) => m.track.marks.tms, t: 8, au: 3.2 },
+  { eep: (m) => 0.5 * (m.track.marks.bgb + m.track.marks.hei), t: 16, au: 3.4 },
+  { eep: (m) => m.track.marks.hei, t: 26, au: 3.8 },
+  { eep: (m) => m.track.marks.hei + 3, t: 30, au: 3.8 },
+  { eep: (m) => m.track.marks.bagb, t: 35, au: 3.8 },
+  { eep: (m) => m.track.marks.tpagb, t: 42, au: 5 },
+  { eep: (m) => eepAtAge(m.track, m.ionYr), t: 52, au: 8 },
+  { afterIonYr: 5000, t: 58, au: 450_000 },
+  { afterIonYr: 22_000, t: 68, au: 700_000 },
+  { afterEndYr: 1e6, t: 74, au: 700_000 },
+  { afterEndYr: 1e9, t: 86, au: 0.0004 },
 ];
 
 let play: { startMs: number; moves: number; lastGoal: number } | null = null;
@@ -193,15 +176,13 @@ const stopPlay = (): void => {
 /** The age of a keyframe, yr. */
 function keyAge(m: SunModel, k: Key): number {
   if (k.afterEndYr !== undefined) return m.endAgeYr + k.afterEndYr;
-  if (k.afterAgbYr !== undefined) return m.agbEndYr + k.afterAgbYr;
-  if (k.eep === 0) return SUN_AGE_TODAY_YR;
-  return stateAtEep(m.track, k.eep!).ageYr;
+  if (k.afterIonYr !== undefined) return m.ionYr + k.afterIonYr;
+  return stateAtEep(m.track, k.eep!(m)).ageYr;
 }
 
 /** Start the Sun's life from today (the journey; content/scenes.ts frames the camera first). */
 export function playSunFuture(): void {
-  void loadTracks().then((t) => {
-    if (!t) return;
+  void loadTracks().then(() => {
     setSunAge(SUN_AGE_TODAY_YR);
     play = { startMs: performance.now(), moves: controller.moves, lastGoal: NaN };
   });
@@ -219,11 +200,12 @@ export function playAt(m: SunModel, s: number): { ageYr: number; au: number; don
   const e = f * f * (3 - 2 * f);
   const a0 = keyAge(m, a);
   const a1 = keyAge(m, b);
-  // Within the track, ages step through EEPs (so each stage gets its time); in the nebula and the cooling, logarithmically from the stage's start.
+  // Within the track, ages step through its points (so each stage gets its time); in the nebula and the cooling,
+  // logarithmically from the stage's start.
   let ageYr: number;
-  if (a.eep !== undefined && b.eep !== undefined) ageYr = stateAtEep(m.track, (a.eep === 0 ? eepToday(m) : a.eep) + ((b.eep === 0 ? eepToday(m) : b.eep) - (a.eep === 0 ? eepToday(m) : a.eep)) * e).ageYr;
+  if (a.eep && b.eep) ageYr = stateAtEep(m.track, a.eep(m) + (b.eep(m) - a.eep(m)) * e).ageYr;
   else {
-    const z = b.afterEndYr !== undefined ? m.endAgeYr : m.agbEndYr;
+    const z = b.afterEndYr !== undefined ? m.endAgeYr : m.leaveYr;
     const d0 = Math.max(1, a0 - z);
     const d1 = Math.max(1, a1 - z);
     ageYr = a0 < z ? a0 + (a1 - a0) * e : z + d0 * (d1 / d0) ** e;
@@ -231,7 +213,6 @@ export function playAt(m: SunModel, s: number): { ageYr: number; au: number; don
   return { ageYr, au: a.au * (b.au / a.au) ** e, done: false };
 }
 
-const eepToday = (m: SunModel): number => m.today.eep;
 
 /** Once a frame (scene/SimDriver.tsx through updateStarTime): the play, then the age's effects. */
 export function updateSunFuture(): void {
@@ -281,12 +262,14 @@ export function sunSwallowedLine(): string | null {
   const scale = sunFuture.state?.orbitScale ?? 1;
   const wider = scale > 1.005 ? `The planets’ orbits are ${Math.round((scale - 1) * 100)}% wider than today’s.` : '';
   if (!gone.length) return wider || null;
-  return `${wider} Swallowed: ${gone.join(', ')}${gone.includes('Earth') ? ' (whether Earth is depends on tides and the Sun’s wind, which this does not model: Schröder & Smith 2008 find it is)' : ''}.`.trim();
+  // Venus and Earth escape in this model only because their orbits widen; tides would drag them in (not modelled).
+  const debated = gone.includes('Earth') ? '' : ' Venus and Earth escape here as their orbits widen; tides, not modelled, may drag them in (Schröder & Smith 2008 find both engulfed).';
+  return `${wider} Swallowed: ${gone.join(', ')}.${debated}`.trim();
 }
 
 // ─── The card's slider ───────────────────────────────────────────────────────────────────
 
-/** The share of the slider the track takes (EEPs, so each stage has room); the rest is the white dwarf's cooling, logarithmically. */
+/** The share of the slider the track takes (its points, so each stage has room); the rest is the white dwarf's cooling, logarithmically. */
 const TRACK_SHARE = 0.9;
 const WD_FROM_YR = 1e5;
 

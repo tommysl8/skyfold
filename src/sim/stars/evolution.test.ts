@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  decodeTracks,
-  EEP,
   eepAtAge,
   engulfmentAgeYr,
+  lifeTrack,
   mestelCoolingYr,
   mestelLuminosity,
   planetaryNebula,
-  PN_EXPANSION_KMS,
   PLANET_A_AU,
+  PN_EXPANSION_KMS,
   stageOf,
   stateAtAge,
   stateAtEep,
@@ -16,52 +15,60 @@ import {
   sunAt,
   sunModel,
   trackForMass,
+  TRACK_MASS_RANGE,
   whiteDwarfRadiusRsun,
-  type TrackFile,
 } from './evolution';
 import { SUN_TEFF_K } from './constants';
-import { readJson } from '../../test/files';
 
-const file = readJson<TrackFile>('public/data/stellar-tracks.json');
-const tracks = decodeTracks(file);
-const sun = sunModel(tracks);
+const sun = sunModel();
+const marks = sun.track.marks;
 const RSUN_AU = 695_700 / 149_597_870.7;
+const ageAt = (eep: number) => stateAtEep(sun.track, eep).ageYr;
 
-describe('the track table', () => {
-  it('has the solar-metallicity grid, each track from the ZAMS with rising ages and its primary EEPs', () => {
-    expect(tracks.map((t) => t.massMsun)).toEqual([0.5, 0.8, 1, 1.2, 1.5, 2, 3, 5, 8, 15, 40]);
-    for (const t of tracks) {
-      expect(t.eep[0]).toBe(EEP.zams);
-      for (let i = 1; i < t.eep.length; i++) {
-        expect(t.eep[i]).toBeGreaterThan(t.eep[i - 1]);
-        expect(t.ageYr[i]).toBeGreaterThan(t.ageYr[i - 1]);
-      }
-      for (const e of t.primaryEeps) expect([...t.eep]).toContain(e);
+describe('tracks from the formulae', () => {
+  it('have rising ages, every stage marked in order, and end as the formulae say', () => {
+    for (const m of [0.8, 1, 1.5, 2, 3, 5]) {
+      const t = lifeTrack(m);
+      for (let i = 1; i < t.ageYr.length; i++) expect(t.ageYr[i]).toBeGreaterThan(t.ageYr[i - 1]);
+      expect(t.end).toBe('white-dwarf');
     }
+    expect(marks.tms).toBeLessThan(marks.bgb);
+    expect(marks.bgb).toBeLessThan(marks.hei);
+    expect(marks.hei).toBeLessThan(marks.bagb);
+    expect(marks.bagb).toBeLessThan(marks.tpagb);
+    expect(marks.tpagb).toBeLessThan(marks.wd);
+    // Massive stars end in a supernova (the track stops there).
+    expect(lifeTrack(15).end).toBe('supernova');
   });
 
-  it('interpolates in EEP and inverts age', () => {
+  it('interpolate in the life coordinate and invert age', () => {
     const t = sun.track;
-    const s = stateAtEep(t, EEP.tams);
-    expect(eepAtAge(t, s.ageYr)).toBeCloseTo(EEP.tams, 6);
-    // Halfway between two kept points, the mean of their values.
+    const s = stateAtEep(t, marks.tms);
+    expect(eepAtAge(t, s.ageYr)).toBeCloseTo(marks.tms, 6);
     const k = 40;
-    const mid = stateAtEep(t, 0.5 * (t.eep[k] + t.eep[k + 1]));
+    const mid = stateAtEep(t, k + 0.5);
     expect(mid.logL).toBeCloseTo(0.5 * (t.logL[k] + t.logL[k + 1]), 10);
   });
 
-  it('interpolates between masses: a track at a grid mass is that track, and lifetimes fall with mass', () => {
-    const exact = trackForMass(tracks, 1.5);
-    expect(exact.massMsun).toBe(1.5);
-    const m13 = trackForMass(tracks, 1.3);
-    const tams = (m: number) => stateAtEep(trackForMass(tracks, m), EEP.tams).ageYr;
-    expect(tams(1.3)).toBeLessThan(tams(1.2));
-    expect(tams(1.3)).toBeGreaterThan(tams(1.5));
-    // Main-sequence lifetimes: about 10 Gyr for the Sun, a few hundred Myr for 3 M☉ (MIST: 9.9 and 0.38 Gyr).
-    expect(tams(1) / 1e9).toBeCloseTo(9.92, 1);
-    expect(tams(3) / 1e9).toBeGreaterThan(0.3);
-    expect(tams(3) / 1e9).toBeLessThan(0.45);
-    expect(m13.ageYr.every((a, i) => i === 0 || a > m13.ageYr[i - 1])).toBe(true);
+  it('give main-sequence lifetimes falling with mass (Hurley et al.: 11.0 Gyr for 1 M☉, 0.38 Gyr for 3 M☉)', () => {
+    const tms = (m: number) => lifeTrack(m).ageYr[lifeTrack(m).marks.tms] / 1e9;
+    expect(tms(1)).toBeCloseTo(11.0, 1);
+    expect(tms(1.2)).toBeLessThan(tms(1));
+    expect(tms(3)).toBeCloseTo(0.378, 2);
+    // The card's tracks are clamped to the range the formulae are drawn for.
+    expect(trackForMass(60).massMsun).toBe(TRACK_MASS_RANGE[1]);
+  });
+
+  it('give white dwarfs of about 0.5–0.8 M☉ from 1–3 M☉ stars (Hurley et al.’s initial–final mass relation, Fig. 18)', () => {
+    const final = (m: number) => {
+      const t = lifeTrack(m);
+      return t.massNow[t.massNow.length - 1];
+    };
+    expect(final(1)).toBeGreaterThan(0.5);
+    expect(final(1)).toBeLessThan(0.55);
+    expect(final(2)).toBeGreaterThan(final(1));
+    expect(final(3)).toBeGreaterThan(0.7);
+    expect(final(3)).toBeLessThan(0.85);
   });
 });
 
@@ -73,52 +80,56 @@ describe('the Sun’s life', () => {
     expect(s.teffK).toBeCloseTo(SUN_TEFF_K, 0);
     expect(s.massMsun).toBeCloseTo(1, 9);
     expect(s.orbitScale).toBeCloseTo(1, 9);
-    // M_V = 4.81 (Willmer 2018) to the bolometric correction's precision.
     expect(s.absMagV).toBeCloseTo(4.81, 1);
     expect(s.stage).toBe('Main sequence');
   });
 
-  it('brightens on the main sequence: about 10% a billion years', () => {
+  it('brightens on the main sequence, about 10% a billion years, to twice today at its end', () => {
     const in1 = sunAt(sun, SUN_AGE_TODAY_YR + 1e9);
     expect(in1.lsun).toBeGreaterThan(1.07);
     expect(in1.lsun).toBeLessThan(1.13);
-    // The end of core hydrogen burning, near 10 Gyr: about twice as bright, half again as large.
-    const tams = sunAt(sun, stateAtEep(sun.track, EEP.tams).ageYr);
-    expect(tams.lsun).toBeGreaterThan(1.9);
-    expect(tams.rsun).toBeGreaterThan(1.4);
+    const tms = sunAt(sun, ageAt(marks.tms));
+    expect(tms.lsun).toBeGreaterThan(1.9);
+    expect(tms.rsun).toBeGreaterThan(1.4);
   });
 
-  it('reaches about 0.8 au at the tip of the red-giant branch, having lost about 5% of its mass', () => {
-    const tip = sunAt(sun, stateAtEep(sun.track, EEP.rgbTip).ageYr);
-    expect(tip.rsun * RSUN_AU).toBeGreaterThan(0.75);
-    expect(tip.rsun * RSUN_AU).toBeLessThan(0.85);
-    expect(tip.lsun).toBeGreaterThan(1800);
+  it('reaches about 0.88 au at the tip of the red-giant branch, having lost about a quarter of its mass (Reimers, η = 0.5)', () => {
+    const tip = sunAt(sun, ageAt(marks.hei));
+    expect(tip.rsun * RSUN_AU).toBeGreaterThan(0.8);
+    expect(tip.rsun * RSUN_AU).toBeLessThan(0.95);
+    expect(tip.lsun).toBeGreaterThan(2500);
     expect(tip.teffK).toBeLessThan(3200);
-    expect(tip.massMsun).toBeGreaterThan(0.94);
-    expect(tip.massMsun).toBeLessThan(0.97);
-    expect(tip.stage).toBe('Helium flash');
+    expect(tip.massMsun).toBeGreaterThan(0.72);
+    expect(tip.massMsun).toBeLessThan(0.82);
+    expect(tip.stage).toBe('Red giant');
   });
 
-  it('settles into the red clump, swells again on the AGB, and ends a white dwarf of about 0.54 M☉', () => {
-    const hb = sunAt(sun, stateAtEep(sun.track, 650).ageYr);
+  it('settles into the red clump, swells again on the AGB, and ends a white dwarf of about 0.52 M☉', () => {
+    const hb = sunAt(sun, ageAt(marks.hei + 20));
     expect(hb.stage).toBe('Horizontal branch (red clump)');
     expect(hb.rsun).toBeGreaterThan(7);
     expect(hb.rsun).toBeLessThan(15);
     let maxR = 0;
-    for (let e = EEP.tpagb; e < EEP.postAgb; e++) maxR = Math.max(maxR, sunAt(sun, stateAtEep(sun.track, e).ageYr).rsun);
-    expect(maxR * RSUN_AU).toBeGreaterThan(1.4);
+    for (let e = marks.bagb; e < marks.wd; e++) maxR = Math.max(maxR, sunAt(sun, ageAt(e)).rsun);
+    expect(maxR * RSUN_AU).toBeGreaterThan(1.0);
+    expect(maxR * RSUN_AU).toBeLessThan(1.25);
     const end = sunAt(sun, sun.endAgeYr);
     expect(end.massMsun).toBeGreaterThan(0.5);
-    expect(end.massMsun).toBeLessThan(0.58);
-    expect(end.rsun).toBeLessThan(0.03);
-    expect(stageOf(sun.track, EEP.wd)).toBe('White dwarf');
+    expect(end.massMsun).toBeLessThan(0.55);
+    expect(end.rsun).toBeLessThan(0.02);
+    expect(end.stage).toBe('White dwarf');
+  });
+
+  it('crosses from the AGB to a hot white dwarf in about a hundred thousand years', () => {
+    expect(sun.ionYr - sun.leaveYr).toBeGreaterThan(5000);
+    expect(sun.ionYr - sun.leaveYr).toBeLessThan(50_000);
+    expect(sun.endAgeYr - sun.leaveYr).toBeLessThan(200_000);
+    expect(sunAt(sun, sun.endAgeYr).teffK).toBeGreaterThan(80_000);
   });
 
   it('cools as a white dwarf: Mestel’s law through Sirius B, to the cold radius of its mass', () => {
-    // Sirius B (Bond et al. 2017): 126 Myr to 0.0565 L☉ at 1.018 M☉, both ways.
     expect(mestelCoolingYr(1.018, 10 ** -1.248)).toBeCloseTo(1.26e8, -3);
     expect(mestelLuminosity(1.018, 1.26e8)).toBeCloseTo(10 ** -1.248, 8);
-    // Nauenberg: about 0.0128 R☉ at 0.6 M☉ (Earth-sized); Sirius B's measured 0.0081 R☉ near its mass.
     expect(whiteDwarfRadiusRsun(0.6)).toBeCloseTo(0.0125, 3);
     expect(whiteDwarfRadiusRsun(1.018)).toBeCloseTo(0.0081, 3);
     const late = sunAt(sun, sun.lastAgeYr);
@@ -130,56 +141,42 @@ describe('the Sun’s life', () => {
   });
 
   it('widens the planets’ orbits as a ∝ 1/M', () => {
-    for (const age of [SUN_AGE_TODAY_YR, stateAtEep(sun.track, EEP.rgbTip).ageYr, sun.endAgeYr]) {
+    for (const age of [SUN_AGE_TODAY_YR, ageAt(marks.hei), sun.endAgeYr]) {
       const s = sunAt(sun, age);
       expect(s.orbitScale * s.massMsun).toBeCloseTo(1, 9);
     }
-    expect(sunAt(sun, sun.endAgeYr).orbitScale).toBeGreaterThan(1.7);
+    expect(sunAt(sun, sun.endAgeYr).orbitScale).toBeGreaterThan(1.8);
   });
 
-  it('swallows Mercury and Venus on the red-giant branch, reaches Earth only on the AGB (tides left out), never Mars', () => {
-    const tipAge = stateAtEep(sun.track, EEP.rgbTip).ageYr;
-    const agbAge = stateAtEep(sun.track, EEP.tpagb).ageYr;
+  it('swallows Mercury near the tip of the red-giant branch; Venus and Earth, their orbits widened, escape (tides left out)', () => {
     const mercury = engulfmentAgeYr(sun, PLANET_A_AU.mercury)!;
-    const venus = engulfmentAgeYr(sun, PLANET_A_AU.venus)!;
-    const earth = engulfmentAgeYr(sun, PLANET_A_AU.earth)!;
-    expect(mercury).toBeLessThan(venus);
-    expect(venus).toBeLessThanOrEqual(tipAge);
-    expect(mercury).toBeGreaterThan(stateAtEep(sun.track, EEP.tams).ageYr);
-    expect(earth).toBeGreaterThan(agbAge);
+    expect(mercury).toBeGreaterThan(ageAt(marks.bgb));
+    expect(mercury).toBeLessThanOrEqual(ageAt(marks.hei));
+    expect(engulfmentAgeYr(sun, PLANET_A_AU.venus)).toBeNull();
+    expect(engulfmentAgeYr(sun, PLANET_A_AU.earth)).toBeNull();
     expect(engulfmentAgeYr(sun, PLANET_A_AU.mars)).toBeNull();
-    // At the moment it is reached, the planet's widened orbit is the Sun's radius.
-    const s = sunAt(sun, venus);
-    expect(s.rsun * RSUN_AU).toBeCloseTo(PLANET_A_AU.venus * s.orbitScale, 3);
+    // At the moment it is reached, Mercury's widened orbit is the Sun's radius.
+    const s = sunAt(sun, mercury);
+    expect(s.rsun * RSUN_AU).toBeCloseTo(PLANET_A_AU.mercury * s.orbitScale, 3);
+    // Venus escapes narrowly: at the tip its widened orbit is within 10% of the Sun's radius.
+    const tip = sunAt(sun, ageAt(marks.hei));
+    expect(PLANET_A_AU.venus * tip.orbitScale).toBeLessThan(1.1 * tip.rsun * RSUN_AU);
   });
 
   it('gives each stage a name in order', () => {
-    const stages = [EEP.zams, 300, 470, 560, 610, 650, 740, 900, EEP.wd].map((e) => stageOf(sun.track, e));
-    expect(stages).toEqual([
-      'Main sequence',
-      'Main sequence',
-      'Subgiant',
-      'Red giant',
-      'Helium flash',
-      'Horizontal branch (red clump)',
-      'Asymptotic giant branch',
-      'Thermally pulsing AGB',
-      'White dwarf',
-    ]);
-    expect(stateAtAge(sun.track, 0).eep).toBe(EEP.zams);
+    const stages = [0, marks.tms + 5, marks.bgb + 100, marks.hei + 1, marks.hei + 20, marks.bagb + 10, marks.tpagb + 1, marks.wd].map((e) => stageOf(sun.track, e));
+    expect(stages).toEqual(['Main sequence', 'Subgiant', 'Red giant', 'Helium flash', 'Horizontal branch (red clump)', 'Asymptotic giant branch', 'Thermally pulsing AGB', 'White dwarf']);
+    expect(stateAtAge(sun.track, 0).eep).toBe(0);
+    expect(sunAt(sun, sun.ionYr + 5000).stage).toBe('Planetary nebula');
   });
 });
 
 describe('the Sun’s planetary nebula (a model)', () => {
-  it('is none before the envelope is gone, glows once the core passes 25,000 K, and is gone 50,000 years after the AGB', () => {
-    expect(planetaryNebula(sun, sun.agbEndYr)).toBeNull();
-    expect(sun.ejectedYr - sun.agbEndYr).toBeGreaterThan(5000);
-    expect(sun.ejectedYr - sun.agbEndYr).toBeLessThan(20_000);
-    const pn = planetaryNebula(sun, sun.agbEndYr + 26_000)!;
+  it('is lit once the core passes 25,000 K, grows at 25 km/s from the AGB’s end, and is gone 30,000 years later', () => {
+    expect(planetaryNebula(sun, sun.leaveYr - 1)).toBeNull();
+    const pn = planetaryNebula(sun, sun.ionYr + 5000)!;
     expect(pn.glow).toBeCloseTo(1, 6);
-    const since = sun.agbEndYr + 26_000 - sun.ejectedYr;
-    expect(pn.radiusAu).toBeCloseTo((PN_EXPANSION_KMS * since * 365.25 * 86_400) / 149_597_870.7, 3);
-    expect(planetaryNebula(sun, sun.agbEndYr + 60_000)).toBeNull();
-    expect(stageOf(sun.track, stateAtAge(sun.track, sun.agbEndYr + 26_000).eep)).toBe('Planetary nebula');
+    expect(pn.radiusAu).toBeCloseTo((PN_EXPANSION_KMS * (sun.ionYr + 5000 - sun.leaveYr) * 365.25 * 86_400) / 149_597_870.7, 3);
+    expect(planetaryNebula(sun, sun.ionYr + 31_000)).toBeNull();
   });
 });

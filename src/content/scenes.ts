@@ -1895,7 +1895,7 @@ defineScene('m87-star-close', {
 
 defineScene('sun-future', {
   label: PENDING_LABELS['sun-future'],
-  note: 'The Sun’s whole life in a minute and a half, from the MIST stellar-evolution tracks: it brightens slowly for 5 billion years, swells into a red giant 0.8 au across its radius that swallows Mercury and Venus, flashes into helium burning, swells again on the asymptotic giant branch, sheds half its mass as a planetary nebula, and ends a white dwarf the size of Earth. Only the Sun ages, not the clock: the planets keep today’s places, their orbits widening as the Sun loses mass. Its card says where it is; its slider and Today are there too.',
+  note: 'The Sun’s whole life in a minute and a half, from the stellar-evolution formulae of Hurley, Pols & Tout: it brightens slowly for 6 billion years, swells into a red giant 0.88 au in radius that swallows Mercury (Venus, its orbit widened as the Sun loses mass, escapes narrowly), flashes into helium burning, swells again on the asymptotic giant branch, sheds half its mass as a planetary nebula, and ends a white dwarf the size of Earth. Only the Sun ages, not the clock: the planets keep today’s places, their orbits widening. Its card says where it is; its slider and Today are there too.',
   unavailable: needs('sun', 'mercury'),
   run: (note) =>
     scene(note, () => {
@@ -1937,12 +1937,16 @@ const DRIFT_STOPS: readonly DriftStop[] = [
   },
 ];
 
+/** The constellation figures' setting before the journey, put back at its end. */
+let driftFigures: UIState['constellations'] = 'auto';
+
 function driftStop(i: number): void {
   const s = DRIFT_STOPS[i];
   resetToNow();
   updateEphemeris();
   if (!s) {
     controller.exitRoam();
+    useUI.setState({ constellations: driftFigures });
     return;
   }
   useUI.setState({ journeyNote: s.note, constellations: 'on', showLabels: false, selected: null });
@@ -1960,6 +1964,7 @@ defineScene('constellations-drift', {
   unavailable: () => (starStatus() === 'ready' ? null : LOADING_STARS),
   run: (note) =>
     scene(note, () => {
+      driftFigures = useUI.getState().constellations;
       driftStop(0);
     }),
 });
