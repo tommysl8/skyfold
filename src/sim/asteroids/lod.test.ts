@@ -18,8 +18,8 @@ const all: Section[] = ix.files.flatMap((f) => {
   const b = zlib.gunzipSync(readBytes(`public/data/asteroids/${f.file}`));
   return decodeOrbitFile(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer).sections;
 });
-/** The bodies checked one by one: the first file (every group's brightest, every comet), a bright and the faintest main-belt file, the small NEOs. */
-const SAMPLE = new Set(['00', '01', '03', '13', '18'].flatMap((n) => ix.files.find((f) => f.file === `${n}.bin.gz`)!.sections.map((s) => s.id)));
+/** The bodies checked one by one: every file (the first holds every group's brightest and every comet; the second the rest and the sample). */
+const SAMPLE = new Set(ix.files.map((f) => f.file.slice(0, 2)).flatMap((n) => ix.files.find((f) => f.file === `${n}.bin.gz`)!.sections.map((s) => s.id)));
 const sections = all.filter((s) => SAMPLE.has(s.id));
 
 const DAYS = 150; // days after the reference epoch (2026-12)

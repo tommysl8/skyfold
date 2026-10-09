@@ -4,14 +4,14 @@ title: Black holes
 shelf: galaxies
 order: 14
 pitch: In 1935 Eddington described a star shrinking until light could not leave it, then called the idea absurd. Here is what one would look like, up close.
-updated: 2026-09-29
+updated: 2026-10-09
 ---
 
 On Friday 11 January 1935, at a meeting of the Royal Astronomical Society in London, Subrahmanyan Chandrasekhar explained why a dead star above a certain mass has nothing left to hold it up. He was 24, a Fellow of Trinity College, Cambridge, and a friend of Arthur Eddington.[^chandrabio] After a comment from Edward Milne, Eddington followed the star all the way down. It would go on radiating and shrinking, he said, until its radius was a few kilometres and its gravity held in its own light, "and the star can at last find peace".[^obs1935]
 
 It was a fair description of a black hole, offered to throw it out: there should be a law of Nature, Eddington told the meeting, to stop a star behaving in so absurd a way.[^obs1935] There is no such law. Chandrasekhar shared the 1983 Nobel Prize in Physics,[^nobel1983] and black holes have since been weighed, pictured and heard colliding.
 
-The shape of space and time around a black hole that does not spin has been known exactly since 1916. It tells you what one looks like from close by, how slowly your clock runs there and what you would see as you fell in. Skyfold draws all of it, for Sagittarius A\* (Sgr A\*) at the centre of our galaxy and for ten other black holes.
+The shape of space and time around a black hole that does not spin has been known exactly since 1916. It tells you what one looks like from close by, how slowly your clock runs there and what you would see as you fell in. Skyfold draws all of it, for Sagittarius A\* (Sgr A\*) at the centre of our galaxy and for thirty-nine other black holes.
 
 ::: timeline Building the case
 - **1783:** John Michell describes stars too heavy for their own light to leave.
@@ -113,6 +113,23 @@ Black holes can also be heard. At 09:50:45 UTC on 14 September 2015 both LIGO de
 | Gaia BH1 | 9.3[^nagarajan2024] (9.6 in the discovery paper[^elbadry2023a]) | 1,570 light-years | 27 km | its companion's orbit |
 | Gaia BH3 | 33[^panuzzo2024] | 1,930 light-years | 97 km | its companion's orbit |
 | OGLE-2011-BLG-0462 | 7.2[^sahu2025] (1.6 to 4.4 in another study[^lam2022]) | 5,000 light-years | 21 km | how it bent a far star's light |
+:::
+
+## Forty black holes to visit
+
+Every black hole in Skyfold has a card with its mass, how it was weighed, its distance and where each number comes from; type a name into "Where to?" to go there.
+
+- **Twenty-four in pairs with a star,** each weighed by its companion's orbit (the twenty-fifth stellar one is OGLE-2011-BLG-0462, alone). A catalogue of them, BlackCAT, lists the black holes found when an outburst of X-rays gave them away;[^blackcat] Skyfold has its confirmed ones with the papers that weighed them. GRS 1915+105, 12 solar masses, shone in X-rays for 26 years from 1992 and has been hidden behind its own gas since 2019;[^reid2014][^motta2021] GRO J0422+32, at about 2.7 solar masses, is one of the lightest black holes known.[^casares2022]
+- **Three in other galaxies:** LMC X-1 and LMC X-3 in the Large Magellanic Cloud, 160,000 light-years away, and M33 X-7 in the Triangulum Galaxy, 2.7 million light-years away, a black hole that its giant companion eclipses every 3.45 days.[^orosz2009][^orosz2007]
+- **Glowing discs.** Five shine steadily enough to be drawn with a thin disc of hot gas, each a model of a typical state rather than of today: Cygnus X-1, LMC X-1 (at 16% of its Eddington limit), LMC X-3, M33 X-7 and GRS 1915+105 in its bright years.[^gou2009]
+- **Fifteen giants at the centres of galaxies,** Sgr A\* and M87\* among them, weighed by the motions of their stars, of gas, or, in NGC 4258, of water masers circling it in a thin disc.[^kormendyho2013][^reid2019] They run from about half a million solar masses in the small galaxy NGC 404 to about 20 billion in NGC 4889, in the Coma cluster.[^mcconnell2011] A mass found from motions grows with the distance assumed, so Skyfold scales each to where it places the galaxy.
+
+::: see-it black-hole-tour
+Five stops, 16 seconds each: GRO J0422+32 and its small red companion; the discs of GRS 1915+105, LMC X-1 and M33 X-7; and M31\*, the black hole of the Andromeda Galaxy, seen from beyond it so that the Milky Way behind it is bent into a ring 3° across. Move the camera to stay at a stop.
+:::
+
+::: see-it lmc-x-1-disk
+Thirty horizon radii from LMC X-1, in another galaxy, just above its disc: the far side is bent up over the black hole and the side whose gas comes towards you is far brighter. The disc is a model of a typical state, drawn without the hole's spin.
 :::
 
 ## What a black hole looks like
@@ -259,7 +276,8 @@ Some things are models, and the app says so where they show:
 - **The gas and the stars round Sgr A\*.** The flow is a model, and so are the stars within a few parsecs, drawn from published counts, brightnesses and colours; among them only S2, S29, S38 and S55 are real.
 - **No dust** is drawn near the black holes, and M87's starlight is a smooth model glow.
 - **One lens at a time.** Only the black hole with the largest effect bends light; the others' effects are then far below a pixel.
-- **Assumed orientations.** How the orbits of four X-ray binaries, V404 Cygni, A0620-00, MAXI J1820+070 and XTE J1118+480, are turned on the sky is assumed.
+- **Assumed orientations.** How the orbits of the X-ray binaries are turned on the sky is assumed (all but Cygnus X-1's, taken from its jet), and so is GRS 1915+105's phase; a few masses known only as ranges are drawn at their middles, as their cards say.
+- **The discs** of Cygnus X-1 and four other X-ray binaries are models of a typical state, not of today.
 - **Contested masses**, as in the table; the Keck group's mass for Sgr A\* is 7.5% below GRAVITY's.[^do2019]
 
 ## What comes next
@@ -387,6 +405,16 @@ Some things are models, and the app says so where they show:
 [^esabh3]: ESA, "Sleeping giant surprises Gaia scientists" (16 April 2024). https://www.esa.int/Science_Exploration/Space_Science/Gaia/Sleeping_giant_surprises_Gaia_scientists
 [^sahu2022]: K. C. Sahu et al., "An isolated stellar-mass black hole detected through astrometric microlensing", Astrophysical Journal 933, 83 (2022). https://doi.org/10.3847/1538-4357/ac739e
 [^lam2022]: C. Y. Lam et al., "An isolated mass-gap black hole or neutron star detected with astrometric microlensing", Astrophysical Journal Letters 933, L23 (2022). https://doi.org/10.3847/2041-8213/ac7442
+[^blackcat]: J. M. Corral-Santana, J. Casares, T. Muñoz-Darias et al., "BlackCAT: a catalogue of stellar-mass black holes in X-ray transients", Astronomy & Astrophysics 587, A61 (2016). https://doi.org/10.1051/0004-6361/201527130
+[^reid2014]: M. J. Reid, J. E. McClintock, J. F. Steiner et al., "A parallax distance to the microquasar GRS 1915+105 and a revised estimate of its black hole mass", Astrophysical Journal 796, 2 (2014): 8.6 kpc, 12.4 solar masses. https://doi.org/10.1088/0004-637X/796/1/2
+[^motta2021]: S. E. Motta, J. J. E. Kajava, M. Giustini et al., "Observations of a radio-bright, X-ray obscured GRS 1915+105", Monthly Notices of the Royal Astronomical Society 503, 152-161 (2021). https://doi.org/10.1093/mnras/stab511
+[^casares2022]: J. Casares, T. Muñoz-Darias, M. A. P. Torres et al., "A correlation between Hα trough depth and inclination in quiescent X-ray transients: evidence for a low-mass black hole in GRO J0422+32", Monthly Notices of the Royal Astronomical Society 516, 2023-2037 (2022). https://doi.org/10.1093/mnras/stac1881
+[^orosz2009]: J. A. Orosz, D. Steeghs, J. E. McClintock et al., "A new dynamical model for the black hole binary LMC X-1", Astrophysical Journal 697, 573-591 (2009): 10.91 solar masses. https://doi.org/10.1088/0004-637X/697/1/573
+[^orosz2007]: J. A. Orosz, J. E. McClintock, R. Narayan et al., "A 15.65-solar-mass black hole in an eclipsing binary in the nearby spiral galaxy M 33", Nature 449, 872-875 (2007). https://doi.org/10.1038/nature06218
+[^gou2009]: L. Gou, J. E. McClintock, J. Liu et al., "A determination of the spin of the black hole primary in LMC X-1", Astrophysical Journal 701, 1076-1090 (2009): its disc at 16% of the Eddington luminosity. https://doi.org/10.1088/0004-637X/701/2/1076
+[^kormendyho2013]: J. Kormendy and L. C. Ho, "Coevolution (or not) of supermassive black holes and host galaxies", Annual Review of Astronomy and Astrophysics 51, 511-653 (2013). https://doi.org/10.1146/annurev-astro-082708-101811
+[^reid2019]: M. J. Reid, D. W. Pesce and A. G. Riess, "An improved distance to NGC 4258 and its implications for the Hubble constant", Astrophysical Journal Letters 886, L27 (2019): its black hole 3.98 × 10⁷ solar masses. https://doi.org/10.3847/2041-8213/ab552d
+[^mcconnell2011]: N. J. McConnell, C.-P. Ma, K. Gebhardt et al., "Two ten-billion-solar-mass black holes at the centres of giant elliptical galaxies", Nature 480, 215-218 (2011). https://doi.org/10.1038/nature10636
 [^sahu2025]: K. C. Sahu et al., "OGLE-2011-BLG-0462: an isolated stellar-mass black hole confirmed using new HST astrometry and updated photometry", Astrophysical Journal 983, 104 (2025): 7.15 ± 0.83 solar masses at 1.52 kpc, moving at 51 km/s. https://doi.org/10.3847/1538-4357/adbe6e
 [^gw150914]: B. P. Abbott et al. (LIGO Scientific Collaboration and Virgo Collaboration), "Observation of gravitational waves from a binary black hole merger", Physical Review Letters 116, 061102 (2016). https://doi.org/10.1103/PhysRevLett.116.061102
 [^ligo2016]: LIGO Caltech, "Gravitational waves detected 100 years after Einstein's prediction" (11 February 2016). https://www.ligo.caltech.edu/news/ligo20160211

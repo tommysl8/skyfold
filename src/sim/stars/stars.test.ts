@@ -25,6 +25,7 @@ import { findStar } from './names';
 import { JD_J2000, besselianToJd } from './constants';
 import { orbitRelativeState } from './orbits';
 import { catalogueStarId, plausibleSpectralType, starKindText } from './records';
+import { EXTREME_STARS } from './extremeStars';
 import { borrowCompanionTemperatures, decodeStars3D, teffIsBorrowed } from './catalogue';
 import { gunzipFile } from '../../test/stars';
 import { bodyOfCatalogueStar, onDemandStars, registerCatalogueStar, registerStars, releaseCatalogueStars, starData, starIds } from './load';
@@ -100,7 +101,8 @@ describe('registration', () => {
     for (const id of ['alpha-centauri-barycentre', 'alpha-centauri-ab-barycentre', 'sirius-barycentre', 'procyon-barycentre', '61-cygni-barycentre', 'capella-barycentre'])
       expect(getBody(id)?.kind, id).toBe('barycentre');
     for (const id of ['sirius-b', 'procyon', 'procyon-b', '61-cygni-b', 'capella', 'capella-ab', 'canopus', 'spica', 'luytens-star']) expect(isBody(id), id).toBe(true);
-    expect(starIds().length).toBe(file.systems.length + 1 + file.stars.filter((s) => s.id !== 'sun').length - 1); // Proxima is replaced, not added
+    // Proxima is replaced, not added; the extreme stars (extremeStars.ts) join them.
+    expect(starIds().length).toBe(file.systems.length + 1 + file.stars.filter((s) => s.id !== 'sun').length - 1 + EXTREME_STARS.length);
   });
 
   it('replaces the built-in Proxima with its place in the Alpha Centauri system, keeping what the app gave it', () => {
@@ -354,7 +356,7 @@ describe('the trail, search and flights', () => {
   it('keeps the stars of the named systems in the ephemeris table, not the stars found in search', () => {
     const rows = ephemerisRows('earth', null);
     for (const id of ['sun', 'earth', 'proxima', 'alpha-centauri-a', 'sirius', 'sirius-b', 'vega']) expect(rows, id).toContain(id);
-    const i = findStar(names, 'Achernar')[0];
+    const i = findStar(names, 'Hadar')[0];
     const id = registerCatalogueStar(i)!;
     expect(getBody(id)!.onDemand).toBe(true);
     expect(ephemerisRows('earth', null)).not.toContain(id);
@@ -363,9 +365,9 @@ describe('the trail, search and flights', () => {
   });
 
   it('prints a star’s estimated radius to three figures, with "≈"', () => {
-    const i = findStar(names, 'Achernar')[0];
+    const i = findStar(names, 'Hadar')[0];
     const id = registerCatalogueStar(i)!;
-    expect(radiusReading(getBody(id)!)).toMatchObject({ l: 'Radius (estimated)', v: expect.stringMatching(/^≈ \d\.\d\d × 10⁶$/) });
+    expect(radiusReading(getBody(id)!)).toMatchObject({ l: 'Radius (estimated)', v: expect.stringMatching(/^≈ \d\.\d\d × 10[⁶⁷]$/) });
     expect(radiusReading(getBody('sirius')!).v).toBe('1.19 × 10⁶');
     releaseCatalogueStars([i]);
   });
@@ -374,25 +376,25 @@ describe('the trail, search and flights', () => {
     expect(starDestinations('Betelgeuse')[0].id).toBe('betelgeuse');
     expect(starDestinations('HIP 70890')[0].id).toBe('proxima');
     expect(starDestinations('α Lyr')[0].id).toBe('vega');
-    const i = findStar(names, 'Achernar')[0];
-    const d = starDestinations('Achernar')[0];
+    const i = findStar(names, 'Hadar')[0];
+    const d = starDestinations('Hadar')[0];
     expect(d.id).toBe(catalogueStarId(i));
-    expect(d.name).toBe('Achernar');
+    expect(d.name).toBe('Hadar');
     expect(isBody(d.id)).toBe(false);
-    expect(d.distanceKm() / LIGHT_YEAR_KM).toBeCloseTo(139, -1);
+    expect(d.distanceKm() / LIGHT_YEAR_KM).toBeCloseTo(392, -1);
     d.prepare!();
     expect(isBody(d.id)).toBe(true);
     expect(bodyOfCatalogueStar(i)).toBe(d.id);
     const r = getBody(d.id)!;
     expect(r.star?.radiusSource).toBe('estimated');
-    expect(r.aliases).toEqual(expect.arrayContaining(['α Eri', 'HIP 7588']));
+    expect(r.aliases).toEqual(expect.arrayContaining(['β Cen', 'HIP 68702']));
     releaseCatalogueStars([i]);
     expect(isBody(d.id)).toBe(false);
   });
 
   it('places a star chosen in search before the camera plans its move there', () => {
-    const i = findStar(names, 'Achernar')[0];
-    const d = starDestinations('Achernar')[0];
+    const i = findStar(names, 'Hadar')[0];
+    const d = starDestinations('Hadar')[0];
     expect(isBody(d.id)).toBe(false);
     const want = d.distanceKm();
     d.go();
@@ -406,16 +408,16 @@ describe('the trail, search and flights', () => {
   });
 
   it('works out a flight cost again once the catalogue it waited for has arrived', () => {
-    const i = findStar(names, 'Achernar')[0];
+    const i = findStar(names, 'Hadar')[0];
     const cache = new Map<string, Cost>();
     starData.full = false;
-    const d = starDestinations('Achernar')[0];
+    const d = starDestinations('Hadar')[0];
     cache.set(d.id, oneGCost(d));
     expect(cache.get(d.id)).toMatchObject({ ok: false, text: 'Loading the star catalogue…', retry: true });
     starData.full = true;
     dropRetries(cache);
     expect(cache.has(d.id)).toBe(false);
-    cache.set(d.id, oneGCost(starDestinations('Achernar')[0]));
+    cache.set(d.id, oneGCost(starDestinations('Hadar')[0]));
     expect(cache.get(d.id)!.ok).toBe(true);
     dropRetries(cache);
     expect(cache.has(d.id)).toBe(true); // a real answer is kept
@@ -423,11 +425,11 @@ describe('the trail, search and flights', () => {
   });
 
   it('shows a star that has just become a body at its distance, never "here"', () => {
-    const i = findStar(names, 'Achernar')[0];
-    const want = starDestinations('Achernar')[0].distanceKm();
+    const i = findStar(names, 'Hadar')[0];
+    const want = starDestinations('Hadar')[0].distanceKm();
     // Registered as the registry would before a frame: in place, but not yet placed.
     registerCatalogueStar(i);
-    const d = starDestinations('Achernar')[0];
+    const d = starDestinations('Hadar')[0];
     expect(isBody(d.id)).toBe(true);
     expect(d.distanceKm() / want).toBeCloseTo(1, 3);
     releaseCatalogueStars([i]);
@@ -460,7 +462,7 @@ describe('the trail, search and flights', () => {
 
 describe('nearby stars', () => {
   it('become bodies when the camera comes within 0.1 pc, and go again when it leaves', async () => {
-    const i = findStar(names, 'Achernar')[0];
+    const i = findStar(names, 'Hadar')[0];
     const p = new Vector3(stars.positions[3 * i], stars.positions[3 * i + 2], -stars.positions[3 * i + 1]).multiplyScalar(PARSEC_KM);
     // Just off the star's catalogue place (it has moved by < 0.01 pc since 2000).
     sim.camera.pos.copy(p).addScaledVector(new Vector3(1, 0, 0), 0.5 * PROMOTE_PC * PARSEC_KM);
@@ -497,7 +499,7 @@ describe('nearby stars', () => {
   }, 60_000);
 
   it('keeps a star it is told to keep (the focus, the selection, a destination)', async () => {
-    const i = findStar(names, 'Achernar')[0];
+    const i = findStar(names, 'Hadar')[0];
     const id = catalogueStarId(i);
     const p = new Vector3(stars.positions[3 * i], stars.positions[3 * i + 2], -stars.positions[3 * i + 1]).multiplyScalar(PARSEC_KM);
     sim.camera.pos.copy(p).addScaledVector(new Vector3(0, 1, 0), 0.5 * PROMOTE_PC * PARSEC_KM);

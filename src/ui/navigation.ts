@@ -158,6 +158,25 @@ export function frameCosmicWeb(): void {
   controller.spin(COSMIC_WEB_SPIN);
 }
 
+/**
+ * A body seen from our side: the camera `distanceKm` from it, on the line from it to the Sun turned `tiltDeg` about
+ * an axis across it (towards the north celestial pole's side), so that what is drawn is about as we see it from
+ * Earth, with a little depth. A galaxy's photograph shows within a few degrees of our line of sight
+ * (sim/cosmos/pictures.ts).
+ */
+export function frameFromOurSide(id: BodyId, distanceKm: number, tiltDeg = 0): void {
+  if (useUI.getState().tripActive || !isBody(id)) return;
+  const p = sim.bodies[id]?.pos;
+  if (!p) return;
+  const toSun = p.clone().negate().normalize();
+  const across = toSun.clone().cross(new Vector3(0, 1, 0));
+  if (across.lengthSq() < 1e-12) across.set(1, 0, 0);
+  across.normalize();
+  const t = (tiltDeg * Math.PI) / 180;
+  const up = across.clone().cross(toSun).normalize();
+  controller.goTo(id, { distance: distanceKm, direction: toSun.multiplyScalar(Math.cos(t)).addScaledVector(up, Math.sin(t)).normalize() });
+}
+
 /** The map of the cosmic microwave background over the sky, the view turning slowly (not in flight). */
 export function showCmbMap(): void {
   if (useUI.getState().tripActive || !isBody('local-group')) return;

@@ -19,8 +19,8 @@ import { fixedGalacticProvider } from '../galaxy/records';
 import { METHOD } from '../cosmos/cosmicWeb';
 import { SURVEY_SOURCES } from '../surveys/format.ts';
 import type { Vec3 } from '../galaxy/frames';
-import { gpsToUnixMs, regionRadiusRad, type DeepSkySetId, type GwEvent, type NgcGalactic, type NgcGalaxy, type Pulsar, type Snr, type SnrFile } from './format';
-import { NS_RADIUS_KM, pulsarModel, shownPulse } from './pulsarModel';
+import { gpsToUnixMs, regionRadiusRad, type DeepSkySetId, type GwEvent, type Magnetar, type NgcGalactic, type NgcGalaxy, type Pulsar, type Snr, type SnrFile } from './format';
+import { NS_RADIUS_KM, pulsarModel, radioMagnetar, shownPulse } from './pulsarModel';
 
 const LY_PER_PC = PARSEC_KM / LIGHT_YEAR_KM;
 const doiUrl = (doi: string) => `https://doi.org/${doi}`;
@@ -380,8 +380,10 @@ export const FAMOUS_PULSARS: Record<string, { names: string[]; note?: string }> 
 export const pulsarName = (p: Pick<Pulsar, 'jname'>): string => `PSR ${minus(p.jname)}`;
 
 /** Its kind in a few words, from the catalogue's types and its spin. */
-export function pulsarWhat(p: Pick<Pulsar, 'p0' | 'types'>): string {
-  if (p.types.includes('AXP')) return 'Magnetar';
+export function pulsarWhat(p: Pick<Pulsar, 'p0' | 'types'> & { magnetar?: Pick<Magnetar, 'kind' | 'flag'> }): string {
+  if (p.magnetar?.kind === 'PSR') return 'Pulsar with magnetar outbursts';
+  if (p.magnetar?.flag === 'candidate') return 'Magnetar candidate';
+  if (p.magnetar || p.types.includes('AXP')) return 'Magnetar';
   if (p.types.some((t) => t.startsWith('RRAT'))) return 'Rotating radio transient';
   if (p.types.includes('XINS')) return 'Isolated neutron star';
   if (p.p0 < 0.03) return 'Millisecond pulsar';
@@ -391,19 +393,70 @@ export function pulsarWhat(p: Pick<Pulsar, 'p0' | 'types'>): string {
 /** A pulsar's body id from its J name. */
 export const pulsarId = (jname: string): string => `psr-${slug(jname)}`;
 
+/** Magnetars known for an event of their own (by the McGill catalogue's name), with their sources (DOIs). */
+export const FAMOUS_MAGNETARS: Record<string, { note: string; dois: string[]; labels: string[] }> = {
+  'SGR 1806-20': {
+    note: 'On 27 December 2004 it let out a giant flare, the brightest burst of light from beyond the Solar System ever recorded at Earth: in about a fifth of a second some 2 × 10⁴⁶ erg if it is 15 kpc away (a third of that at the 8.7 kpc used here), more than the Sun gives out in a hundred thousand years.',
+    dois: ['10.1038/nature03519', '10.1038/nature03525'],
+    labels: ['Hurley et al. 2005', 'Palmer et al. 2005'],
+  },
+  'SGR 1935+2154': {
+    note: 'On 28 April 2020 it sent out a fast radio burst, the first seen from inside the Milky Way, tying those millisecond flashes to magnetars.',
+    dois: ['10.1038/s41586-020-2863-y', '10.1038/s41586-020-2872-x'],
+    labels: ['CHIME/FRB Collaboration 2020', 'Bochenek et al. 2020'],
+  },
+  'SGR 0526-66': {
+    note: 'Its giant flare of 5 March 1979, seen from the Large Magellanic Cloud by spacecraft across the Solar System, was the first sign that such objects exist.',
+    dois: ['10.1038/282587a0'],
+    labels: ['Mazets et al. 1979'],
+  },
+  'SGR 1900+14': {
+    note: 'It gave out a giant flare on 27 August 1998, pulsing with its 5.2-second spin as it faded.',
+    dois: ['10.1038/16199'],
+    labels: ['Hurley et al. 1999'],
+  },
+};
+
+const MCGILL = 'McGill Online Magnetar Catalog (Olausen & Kaspi 2014, ApJS 212, 6)';
+const MCGILL_URL = 'https://www.physics.mcgill.ca/~pulsar/magnetar/main.html';
+
 export function pulsarEntry(p: Pulsar, index: number): DeepSkyEntry {
+  const m = p.magnetar;
   const famous = FAMOUS_PULSARS[p.jname];
-  const name = famous?.names[0] && !/^(first|fastest|heaviest|binary)/.test(famous.names[0]) ? famous.names[0] : pulsarName(p);
-  const designations = [pulsarName(p), `PSR ${p.jname}`, p.jname, minus(p.jname), ...(p.bname ? [`PSR ${minus(p.bname)}`, `PSR ${p.bname}`, p.bname, minus(p.bname)] : [])];
+  const own = !!m && !m.atnf;
+  // A magnetar goes by its own name ("SGR 1806−20"); its ATNF designation stays an alias.
+  const name = m ? minus(m.name) : famous?.names[0] && !/^(first|fastest|heaviest|binary)/.test(famous.names[0]) ? famous.names[0] : pulsarName(p);
+  const designations = own
+    ? [m.name, minus(m.name)]
+    : [pulsarName(p), `PSR ${p.jname}`, p.jname, minus(p.jname), ...(p.bname ? [`PSR ${minus(p.bname)}`, `PSR ${p.bname}`, p.bname, minus(p.bname)] : []), ...(m ? [m.name, minus(m.name)] : [])];
+  const kind = m?.kind === 'SGR' ? ' (soft gamma repeater)' : m?.kind === 'AXP' ? ' (anomalous X-ray pulsar)' : '';
   return {
     set: 'pulsars',
     index,
-    id: pulsarId(p.jname),
+    id: own ? `magnetar-${slug(m.name)}` : pulsarId(p.jname),
     name,
-    aliases: [...new Set([...designations, ...(famous?.names ?? [])])].filter((a) => a !== name),
-    kindText: name === pulsarName(p) ? pulsarWhat(p) : `${pulsarWhat(p)} · ${pulsarName(p)}`,
-    prominent: !!famous,
+    aliases: [...new Set([...designations, ...(famous?.names ?? []), ...(m ? ['magnetar'] : [])])].filter((a) => a !== name),
+    kindText: m ? `${pulsarWhat(p)}${kind}` : name === pulsarName(p) ? pulsarWhat(p) : `${pulsarWhat(p)} · ${pulsarName(p)}`,
+    // Every magnetar is a body while the catalogue is loaded: there are only some thirty.
+    prominent: !!famous || !!m,
   };
+}
+
+/** "3.9 × 10¹⁴". */
+function sci(x: number, digits = 2): string {
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  const sup = String(e)
+    .replace(/-/g, '⁻')
+    .replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[Number(d)]);
+  return `${(x / 10 ** e).toFixed(digits - 1)} × 10${sup}`;
+}
+
+/** Where a magnetar's distance comes from, in words, with the paper the catalogue cites (its ADS bibcode). */
+function magnetarDistanceSource(m: Magnetar): string {
+  const ref = m.distRef ?? '';
+  const bib = ref.split(' ')[1];
+  const paper = bib && /^\d{4}/.test(bib) ? `ADS ${bib}` : ref;
+  return `${m.distApprox ? 'an approximate distance' : 'the distance'} the ${MCGILL} adopts${paper ? ` (${paper})` : ''}`;
 }
 
 export { shownPulse, WATCHABLE_PERIOD_S } from './pulsarModel';
@@ -447,6 +500,7 @@ export const DM_DISTANCE_NOTE =
   'Its distance comes from its dispersion measure (how much its radio pulses are delayed by free electrons) and a model of those electrons: often off by a quarter, sometimes by a factor of two.';
 
 export function pulsarRecord(p: Pulsar, entry: DeepSkyEntry): BodyRecord {
+  if (p.magnetar) return magnetarRecord(p, p.magnetar, entry);
   const famous = FAMOUS_PULSARS[p.jname];
   const spin = 1 / p.p0;
   const pulse = shownPulse(p.p0);
@@ -520,6 +574,73 @@ export function pulsarRecord(p: Pulsar, entry: DeepSkyEntry): BodyRecord {
     dataSource: ATNF,
     article: 'what-stars-are-made-of',
     provider: fixedGalacticProvider(p.pos, 'Catalogue position at the catalogue’s distance'),
+  };
+}
+
+/** A magnetar's record: the McGill catalogue's numbers, its twisted field up close, and its story where it has one. */
+function magnetarRecord(p: Pulsar, m: Magnetar, entry: DeepSkyEntry): BodyRecord {
+  const model = pulsarModel(p);
+  const famous = FAMOUS_MAGNETARS[m.name];
+  const pulse = shownPulse(m.p0);
+  const radio = radioMagnetar(m);
+  const home = m.assoc?.includes('LMC') ? ('Large Magellanic Cloud' as const) : m.assoc?.includes('SMC') ? ('Small Magellanic Cloud' as const) : undefined;
+  const facts: string[] = [];
+  const field = Number.isFinite(m.bG)
+    ? `a magnetic field of about ${sci(m.bG)} gauss at its surface${m.bG > 1e14 ? ', hundreds of times a typical pulsar’s and a thousand million million times Earth’s' : ''}`
+    : 'a field too strong to measure from its spin alone';
+  facts.push(`A magnetar: a neutron star with ${field}, inferred from how fast its ${rounded(m.p0, 3)}-second spin is slowing.`);
+  if (Number.isFinite(m.lxErgS) && Number.isFinite(m.edotErgS) && m.lxErgS > m.edotErgS)
+    facts.push('It shines in X-rays more brightly than its slowing spin could power: the energy comes from its decaying magnetic field.');
+  if (famous) facts.push(famous.note);
+  else if (m.activity.includes('F')) facts.push('It has given out a giant flare.');
+  const info: DeepSkyInfo = {
+    type: pulsarWhat(p),
+    distancePc: p.distPc,
+    ...(p.distLoPc > 0 && p.distHiPc > p.distLoPc ? { distanceLoPc: p.distLoPc, distanceHiPc: p.distHiPc } : {}),
+    distanceSource: magnetarDistanceSource(m),
+    rows: [
+      { l: 'Spin period', v: m.p0 < 0.1 ? (m.p0 * 1000).toPrecision(6) : m.p0.toPrecision(6), u: m.p0 < 0.1 ? 'ms' : 's', title: MCGILL },
+      ...(Number.isFinite(m.p1) ? [{ l: 'Spin-down Ṗ', v: `${m.p1Upper ? '< ' : ''}${sci(m.p1)}`, u: 's/s', title: MCGILL }] : []),
+      ...(Number.isFinite(m.bG) ? [{ l: 'Surface magnetic field', v: `${m.p1Upper ? '< ' : ''}${sci(m.bG)}`, u: 'G', title: `3.2 × 10¹⁹ (P Ṗ)^½ G: ${MCGILL}` }] : []),
+      ...(Number.isFinite(m.edotErgS) ? [{ l: 'Spin-down power', v: sci(m.edotErgS), u: 'erg/s', title: MCGILL }] : []),
+      ...(Number.isFinite(m.lxErgS) ? [{ l: 'X-ray luminosity (2–10 keV)', v: sci(m.lxErgS), u: 'erg/s', title: MCGILL }] : []),
+      ...(Number.isFinite(m.ageYr) ? [{ l: 'Characteristic age P/2Ṗ', v: rounded(m.ageYr), u: 'years', title: 'An upper limit on its true age if it was born spinning fast' }] : []),
+    ],
+    hostGalaxy: home,
+    cardNote: m.flag === 'candidate' ? 'A candidate magnetar: its nature is not yet certain.' : undefined,
+    refs: [`${MCGILL} (period, spin-down, field, distance)`, ...(m.atnf ? [`${ATNF} (position)`] : []), ...(famous?.labels ?? [])],
+  };
+  const slowed = pulse.slowedBy === 1 ? 'at its real rate' : `${pulse.slowedBy.toLocaleString('en-GB')} times slower than it really does`;
+  const modelNotes = [
+    `Up close: the neutron star, about 24 km across, turning ${slowed}, with hot spots where its strongest field lines meet the surface, and its magnetosphere drawn as dipole loops a few star radii across, twisted about the magnetic axis by about a radian, as Thompson, Lyutikov & Kulkarni (2002) describe magnetars. The loops are a model, in false colour.`,
+    radio
+      ? 'It has been seen pulsing in radio: its radio beams are drawn, their width from its spin (Rankin 1993).'
+      : 'It has not been seen pulsing in radio: no beams are drawn. It is seen in X-rays.',
+    'Which way its spin axis points is not known: it is chosen.',
+  ];
+  return {
+    id: entry.id,
+    name: entry.name,
+    aliases: entry.aliases,
+    kind: 'pulsar',
+    kindText: entry.kindText,
+    parent: null,
+    physical: { radiusKm: NS_RADIUS_KM, colour: '#ff8fe0' },
+    visual: { renderer: 'layer' },
+    framing: { distanceKm: model ? 3 * model.sizeKm : 1e8, minKm: 3 * NS_RADIUS_KM },
+    detector: false,
+    orbitLine: false,
+    onDemand: true,
+    deepSky: info,
+    ...(model ? { pulsar: model } : {}),
+    facts,
+    factSources: [MCGILL_URL, doiUrl('10.1088/0067-0049/212/1/6'), ...(famous?.dois.map(doiUrl) ?? [])].slice(0, facts.length),
+    factSourceLabels: ['McGill Online Magnetar Catalog', 'Olausen & Kaspi 2014', ...(famous?.labels ?? [])].slice(0, facts.length),
+    positionNote: `Position: ${m.atnf ? ATNF : MCGILL}, at the magnetar catalogue’s distance, held fixed.`,
+    modelNotes,
+    dataSource: m.atnf ? `${MCGILL}; position ${ATNF}` : MCGILL,
+    article: 'what-stars-are-made-of',
+    provider: fixedGalacticProvider(p.pos, 'Catalogue position at the magnetar catalogue’s distance'),
   };
 }
 

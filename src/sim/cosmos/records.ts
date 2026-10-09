@@ -10,13 +10,14 @@ import { KPC_KM, LIGHT_YEAR_KM, MPC_KM, PARSEC_KM } from '../../physics/constant
 import { bvToTemperature } from '../../physics/blackbody';
 import { sig } from '../../lib/sci';
 import { ALWAYS } from '../bodies/providers/simple';
-import type { BodyRecord, DeepSkyInfo, PositionProvider } from '../bodies/types';
+import type { BodyRecord, DeepSkyImage, DeepSkyInfo, PositionProvider } from '../bodies/types';
 import { msFromAstroTime } from '../../lib/time';
 import { isBoundToLocalGroup } from '../../physics/cosmology/policy';
 import { cosmicAtMemo } from '../cosmicTime';
 import { EARLIEST_GALAXIES_GYR } from './expansion';
 import { add, apply, cross, dot, eclToWorld, ICRS_TO_ECL, norm, scale, skyBasis, skyDirectionWorld, type Vec3 } from './frames';
-import type { GalaxyClass, LocalGalaxiesDoc, LocalGalaxy, NamedDoc, NamedObject } from './localGalaxies';
+import { discAxesEcl, type DiscInfo, type GalaxyClass, type LocalGalaxiesDoc, type LocalGalaxy, type NamedDoc, type NamedObject } from './localGalaxies';
+import { apparentV, DISC_TEMPLATES, inclinationFromAxisRatio, templateForHubble, type MoreGalaxiesDoc, type MoreGalaxy } from './moreGalaxies';
 import { templateFor, type TemplateId } from './templates';
 
 export const LOCAL_GROUP_ID = 'local-group';
@@ -156,7 +157,7 @@ const unit = (v: Vec3): Vec3 => scale(v, 1 / norm(v));
  * templates trail a rotation clockwise about their +z: where the sense of rotation is known the
  * template is turned so that its arms trail (flipping y and z when the spin is along the normal).
  */
-function discAxesWorld(d: NonNullable<NamedObject['disc']>, stretch: Vec3 = [1, 1, 1]): { axes: [Vec3, Vec3, Vec3]; normal: Vec3 } {
+function discAxesWorld(d: { axesEcl: DiscInfo['axesEcl'] }, stretch: Vec3 = [1, 1, 1]): { axes: [Vec3, Vec3, Vec3]; normal: Vec3 } {
   const a = d.axesEcl.major;
   let m = d.axesEcl.minor;
   let n = d.axesEcl.normal;
@@ -253,6 +254,7 @@ const CLASS_TEXT: Record<GalaxyClass, string> = {
   'dwarf-elliptical': 'Dwarf elliptical galaxy',
   'compact-elliptical': 'Compact elliptical galaxy',
   elliptical: 'Elliptical galaxy',
+  lenticular: 'Lenticular galaxy',
   'lenticular-peculiar': 'Elliptical galaxy with a dust lane',
   cluster: 'Cluster of galaxies',
   'high-z': 'Galaxy of the early universe',
@@ -270,6 +272,7 @@ const CLASS_WORD: Record<GalaxyClass, string> = {
   'dwarf-elliptical': 'dwarf elliptical galaxy',
   'compact-elliptical': 'compact elliptical galaxy',
   elliptical: 'elliptical galaxy',
+  lenticular: 'lenticular galaxy (a disc without spiral arms)',
   'lenticular-peculiar': 'elliptical galaxy',
   cluster: 'cluster of galaxies',
   'high-z': 'young galaxy',
@@ -672,7 +675,7 @@ const NAMED_EXTRA: Record<string, Facts> = {
   'virgo-cluster': {
     facts: [
       'The nearest big cluster of galaxies, 16.5 million parsecs (54 million light-years) away; the Local Group lies on its outskirts.',
-      'About 2,000 galaxies have been catalogued in it. Cosmicflows-4 measured the distances of 164 of them, and those are the points drawn here.',
+      'About 2,000 galaxies have been catalogued in it. Its sixty brightest are drawn here as galaxies of their own, most at their measured distances; the rest of the 164 whose distances Cosmicflows-4 measured are points of the cosmic web.',
     ],
     sources: [adsUrl('2007ApJ...655..144M'), adsUrl('1985AJ.....90.1681B')],
     labels: ['Mei et al. 2007', 'Binggeli, Sandage & Tammann 1985'],
@@ -808,7 +811,11 @@ function namedObject(o: NamedObject, ctx: { virgoEclKm: Vec3 | null }): Built {
       'Seen from here its light is drawn redshifted and dimmed as the expansion of the universe has stretched it, with the spectrum of a hot black body (its ultraviolet magnitude stands in for its visible one). In truth hydrogen in the young universe absorbed all its light bluer than 121.6 nm, which the redshift has carried to 1.4 micrometres and beyond: to the eye it would be entirely dark, and only infrared telescopes such as JWST see it.',
     );
   } else if (isCluster && o.id !== 'bullet-cluster') {
-    notes.push('Drawn as its galaxies with measured distances, the points of the cosmic web (Cosmicflows-4): many fainter members are not in the survey.');
+    notes.push(
+      o.id === 'virgo-cluster'
+        ? 'Drawn as its galaxies: its sixty brightest as galaxies of their own (at their measured distances where those are precise, else at the cluster’s), the rest with measured distances as points of the cosmic web (Cosmicflows-4); many fainter members are in neither.'
+        : 'Drawn as its galaxies: its brightest thirty-odd as galaxies of their own, all at the cluster’s distance (their own are not precise enough to place them in depth), the rest with measured distances as points of the cosmic web (Cosmicflows-4); many fainter members are in neither.',
+    );
   } else if (o.id === 'bullet-cluster') {
     notes.push('Illustrative: its galaxies are drawn as two groups about 0.7 Mpc apart on the sky, as its two clusters are; where each galaxy sits is a random draw, their total light (about 3 × 10¹² Suns) is typical of so massive a cluster, and the hot gas between them is not drawn.');
     notes.push('Placed where it is now, at the comoving distance of its redshift.');
@@ -879,6 +886,233 @@ function namedObject(o: NamedObject, ctx: { virgoEclKm: Vec3 | null }): Built {
   return { record, shape, anchor: { id: record.id, anchorWorldKm: eclToWorld(anchorKm), home: false } };
 }
 
+// ─── More galaxies: famous ones beyond the Local Group, and the Virgo and Coma clusters' brightest ─────
+
+const OPENNGC = 'OpenNGC (Verga; from HyperLEDA, NED and SIMBAD)';
+const OPENNGC_URL = 'https://github.com/mattiaverga/OpenNGC';
+const CF4_REF = 'Tully et al. 2023, ApJ 944, 94 (Cosmicflows-4)';
+const MEI_2007 = 'Mei et al. 2007, ApJ 655, 144';
+
+/** "3.63 million parsecs (11.8 million light-years)". */
+const mpcWords = (mpc: number): string => `${sig(mpc, 3)} million parsecs (${lightYearsWords(mpc * 1e6)})`;
+
+/** What a galaxy's picture is, on its card (scene/GalaxyPictures.tsx; sim/cosmos/pictures.ts). */
+export const PICTURE_NOTE =
+  'Seen from near our line of sight it is drawn with a photograph (credited on its card), laid on its disc as we see it: a photograph shows the galaxy only from about where it was taken, so as you move away from our line of sight, or come close enough for its pixels to show, the picture fades into the model. Its light is the galaxy’s measured light, spread as the photograph spreads it.';
+
+/** Hand-written facts of the famous ones (the rest get a line from their measurements). */
+const MORE_FACTS: Record<string, Facts> = {
+  m82: {
+    facts: [
+      'A starburst galaxy in the M81 group: a close pass of M81 a few hundred million years ago set off a burst of star formation in its centre.',
+      'Winds from its many young stars and supernovae blow gas out above and below its disc, seen as red filaments in pictures.',
+    ],
+    sources: [doiUrl('10.1038/372530a0'), doiUrl('10.1086/305102')],
+    labels: ['Yun, Ho & Lo 1994', 'Shopbell & Bland-Hawthorn 1998'],
+  },
+  m64: {
+    facts: [
+      'A band of dust in front of its bright centre gives it its name.',
+      'The gas in its outer disc turns the opposite way to the gas and stars of its inner disc: perhaps the remains of a small galaxy it swallowed.',
+    ],
+    sources: [doiUrl('10.3847/1538-4357/ac94d8'), doiUrl('10.1038/360442a0')],
+    labels: ['Tully et al. 2023', 'Braun, Walterbos & Kennicutt 1992'],
+  },
+  'ngc-4038': {
+    facts: [
+      'Two spiral galaxies in collision, NGC 4038 and NGC 4039. Stars flung out by the encounter form two long tails, the antennae.',
+      'The collision has set off a burst of star formation: Hubble found thousands of young, massive star clusters where the two discs meet.',
+    ],
+    sources: [doiUrl('10.3847/1538-4357/ac94d8'), doiUrl('10.1086/117334')],
+    labels: ['Tully et al. 2023', 'Whitmore & Schweizer 1995'],
+  },
+  'ngc-4039': {
+    facts: ['The smaller of the two colliding spirals of the Antennae Galaxies, with NGC 4038.'],
+    sources: [doiUrl('10.1086/117334')],
+    labels: ['Whitmore & Schweizer 1995'],
+  },
+  m101: {
+    facts: [
+      'A big spiral seen face-on in Ursa Major.',
+      'In 2011 it hosted SN 2011fe, the nearest type Ia supernova in decades, found within a day of its explosion.',
+    ],
+    sources: [doiUrl('10.3847/1538-4357/ac94d8'), doiUrl('10.1038/nature10644')],
+    labels: ['Tully et al. 2023', 'Nugent et al. 2011'],
+  },
+  'ngc-3628': {
+    facts: ['The edge-on member of the Leo Triplet, with M65 and M66. Its encounters with them have pulled out a long tail of stars.'],
+    sources: [adsUrl('1974AJ.....79..671K')],
+    labels: ['Kormendy & Bahcall 1974'],
+  },
+  m100: {
+    facts: ['A grand-design spiral in the Virgo Cluster. In 1994 Hubble found Cepheid variable stars in it, giving one of the first precise distances to the cluster, about 17 million parsecs.'],
+    sources: [doiUrl('10.1038/371757a0')],
+    labels: ['Freedman et al. 1994'],
+  },
+};
+
+/** Words for the members of a cluster. */
+const CLUSTER_OF: Record<string, string> = { virgo: 'the Virgo Cluster', coma: 'the Coma Cluster' };
+
+/**
+ * A galaxy that keeps its place in its group, which takes part in the expansion: at comoving place x with its group's
+ * anchor c, it is at a c + (x − c) = x + (a − 1) c at the clock's time (as the cosmic web's points are).
+ */
+function anchoredProvider(helioEclKm: Readonly<Vec3>, anchorEclKm: Readonly<Vec3>): PositionProvider {
+  const x = [helioEclKm[0], helioEclKm[1], helioEclKm[2]];
+  const c = [anchorEclKm[0], anchorEclKm[1], anchorEclKm[2]];
+  return {
+    label: 'Measured place (heliocentric), held in its group, which is carried by the expansion of the universe',
+    availability: (ms) => {
+      if (Math.abs(ms - J2000_MS) <= GALAXY_YEARS * YEAR_MS) return ALWAYS.approximate;
+      return cosmicAtMemo(ms).ageGyr < EARLIEST_GALAXIES_GYR ? TOO_EARLY : ALWAYS.illustrative;
+    },
+    positionAt(t, pos, vel) {
+      const am1 = cosmicAtMemo(msFromAstroTime(t)).am1;
+      pos.x = x[0] + am1 * c[0];
+      pos.y = x[1] + am1 * c[1];
+      pos.z = x[2] + am1 * c[2];
+      if (vel) vel.x = vel.y = vel.z = 0;
+    },
+  };
+}
+
+/**
+ * A galaxy of more-galaxies.json.gz as a body. The famous ones are placed where the cosmic web places their row, and
+ * take part in the expansion with their group (its anchor: the deep-sky layer's); the clusters' members are held in
+ * their cluster, relative to its place, as M87 is in Virgo.
+ */
+function moreGalaxy(g: MoreGalaxy, clusterEclKm: Record<string, Vec3 | null>, image: DeepSkyImage | undefined): Built {
+  const template = templateForHubble(g.hubble);
+  const bv = typicalBV(template);
+  const db = g.distance;
+  const dMpc = db.placedMpc;
+  const mag = apparentV(g, bv);
+  const absMagV = mag ? mag.v - 5 * Math.log10((db.measuredMpc ?? dMpc) * 1e5) : -20;
+  const lumV = 10 ** (-0.4 * (absMagV - M_V_SUN));
+  const majArcmin = g.majArcmin ?? 1;
+  const q = g.minArcmin && g.majArcmin ? Math.min(1, g.minArcmin / g.majArcmin) : 1;
+  const r25Kpc = dMpc * 1000 * Math.tan(((majArcmin / 2) * Math.PI) / 10800);
+  const size = sizes(template, undefined, r25Kpc, DISC_HALF_LIGHT_PER_R25[template] ?? 0.35);
+  const disc = DISC_TEMPLATES.has(template) && g.pa !== null;
+  const inclination = inclinationFromAxisRatio(q);
+  const orientation = disc ? discAxesWorld({ axesEcl: discAxesEcl(g.ra, g.dec, { inclination, pa: g.pa! }) }) : skyAxesWorld(g.ra, g.dec, g.pa ?? 0, g.pa !== null ? q : 1);
+  const posKm = scale(g.positionEclMpc, MPC_KM);
+  const parent = g.set === 'virgo' ? 'virgo-cluster' : g.set === 'coma' ? 'coma-cluster' : null;
+  const clusterKm = parent ? clusterEclKm[g.set] : null;
+  const where = parent ? CLUSTER_OF[g.set] : null;
+  const cls: GalaxyClass = template === 'elliptical' ? 'elliptical' : template === 'lenticular' ? 'lenticular' : template === 'irregular' ? 'irregular' : 'spiral';
+  const fromMei = db.ref.startsWith('Mei');
+
+  const facts: string[] = [`A ${CLASS_WORD[cls]}${where ? ` in ${where}` : ''}, ${mpcWords(db.measuredMpc ?? dMpc)} from the Sun, shining with the light of ${sunsWords(lumV)} Suns.`];
+  const sources: string[] = [fromMei || (g.set === 'virgo' && db.basis === 'cluster') ? adsUrl('2007ApJ...655..144M') : g.set === 'coma' ? doiUrl('10.3847/2041-8213/ada0bd') : doiUrl('10.3847/1538-4357/ac94d8')];
+  const labels: string[] = [fromMei || (g.set === 'virgo' && db.basis === 'cluster') ? 'Mei et al. 2007' : g.set === 'coma' ? 'Scolnic et al. 2025' : 'Tully et al. 2023'];
+  const own = MORE_FACTS[g.id];
+  if (own) {
+    facts.push(...own.facts);
+    sources.push(...own.sources);
+    labels.push(...own.labels);
+  }
+  if (g.vHelio !== null && g.vHelio < 0) {
+    facts.push(`Its light is blueshifted: it is coming towards us at ${Math.abs(g.vHelio)} km/s, its fall through the cluster outrunning the expansion of the universe.`);
+    sources.push(OPENNGC_URL);
+    labels.push('OpenNGC');
+  }
+
+  const rows: { l: string; v: string; u?: string; title?: string }[] = [];
+  if (g.hubble) rows.push({ l: 'Type', v: g.hubble, title: `Hubble type (${OPENNGC})` });
+  rows.push({
+    l: 'Absolute magnitude M_V',
+    v: absMagV.toFixed(2),
+    title: mag?.fromB ? `From its B magnitude (${OPENNGC}) and a B − V typical of its type (${FSI95}); not corrected for the Milky Way’s dust` : `V magnitude (${OPENNGC}) − distance modulus; not corrected for the Milky Way’s dust`,
+  });
+  rows.push({ l: 'Luminosity', v: sig(lumV, 2), u: 'L☉', title: 'V band, M_V☉ = 4.83' });
+  if (g.vHelio !== null) rows.push({ l: 'Radial velocity', v: String(g.vHelio), u: 'km/s', title: `Heliocentric (${OPENNGC}): negative is towards us` });
+  if (disc) rows.push({ l: 'Inclination', v: `${Math.round(inclination)}°`, title: `From its axis ratio ${sig(q, 2)}, for a disc a fifth as thick as it is wide (Hubble 1926)` });
+  const methodText = db.methods ? cf4Methods(db.methods) : '';
+  const distanceSource =
+    db.basis === 'cluster'
+      ? `the cluster’s distance (${db.ref.split(' (')[0]}): its own is not measured well enough to place it within the cluster`
+      : db.basis === 'pair'
+        ? `its partner NGC 4038’s (${CF4_REF}, as the cosmic web places it)`
+        : db.basis === 'web'
+          ? `${methodText ? `${methodText} in its group, ` : ''}its group’s distance (${CF4_REF}), as the cosmic web places it`
+          : fromMei
+            ? `surface brightness fluctuations (${MEI_2007})`
+            : `${methodText} (${CF4_REF}), on the scale of ${MEI_2007}`;
+  const info: DeepSkyInfo = {
+    type: CLASS_TEXT[cls],
+    distancePc: dMpc * 1e6,
+    distanceLoPc: db.loMpc * 1e6,
+    distanceHiPc: db.hiMpc * 1e6,
+    distanceSource: `${distanceSource}${parent ? '; placed as its cluster is, where it is now' : ''}`,
+    sizes: [{ label: 'Radius to 25 mag/arcsec² (R25)', pc: r25Kpc * 1000, title: `${sig(majArcmin, 3)}′ across on the sky (${OPENNGC})` }],
+    rows,
+    ...(image ? { image } : {}),
+    refs: [`${OPENNGC} (position, type, size, brightness, velocity)`, `${db.ref} (distance)`],
+  };
+  const notes: string[] = [templateNote(template, disc, disc, !disc && g.pa === null)];
+  if (disc) notes.push(`Its tilt (${Math.round(inclination)}° from face-on) is worked out from its shape on the sky, not measured from how its gas turns.`);
+  if (db.basis === 'cluster') notes.push(`Its own distance is not measured well enough: it is placed at ${where}’s distance, in its own direction, so where it lies in depth within the cluster is not known.`);
+  if (image) notes.push(PICTURE_NOTE);
+  const radiusKm = (TEMPLATE_UNIT_R25.has(template) ? size.unitKpc : 2 * size.halfLightKpc) * KPC_KM;
+  const record: BodyRecord = {
+    id: g.id,
+    name: g.name.replace(/'/g, '’'),
+    aliases: [...new Set([...g.aliases, ...(g.name.includes("'") ? [g.name] : [])])],
+    kind: 'galaxy',
+    kindText: CLASS_TEXT[cls],
+    parent,
+    physical: { radiusKm, colour: bvColour(bv), luminous: { vmag: absMagV, atKm: 10 * PARSEC_KM, teffK: bvToTemperature(bv) } },
+    visual: { renderer: 'layer' },
+    framing: { distanceKm: 4 * radiusKm, minKm: 0.02 * radiusKm },
+    labelRank: g.set === 'famous' ? 13.3 : labelRankFor(absMagV) + 0.3,
+    detector: false,
+    orbitLine: false,
+    deepSky: info,
+    facts,
+    factSources: sources.slice(0, facts.length),
+    factSourceLabels: labels.slice(0, facts.length),
+    positionNote: parent
+      ? `Position: ${OPENNGC}, at ${db.basis === 'cluster' ? 'its cluster’s distance' : 'its measured distance'} (as the cluster is placed: divided by 1 + its redshift, where it is now); held fixed in its cluster, which gravity holds together: the cluster as a whole is carried away as the universe expands.`
+      : `Position: ${OPENNGC}, at its group’s distance (${CF4_REF}), where the cosmic web places it; held in its group, which is carried away as the universe expands.`,
+    modelNotes: notes,
+    dataSource: `${OPENNGC}; ${db.ref}`,
+    article: ARTICLE_GALAXIES,
+    provider: parent && clusterKm ? fixedProvider(posKm, clusterKm, 'Measured place, relative to its cluster') : anchoredProvider(posKm, scale(g.anchorEclMpc, MPC_KM)),
+  };
+  const shape: GalaxyShape = {
+    id: g.id,
+    template,
+    scaleKpc: size.unitKpc,
+    axes: orientation.axes,
+    normal: orientation.normal,
+    lumV,
+    halfLightKpc: size.halfLightKpc,
+    inSkyMap: false,
+    // A generic lenticular has no ring of dust (the lenticular template's ring is the Sombrero's): none is drawn.
+    dust: template === 'lenticular' ? NO_DUST : dustFor(template, size.unitKpc),
+  };
+  const anchorKm = parent && clusterKm ? clusterKm : scale(g.anchorEclMpc, MPC_KM);
+  return { record, shape, anchor: { id: record.id, anchorWorldKm: eclToWorld(anchorKm), home: false } };
+}
+
+/** Cosmicflows-4's distance methods (its method bits, cosmicWeb.ts METHOD) in words, the most precise first. */
+const CF4_METHODS: [number, string][] = [
+  [64, 'Cepheids'],
+  [32, 'the tip of the red giant branch'],
+  [1, 'type Ia supernovae'],
+  [128, 'a water maser'],
+  [8, 'surface brightness fluctuations'],
+  [16, 'type II supernovae'],
+  [4, 'the fundamental plane'],
+  [2, 'the Tully–Fisher relation'],
+];
+const cf4Methods = (bits: number): string => {
+  const w = CF4_METHODS.filter(([b]) => bits & b).map(([, t]) => t);
+  return w.length <= 1 ? (w[0] ?? '') : `${w.slice(0, -1).join(', ')} and ${w[w.length - 1]}`;
+};
+
 // ─── The Local Group ─────────────────────────────────────────────────────────────────────
 
 function localGroupRecord(ctx: CosmosContext, andromedaEclKm: Vec3, members: number): BodyRecord {
@@ -932,8 +1166,11 @@ export interface CosmosBuild {
   anchors: ExpansionAnchor[];
 }
 
-/** Rows of the local file drawn as galaxies (all of them). */
-export function cosmosRecords(local: LocalGalaxiesDoc, named: NamedDoc, ctx: CosmosContext): CosmosBuild {
+/**
+ * Every galaxy as a body: the rows of the local file (all of them), the named objects, and the more galaxies (famous ones
+ * and the clusters' brightest), with the pictures of those that have one (sim/cosmos/pictures.ts) on their cards.
+ */
+export function cosmosRecords(local: LocalGalaxiesDoc, named: NamedDoc, ctx: CosmosContext, more: MoreGalaxiesDoc | null = null, images: ReadonlyMap<string, DeepSkyImage> = new Map()): CosmosBuild {
   const byId = new Map(named.objects.map((o) => [o.id, o]));
   const m31 = local.galaxies.find((g) => g.id === 'andromeda');
   if (!m31) throw new Error('local-galaxies: no Andromeda');
@@ -945,6 +1182,17 @@ export function cosmosRecords(local: LocalGalaxiesDoc, named: NamedDoc, ctx: Cos
   // Clusters first, so a galaxy in one (M87) can name it as parent.
   const others = named.objects.filter((o) => !localIds.has(o.id)).sort((a, b) => Number(b.kind === 'cluster') - Number(a.kind === 'cluster'));
   for (const o of others) built.push(namedObject(o, { virgoEclKm }));
+  const coma = byId.get('coma-cluster');
+  const clusters = { virgo: virgoEclKm, coma: coma ? scale(coma.positionEclMpc, MPC_KM) : null };
+  const ids = new Set(built.map((b) => b.record.id));
+  for (const g of more?.galaxies ?? []) if (!ids.has(g.id)) built.push(moreGalaxy(g, clusters, images.get(g.id)));
+  // The local and named galaxies with a picture: on their cards, with what it is.
+  for (const b of built) {
+    const image = images.get(b.record.id);
+    if (!image || !b.record.deepSky || b.record.deepSky.image) continue;
+    b.record.deepSky = { ...b.record.deepSky, image };
+    b.record.modelNotes = [...(b.record.modelNotes ?? []), PICTURE_NOTE];
+  }
   const members = local.galaxies.filter((g) => g.subgroup === 'MW' || g.subgroup === 'M31' || g.subgroup === 'LG').length + 1;
   const records = [localGroupRecord(ctx, andromedaEclKm, members), ...built.map((b) => b.record)];
   return {

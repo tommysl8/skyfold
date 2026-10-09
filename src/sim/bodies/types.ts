@@ -12,6 +12,7 @@
  *    astronomy-engine providers and the date policy (ephemerisPolicy.ts) need.
  */
 import type { PulsarModel } from '../deepsky/pulsarModel';
+import type { StarSurface } from '../stars/closeup';
 import type { AstroTime } from 'astronomy-engine';
 import type { Quaternion, Vector3 } from 'three';
 
@@ -434,6 +435,8 @@ export interface BodyRecord {
   blackHole?: BlackHoleInfo;
   /** A pulsar's model up close: its spin, beams and field, and a neutron-star companion (sim/deepsky/pulsarModel.ts). */
   pulsar?: PulsarModel;
+  /** A star's close-up: its shape, limb darkening, cells, spots and flares (sim/stars/closeup.ts). */
+  starSurface?: StarSurface;
 }
 
 /** A picture of a deep-sky object, with what its licence asks to be shown with it (CC BY 4.0). */
@@ -496,6 +499,13 @@ export interface BlackHoleInfo {
   massSource: string;
   /** Other published masses for the card ("9.62 in the discovery paper", "5.4–8.7 × 10⁹ from stellar dynamics"). */
   massNote?: string;
+  /** How the mass was measured, in a few plain words ("the motions of its stars"), where the card says it. */
+  massMethod?: string;
+  /**
+   * The galaxy it lies in when that is not the Milky Way and not its record's parent: LMC X-1's Large Magellanic Cloud,
+   * or the NGC catalogue's galaxy a hole sits at the centre of (registered only on demand). For "Where to?".
+   */
+  hostGalaxy?: { id: BodyId; name: string };
   /** GM, km³/s² (massMsun × GM☉). */
   gmKm3S2: number;
   /** 2GM/c², km. */
@@ -503,7 +513,7 @@ export interface BlackHoleInfo {
   spin: { value: number | null; status: 'unknown' | 'estimated'; note: string };
   /** Accretion-flow model drawn for it, if any. */
   flow?: 'sgr-a-star-riaf';
-  /** A thin accretion disc drawn for it, if any (Cygnus X-1's). */
+  /** A thin accretion disc drawn for it, if any (Cygnus X-1's, and those of the persistent X-ray binaries). */
   disk?: BlackHoleDisk;
   /** The Event Horizon Telescope's picture, shown on the card with its credit (CC BY 4.0). */
   ehtImage?: DeepSkyImage & { ringDiameterUas: number; ringSource: string };

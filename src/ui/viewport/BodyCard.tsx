@@ -10,7 +10,8 @@
  * A black hole's card gives, near it, its height above the horizon instead of a distance
  * (exact, from sim/lensBodies.ts holeView and the gravity state: the heliocentric difference is
  * kilometres coarse near a hole; far away its distance and light-time like any body's), a "From here" line (the shadow, the Einstein ring, your clock
- * against home's, the thrust it takes to stay), its mass with the published uncertainties, a "What is
+ * against home's, the thrust it takes to stay), its mass with the published uncertainties (and, where the record
+ * says it, how the mass was measured: "weighed by the motions of its stars"), a "What is
  * modelled here" link to its notes (the data sheet, ui/dataSheet.ts sheetNotes, and the Guide; its first
  * three are under Sources too), and for Sgr A* and M87* the Event Horizon Telescope's picture (EhtFigure)
  * with, for Sgr A*, the accretion flow's switches (FlowControls); for a hole with a thin accretion disc (Cygnus X-1)
@@ -255,6 +256,7 @@ export function BodyCard() {
                 <span className="text-fg-3">mass </span>
                 {mass.v}
               </div>
+              {hole.massMethod && <div className="font-sans text-[11px] text-fg-3">weighed by {hole.massMethod}</div>}
             </div>
           )}
           {d.star && (

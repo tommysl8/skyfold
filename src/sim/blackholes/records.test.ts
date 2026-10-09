@@ -76,7 +76,8 @@ describe('the data file', () => {
     expect(file.version).toBe(1);
     const ids = [...file.holes.map((h) => h.id), ...file.companions.map((c) => c.id), ...file.systems.map((s) => s.id)];
     expect(new Set(ids).size).toBe(ids.length);
-    expect(file.holes.map((h) => h.id)).toEqual(['sgr-a-star', 'm87-star', 'gaia-bh1', 'gaia-bh2', 'gaia-bh3', 'cyg-x-1', 'v404-cygni', 'a0620-00', 'maxi-j1820', 'xte-j1118', 'ogle-2011-blg-0462']);
+    // The first table's eleven, in order, then the second's (scripts/blackholes-more.mjs; more.test.ts checks those).
+    expect(file.holes.slice(0, 11).map((h) => h.id)).toEqual(['sgr-a-star', 'm87-star', 'gaia-bh1', 'gaia-bh2', 'gaia-bh3', 'cyg-x-1', 'v404-cygni', 'a0620-00', 'maxi-j1820', 'xte-j1118', 'ogle-2011-blg-0462']);
   });
 
   it('gives every value a reference the file lists', () => {
@@ -344,12 +345,14 @@ describe('the records', () => {
       expect(hole.aliases, s.id).toContain(STELLAR_HOLE_ALIAS);
       const phase = phaseUncertaintyOrbits(s);
       const said = /is illustrative/.test(hole.positionNote ?? '');
-      expect(said, s.id).toBe(phase >= PHASE_ILLUSTRATIVE_ORBITS);
+      expect(said, s.id).toBe(phase >= PHASE_ILLUSTRATIVE_ORBITS || !!s.phaseAssumed);
       expect(star.positionNote, s.id).toBe(hole.positionNote);
       if (said) illustrative.push(s.orbits[0].primary[0]);
     }
     // The phase uncertainties: Gaia BH1 0.05 and V404 Cygni 0.14 of an orbit; Gaia BH2 0.51 up to MAXI J1820+070's 75.
-    expect(illustrative.sort()).toEqual(['a0620-00', 'cyg-x-1', 'gaia-bh2', 'gaia-bh3', 'maxi-j1820', 'xte-j1118']);
+    // (The first table's binaries; more.test.ts checks the second's, some of whose phases are assumed outright.)
+    const first = new Set(['gaia-bh1', 'gaia-bh2', 'gaia-bh3', 'cyg-x-1', 'v404-cygni', 'a0620-00', 'maxi-j1820', 'xte-j1118']);
+    expect(illustrative.filter((id) => first.has(id)).sort()).toEqual(['a0620-00', 'cyg-x-1', 'gaia-bh2', 'gaia-bh3', 'maxi-j1820', 'xte-j1118']);
     expect(phaseUncertaintyOrbits(systemOf('gaia-bh1'))).toBeCloseTo(0.05, 2);
     expect(phaseUncertaintyOrbits(systemOf('maxi-j1820'))).toBeGreaterThan(70);
     expect(holeSystemRecords(file, systemOf('gaia-bh2'))[1].positionNote).toMatch(/adds up to 0\.5\d of an orbit/);

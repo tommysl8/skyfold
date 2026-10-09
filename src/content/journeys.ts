@@ -26,9 +26,19 @@ export interface Journey {
   run: () => boolean;
 }
 
+/**
+ * A journey from its scene. What to look for is the scene's note as it reads when asked (a note worded from the data,
+ * such as the black-hole tour's, is only complete once those data are in).
+ */
 function journey(j: { id: string; title: string; sub: string; scene: string; clock?: string }): Journey {
-  const look = sceneNote(j.scene) ?? '';
-  return { ...j, look, flight: flightOf(j.scene) ?? undefined, run: () => runScene(j.scene, { note: look }) };
+  return {
+    ...j,
+    get look() {
+      return sceneNote(j.scene) ?? '';
+    },
+    flight: flightOf(j.scene) ?? undefined,
+    run: () => runScene(j.scene, { note: sceneNote(j.scene) ?? '' }),
+  };
 }
 
 export const JOURNEYS: Journey[] = [
@@ -94,7 +104,32 @@ export const JOURNEYS: Journey[] = [
     sub: 'Just above a black hole’s glowing disc, its far side bent over the top',
     scene: 'cyg-x-1-disk',
   }),
+  journey({
+    id: 'black-hole-tour',
+    title: 'A tour of black holes',
+    sub: 'Five stops, from one of the lightest black holes known to M31*, 16 s each',
+    scene: 'black-hole-tour',
+  }),
+  journey({
+    id: 'lmc-x-1-disk',
+    title: 'A black hole in another galaxy',
+    sub: 'Above the disc of LMC X-1, in the Large Magellanic Cloud',
+    scene: 'lmc-x-1-disk',
+  }),
+  journey({
+    id: 'famous-galaxies',
+    title: 'Famous galaxies, as photographed',
+    sub: 'The Whirlpool from our side, drawn with Hubble’s photograph',
+    scene: 'famous-galaxies',
+  }),
+  journey({ id: 'virgo-cluster', title: 'The Virgo Cluster', sub: 'Sixty of its brightest galaxies, 54 million light-years away', scene: 'virgo-cluster-close' }),
   journey({ id: 'sgr-a-star-radio', title: 'Sagittarius A* in radio light', sub: 'The ring the Event Horizon Telescope sees, up close', scene: 'sgr-a-star-radio' }),
+  journey({
+    id: 'monsters',
+    title: 'Monsters among the stars',
+    sub: 'The biggest, flattest and wildest stars, up close: Betelgeuse to WR 104’s pinwheel',
+    scene: 'monsters-among-the-stars',
+  }),
   journey({ id: 'sn-1054', title: 'The new star of 1054', sub: 'From Earth: the supernova that made the Crab Nebula, seen by day for 23 days', scene: 'sn-1054-from-earth', clock: 'July 1054, faster and faster' }),
   journey({ id: 'sn-1572', title: 'Tycho’s new star, 1572', sub: 'From Earth: as bright as Venus, fading and reddening as Tycho recorded', scene: 'sn-1572-from-earth', clock: 'November 1572, faster and faster' }),
   journey({ id: 'sn-1604', title: 'Kepler’s star beside Jupiter, 1604', sub: 'From Earth: the last supernova seen in our Galaxy', scene: 'sn-1604-from-earth', clock: 'October 1604, faster and faster' }),

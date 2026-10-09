@@ -1,7 +1,7 @@
 # The asteroids and comets
 
-1,465,911 asteroids and comets from JPL's Small-Body Database (SBDB): every one with an orbit good enough to draw, as
-of 1 October 2026. Each moves on its two-body Kepler orbit, solved per point in the vertex shader, and is as bright as
+The asteroids and comets of JPL's Small-Body Database (SBDB) worth a card: 32,569 of the 1,465,911 with an orbit good
+enough to draw (as of 1 October 2026), and a sample of the rest (§2a). Each moves on its two-body Kepler orbit, solved per point in the vertex shader, and is as bright as
 it really is from the camera. Code in `scripts/build-asteroids.mjs` (the build; `scripts/asteroids/fetch.mjs` the
 download, `scripts/asteroids/horizons-fixtures.mjs` the accuracy check's data), `src/sim/asteroids/` (the format, the
 orbits, the brightness and the choice of what to draw, the loading, the near search, the bodies a click makes),
@@ -39,6 +39,25 @@ Trojans 14,855 (olive), Centaurs 806 (lilac), trans-Neptunian objects 4,636 (blu
 groups are JPL's classes (IEO, ATE, APO, AMO; IMB, MBA, OMB, MCA; TJN; CEN and AST beyond 5 au; TNO), with the Hildas
 taken out of the outer belt by their orbits (a 3.7–4.2 au, e < 0.3, i < 20°), and the few asteroids on open orbits
 with the comets.
+
+## 2a. Only the notable ones, and a sample
+
+A card for each of 1.47 million bodies was more than anyone uses, and 28 MB to fetch. `scripts/asteroids/notable.mjs`
+(run after the build: `npm run data:asteroids` does both) keeps as bodies with a card, a label and a place in "Where
+to?" only:
+
+| Group | Kept | Rule |
+| --- | --- | --- |
+| near-Earth | 1,161 | named, or H ≤ 18 (about a kilometre and up) |
+| main belt | 25,776 | named, or H ≤ 11 (about 15 km and up) |
+| Hildas, Trojans | 181, 393 | as the main belt |
+| Centaurs, beyond Neptune | 31, 1,427 | named, or H ≤ 7 |
+| comets | 3,600 | all |
+
+26,554 of them have names. Of the others, one in 20 (by a fixed hash of its number or designation: 71,676) is drawn as
+a sample, in sections flagged `sample` (`src/sim/asteroids/format.ts`): the same points, as bright as they really
+are, so the belts keep their shape and their grain from afar, but never picked, labelled or found. The layer is now
+2.1 MB (was 28 MB).
 
 ## 3. Orbits
 

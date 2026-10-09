@@ -14,7 +14,7 @@ import { parseClusters, type ClustersFile } from '../sim/galaxy/clusters';
 import type { NebulaeFile } from '../sim/galaxy/records';
 import nebulaeJson from '../sim/galaxy/nebulae.json';
 import { registerCosmos } from '../sim/cosmos/load';
-import { loadLocalGalaxies, loadNamed } from './cosmos';
+import { loadLocalGalaxies, loadMore, loadNamed, loadPictures } from './cosmos';
 import { loadFeaturedFile } from './exoplanets';
 import { gunzipFile, loadExtra, loadNames, loadStars, loadSystems } from './stars';
 import { readBytes, readJson } from './files';
@@ -50,7 +50,7 @@ export function registerUniverse(): void {
   galaxyState.status = 'ready';
   galaxyState.nebulaStatus = 'ready';
 
-  registerCosmos(loadLocalGalaxies(), loadNamed());
+  registerCosmos(loadLocalGalaxies(), loadNamed(), loadMore(), loadPictures());
 
   registerPhenomena();
 }

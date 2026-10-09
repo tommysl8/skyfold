@@ -31,7 +31,7 @@ It started as a way to see what relativity actually looks like, and grew from th
   close things are: about 15 seconds gets you out of the Solar System, and holding Shift gets you out of the Milky Way
   in about three.
 - **Go anywhere by name.** Press `/` and type: Europa, Betelgeuse, K2-18 b, the Orion Nebula, Andromeda.
-- **Visit a black hole.** Eleven real ones, from Sagittarius A\* and M87\* to Gaia BH1. The lensing is exact general
+- **Visit a black hole.** Forty real ones, from Sagittarius A\* and M87\* to Gaia BH1, LMC X-1 and M31\*. The lensing is exact general
   relativity. Hover just above the horizon and watch your clock slow, or fall in.
 - **Just look.** `Shift+F` hides everything but the view.
 - **Read about it.** Learn has longer reads on the science behind what you're seeing, with their sources.
@@ -61,7 +61,7 @@ On a touch screen, drag to look around and hold the arrows at the right edge to 
 
 Almost everything you see comes from real measurements:
 
-- **Solar System:** positions from Astronomy Engine and JPL Horizons; 1.47 million asteroids and comets from the JPL Small-Body Database, on their Kepler orbits.
+- **Solar System:** positions from Astronomy Engine and JPL Horizons; the named and large asteroids and every comet from the JPL Small-Body Database (about 33,000, with a sample of the rest), on their Kepler orbits.
 - **Stars:** 3.75 million from AT-HYG, the Gaia Catalogue of Nearby Stars and Gaia DR3, with Gaia distances and motions.
 - **Planets of other stars:** the NASA Exoplanet Archive.
 - **Galaxies:** the Local Volume Database and Cosmicflows-4.

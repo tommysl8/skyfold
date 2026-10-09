@@ -4,7 +4,7 @@ title: What stars are made of
 shelf: stars
 order: 11
 pitch: In 1835 a philosopher declared we would never know what stars are made of. Twenty-four years later, a flame of table salt proved him wrong.
-updated: 2026-09-25
+updated: 2026-10-09
 ---
 
 On 27 October 1859 Gustav Kirchhoff, a physics professor in Heidelberg, sent the Berlin Academy of Sciences a short report about a flame laced with table salt. He had been shining light through it and into a spectroscope, a prism instrument that spreads light into a sharp rainbow, or spectrum. Alone, the salt flame shows two bright yellow lines. Put a powerful lamp behind it and they turn black, exactly where the Sun's spectrum has two dark gaps that astronomers had called D for forty years. Shine sunlight through the flame and the Sun's D lines grow darker and broader.[^kirchhoff1860]
@@ -260,6 +260,18 @@ Betelgeuse is somewhere between about 550 and 720 light-years away; the distance
 A flight to Betelgeuse holding 1 g, a push equal to Earth's gravity, takes about 12 years on the ship's clock while five centuries or more pass at home. Put in the Sun's place, the star would reach beyond the orbit of Mars.[^joyce2020][^nasa2022betel] It will almost certainly still be there when you arrive.
 :::
 
+## Monsters up close
+
+Interferometers, which combine the light of telescopes metres apart, can now see the faces of a few dozen stars. They look nothing like neat balls of light. Where the Sun's surface is a mesh of millions of small convection cells, red supergiants such as Betelgeuse and Antares show a handful of giant ones, each a good fraction of the star across, which change over months.[^chiavassa2010][^ohnaka2017] Their edges are far darker than their centres, because we see into cooler, higher layers there.[^claret2011]
+
+Stars that spin fast are squashed. Altair turns once in under nine hours, at 92% of the speed that would tear it apart. The CHARA array imaged it in 2007: a quarter wider at the equator than pole to pole, its poles 1,600 K hotter than its equator, because gravity is weaker where the spin flings the surface outwards (the effect Hugo von Zeipel predicted in 1924).[^monnier2007] Achernar is flatter still, 35% wider at its equator.[^domiciano2014]
+
+The biggest stars are hard to measure. Stephenson 2-18 is often called the largest known, about 2,150 times the Sun's radius, but that figure rests on a temperature from a model of its dust and on the distance of a star cluster it may not belong to; nearer, it would be smaller.[^fok2012][^humphreys2020] UY Scuti was billed at 1,708 solar radii until Gaia measured its distance; the same angular size then makes it about 1,100.[^arroyo2013]
+
+::: see-it monsters-among-the-stars
+A tour of the extreme stars, each drawn as it is measured: Betelgeuse's giant cells, Stephenson 2-18 and UY Scuti, Altair and Achernar squashed by their spin, Eta Carinae inside the Homunculus it threw off in the 1840s, and the dust spiral of WR 104 turning once every 241.5 days.[^smith2006][^tuthill2008]
+:::
+
 ## What comes next
 
 ### A ten-year film of the changing sky
@@ -445,3 +457,13 @@ Models of the Sun's interior built with the lower amounts of carbon, nitrogen an
 [^hyperk2025]: Institute for Cosmic Ray Research, University of Tokyo, "Excavation of the colossal cavern for Hyper-Kamiokande completed" (5 August 2025), archived copy. https://web.archive.org/web/20260314025503/https://www.icrr.u-tokyo.ac.jp/en/news/16770/
 [^dune]: Fermilab, LBNF/DUNE, "Milestones" and "Science goals". https://lbnf-dune.fnal.gov/about/milestones/ ; https://lbnf-dune.fnal.gov/about/science-goals/
 [^surf]: Sanford Underground Research Facility, Lead, South Dakota. https://www.sanfordlab.org/
+[^chiavassa2010]: A. Chiavassa et al., "Radiative hydrodynamics simulations of red supergiant stars. II. Simulations of convection on Betelgeuse match interferometric observations", Astronomy & Astrophysics 515, A12 (2010). https://doi.org/10.1051/0004-6361/200913907
+[^ohnaka2017]: K. Ohnaka et al., "Vigorous atmospheric motion in the red supergiant star Antares", Nature 548, 310-312 (2017). https://doi.org/10.1038/nature23445
+[^claret2011]: A. Claret and S. Bloemen, "Gravity and limb-darkening coefficients for the Kepler, CoRoT, Spitzer, uvby, UBVRIJHK, and Sloan photometric systems", Astronomy & Astrophysics 529, A75 (2011). https://doi.org/10.1051/0004-6361/201116451
+[^monnier2007]: J. D. Monnier et al., "Imaging the surface of Altair", Science 317, 342-345 (2007). https://doi.org/10.1126/science.1143205
+[^domiciano2014]: A. Domiciano de Souza et al., "The environment of the fast rotating star Achernar. III. Photospheric parameters revealed by the VLTI", Astronomy & Astrophysics 569, A10 (2014). https://doi.org/10.1051/0004-6361/201424144
+[^fok2012]: T. K. T. Fok et al., "Maser observations of Westerlund 1 and comprehensive considerations on maser properties of red supergiants associated with massive clusters", Astrophysical Journal 760, 65 (2012). https://doi.org/10.1088/0004-637X/760/1/65
+[^humphreys2020]: R. M. Humphreys et al., "Exploring the mass loss histories of the red supergiants", Astronomical Journal 160, 145 (2020). https://doi.org/10.3847/1538-3881/abab15
+[^arroyo2013]: B. Arroyo-Torres et al., "The atmospheric structure and fundamental parameters of the red supergiants AH Scorpii, UY Scuti, and KW Sagittarii", Astronomy & Astrophysics 554, A76 (2013). https://doi.org/10.1051/0004-6361/201220920
+[^smith2006]: N. Smith, "The structure of the Homunculus. I. Shape and latitude dependence from H2 and [Fe II] velocity maps of Eta Carinae", Astrophysical Journal 644, 1151-1163 (2006). https://doi.org/10.1086/503766
+[^tuthill2008]: P. G. Tuthill et al., "The prototype colliding-wind pinwheel WR 104", Astrophysical Journal 675, 698-710 (2008). https://doi.org/10.1086/527286

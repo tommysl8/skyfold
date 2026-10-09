@@ -64,8 +64,9 @@ if (import.meta.env.DEV) {
     import('./scene/asteroidPick'),
     import('./scene/Asteroids'),
     import('./sim/deepsky'),
+    import('./scene/GalaxyPictures'),
     import('./sim/phenomena'),
-  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky, phen]) =>
+  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky, pictures, phen]) =>
     Object.assign(window, {
       __ls: {
         sim: s.sim,
@@ -108,6 +109,8 @@ if (import.meta.env.DEV) {
         deepSky: deepSky.deepSkyGate,
         /** The supernovae, the kilonova, the jets and the aurora: what is wanted and each one's state this frame (sim/phenomena). */
         phenomena: phen.phenomena,
+        /** The galaxies' photographs mounted, and each galaxy's share of light they draw this frame (scene/GalaxyPictures.tsx). */
+        pictures: { mounted: pictures.galaxyPictures, shares: pictures.pictureShares },
         /** The asteroids and comets: what has loaded, the drawn sections, picking and registering one (sim/asteroids, scene/Asteroids.tsx). */
         asteroids: { state: smallLoad.smallBodies, sections: smallPick.layerSections, pick: smallPick.pickSmallBody, ensure: smallBodies.ensureSmallBody, look: smallScene.asteroidLook, frame: smallScene.asteroidFrame },
         /** Render n frames with a fixed timestep (works while the tab is hidden). */

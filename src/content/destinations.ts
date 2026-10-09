@@ -256,11 +256,13 @@ export function bodyGroup(r: BodyRecord): DestinationGroup {
 /**
  * Where a black hole is listed: at a galaxy's centre (M87*) with its galaxy; in the Milky Way (Sgr A*, a lone
  * hole) under The Milky Way, and so is a binary with a black hole, the hole and its star listed under the
- * system's row.
+ * system's row; in another galaxy that is not its parent (LMC X-1 in the Large Magellanic Cloud, the hole at the
+ * centre of a galaxy of the NGC catalogue) under the galaxies.
  */
 function holeGroup(r: BodyRecord): DestinationGroup {
   const host = r.parent ? getBody(r.parent) : undefined;
-  return host?.kind === 'galaxy' ? bodyGroup(host) : 'milky-way';
+  if (host?.kind === 'galaxy') return bodyGroup(host);
+  return r.blackHole?.hostGalaxy ? 'galaxies' : 'milky-way';
 }
 
 /** A group or cluster of galaxies (not of stars). */
@@ -340,7 +342,7 @@ function systemDestination(root: BodyRecord, members: readonly BodyRecord[]): De
     name: root.name,
     aliases: root.aliases ?? [],
     kind: holes.length ? `Black hole and ${stars.length === 1 ? 'star' : `${stars.length} stars`}` : `System of ${stars.length} stars`,
-    group: holes.length ? 'milky-way' : 'stars',
+    group: holes.length ? holeGroup(holes[0]) : 'stars',
     section: holes.length ? undefined : starSection(primary, stars),
     body: primary.id,
     distanceKm: p.distanceKm,

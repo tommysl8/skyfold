@@ -19,6 +19,7 @@ import { TEMPLATE_UNIT_R25, type GalaxyShape } from '../sim/cosmos/records';
 import type { Template, TemplateId } from '../sim/cosmos/templates';
 import { sim } from '../sim/sim';
 import { cosmicSky } from '../sim/cosmos/expansion';
+import { pictureShares } from './GalaxyPictures';
 
 /** Floats per instance: centre (3), axes x, y, z (9), normal (3), luminosity and splat scale (2), dust (4), ln(1 + z) (1). */
 const STRIDE = 22;
@@ -165,7 +166,8 @@ export function Galaxies() {
       const rPx = d > p.radiusKpc ? (p.radiusKpc / d) * pxPerRadCss : 1e4;
       const t = Math.min(1, Math.max(0, (rPx - DETAIL_PX[0]) / (DETAIL_PX[1] - DETAIL_PX[0])));
       const wd = t * t * (3 - 2 * t);
-      const lum = s.lumV * gain;
+      // A photograph near our line of sight draws its share of the light (scene/GalaxyPictures.tsx): the model the rest.
+      const lum = s.lumV * gain * (1 - (pictureShares.get(s.id) ?? 0));
       const detailed = s.template !== 'point' ? set.batches.get(s.template) : undefined;
       if (wd > 0 && detailed) {
         // Large on screen: the fine template, crossfaded in.

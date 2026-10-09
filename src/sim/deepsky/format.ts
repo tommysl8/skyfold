@@ -27,14 +27,17 @@ export const DEEP_SKY_FILES: Record<DeepSkySetId, string> = {
 };
 /** The NGC/IC designations of the objects the app already has (they keep their own records). */
 export const NGC_EXISTING_FILE = 'data/deepsky/ngc-existing.json.gz';
+/** The magnetars of the McGill catalogue, loaded with the pulsars and merged into them (mergeMagnetars). */
+export const MAGNETARS_FILE = 'data/deepsky/magnetars.json.gz';
 
-const SCHEMAS: Record<DeepSkySetId | 'ngc-existing', string> = {
+const SCHEMAS: Record<DeepSkySetId | 'ngc-existing' | 'magnetars', string> = {
   'ngc-galactic': 'lightspeed.ngc-galactic/1',
   snrs: 'lightspeed.snrs/1',
   pulsars: 'lightspeed.pulsars/1',
   'ngc-galaxies': 'lightspeed.ngc-galaxies/1',
   'gw-events': 'lightspeed.gw-events/1',
   'ngc-existing': 'lightspeed.ngc-existing/1',
+  magnetars: 'lightspeed.magnetars/1',
 };
 
 export interface ColumnFile {
@@ -207,6 +210,8 @@ export interface Pulsar {
   /** Associations: "GC:47Tuc(NGC104)", "SNR:Crab", "EXGAL:LMC"… */
   assoc: string[];
   pos: Vec3;
+  /** A magnetar of the McGill catalogue (mergeMagnetars): its values there. */
+  magnetar?: Magnetar;
 }
 
 export function parsePulsars(file: ColumnFile): Pulsar[] {
@@ -229,6 +234,118 @@ export function parsePulsars(file: ColumnFile): Pulsar[] {
     assoc: (str(g('assoc')) ?? '').split(',').filter(Boolean),
     pos: [num(g('xPc')), num(g('yPc')), num(g('zPc'))],
   }));
+}
+
+// ─── Magnetars ───────────────────────────────────────────────────────────────────────────
+
+/** A magnetar of the McGill Online Magnetar Catalog (Olausen & Kaspi 2014, ApJS 212, 6; scripts/build-magnetars.mjs). */
+export interface Magnetar {
+  /** "SGR 1806-20", "1E 2259+586". */
+  name: string;
+  /** Soft gamma repeater, anomalous X-ray pulsar, or a radio pulsar with magnetar outbursts (PSR J1846−0258). */
+  kind: 'SGR' | 'AXP' | 'PSR';
+  /** 'candidate' (the catalogue's #), 'high-B pulsar' (##), or null. */
+  flag: string | null;
+  /** The ATNF catalogue's J name of the same object, if it has one. */
+  atnf: string | null;
+  raDeg: number;
+  decDeg: number;
+  /** Distance, pc, with its uncertainties (NaN: none given) and whether it is only approximate. */
+  distPc: number;
+  distUpPc: number;
+  distDnPc: number;
+  distApprox: boolean;
+  /** The catalogue's reference for the distance: its code and ADS bibcode ("bcfc08 2008MNRAS.386L..23B"), or a citation. */
+  distRef: string | null;
+  /** Spin period, s; its derivative (NaN: not measured), an upper limit when p1Upper. */
+  p0: number;
+  p1: number;
+  p1Upper: boolean;
+  /** Surface dipole field inferred from P and Ṗ, G; spin-down power, erg/s; characteristic age, yr; X-ray luminosity, erg/s. */
+  bG: number;
+  edotErgS: number;
+  ageYr: number;
+  lxErgS: number;
+  /** Associations ("SNR CTB 109", "Westerlund 1"), bands seen in (X, O, I, R, H: hard X-rays, G: gamma) and activity (B bursts, G glitches, F giant flares, T transient, A anti-glitch). */
+  assoc: string | null;
+  bands: string;
+  activity: string;
+  pos: Vec3;
+}
+
+export function parseMagnetars(file: ColumnFile): Magnetar[] {
+  const cols = ['name', 'kind', 'flag', 'atnf', 'raDeg', 'decDeg', 'distPc', 'distUpPc', 'distDnPc', 'distLim', 'distRef', 'p0', 'p1', 'p1Lim', 'bG', 'edotErgS', 'ageYr', 'lxErgS', 'lxLim', 'assoc', 'bands', 'activity', 'xPc', 'yPc', 'zPc'];
+  return rowsOf(file, 'magnetars', cols).map((g) => ({
+    name: String(g('name')),
+    kind: String(g('kind')) as Magnetar['kind'],
+    flag: str(g('flag')),
+    atnf: str(g('atnf')),
+    raDeg: num(g('raDeg')),
+    decDeg: num(g('decDeg')),
+    distPc: num(g('distPc')),
+    distUpPc: num(g('distUpPc')),
+    distDnPc: num(g('distDnPc')),
+    distApprox: g('distLim') === 'approx',
+    distRef: str(g('distRef')),
+    p0: num(g('p0')),
+    p1: num(g('p1')),
+    p1Upper: g('p1Lim') === 'upper',
+    bG: num(g('bG')),
+    edotErgS: num(g('edotErgS')),
+    ageYr: num(g('ageYr')),
+    lxErgS: num(g('lxErgS')),
+    assoc: str(g('assoc')),
+    bands: str(g('bands')) ?? '',
+    activity: str(g('activity')) ?? '',
+    pos: [num(g('xPc')), num(g('yPc')), num(g('zPc'))],
+  }));
+}
+
+/**
+ * The pulsars with the magnetars merged in: an ATNF pulsar that is a McGill magnetar keeps its entry and gains the
+ * catalogue's values (and its distance, the magnetar catalogue's compilation); a magnetar the ATNF catalogue lacks is
+ * added (its J name its own name, to keep ids unique). The ATNF's own magnetar flag (AXP) stays as it was.
+ */
+export function mergeMagnetars(pulsars: readonly Pulsar[], magnetars: readonly Magnetar[]): Pulsar[] {
+  const byName = new Map(magnetars.filter((m) => m.atnf).map((m) => [m.atnf!, m]));
+  const out = pulsars.map((p) => {
+    const m = byName.get(p.jname);
+    if (!m) return p;
+    const d = Math.hypot(...p.pos);
+    const k = d > 0 ? m.distPc / d : 1;
+    return {
+      ...p,
+      magnetar: m,
+      distPc: m.distPc,
+      distLoPc: Number.isFinite(m.distDnPc) ? m.distPc - m.distDnPc : NaN,
+      distHiPc: Number.isFinite(m.distUpPc) ? m.distPc + m.distUpPc : NaN,
+      method: 'independent' as const,
+      pos: [p.pos[0] * k, p.pos[1] * k, p.pos[2] * k] as Vec3,
+    };
+  });
+  for (const m of magnetars) {
+    if (m.atnf) continue;
+    out.push({
+      jname: m.name,
+      bname: null,
+      raDeg: m.raDeg,
+      decDeg: m.decDeg,
+      distPc: m.distPc,
+      distLoPc: Number.isFinite(m.distDnPc) ? m.distPc - m.distDnPc : NaN,
+      distHiPc: Number.isFinite(m.distUpPc) ? m.distPc + m.distUpPc : NaN,
+      method: 'independent',
+      p0: m.p0,
+      p1: m.p1,
+      dm: NaN,
+      pbDays: NaN,
+      companion: null,
+      types: [],
+      assoc: [],
+      pos: m.pos,
+      magnetar: m,
+    });
+  }
+  return out;
 }
 
 // ─── Supernova remnants ─────────────────────────────────────────────────────────────────

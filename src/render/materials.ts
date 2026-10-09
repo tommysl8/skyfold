@@ -51,6 +51,9 @@ import orbitFrag from './shaders/orbit.frag.glsl?raw';
 import planetVert from './shaders/planet.vert.glsl?raw';
 import planetFrag from './shaders/planet.frag.glsl?raw';
 import sunFrag from './shaders/sun.frag.glsl?raw';
+import starSurfaceVert from './shaders/starSurface.vert.glsl?raw';
+import starSurfaceFrag from './shaders/starSurface.frag.glsl?raw';
+import starCellsFrag from './shaders/starCells.frag.glsl?raw';
 import ringVert from './shaders/ring.vert.glsl?raw';
 import ringFrag from './shaders/ring.frag.glsl?raw';
 import tailVert from './shaders/tail.vert.glsl?raw';
@@ -68,6 +71,8 @@ import nebulaVert from './shaders/nebula.vert.glsl?raw';
 import clusterRingVert from './shaders/clusterRing.vert.glsl?raw';
 import nebulaFrag from './shaders/nebula.frag.glsl?raw';
 import galaxiesVert from './shaders/galaxies.vert.glsl?raw';
+import galaxyPictureVert from './shaders/galaxyPicture.vert.glsl?raw';
+import galaxyPictureFrag from './shaders/galaxyPicture.frag.glsl?raw';
 import cosmicWebVert from './shaders/cosmicWeb.vert.glsl?raw';
 import galaxyMapGlsl from './shaders/galaxyMap.glsl?raw';
 import surveyVert from './shaders/survey.vert.glsl?raw';
@@ -533,6 +538,57 @@ export function createSunMaterial(color: Color = SUN_COLOR): ShaderMaterial {
   });
 }
 
+/**
+ * A star other than the Sun up close (shaders/starSurface.*.glsl; its parameters from sim/stars/closeup.ts, set by
+ * scene/Bodies.tsx StarBody): its own shape and gravity darkening, convection cells, starspots and flares, coloured
+ * by Planck's law about its mean temperature, whose blackbody colour `color` is.
+ */
+export function createStarSurfaceMaterial(color: Color = SUN_COLOR, teffK = SUN_TEFF_K): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uColor: { value: color },
+      uIntensity: { value: 6 },
+      uTeff: { value: teffK },
+      uTPole: { value: teffK },
+      uLimbU: { value: LIMB_DARKENING_U.clone() },
+      uGranFreq: { value: 0 },
+      uGranContrast: { value: 0 },
+      uGiantFreq: { value: 0 },
+      uGiantContrast: { value: 0 },
+      uCells: { value: null },
+      uHasCells: { value: 0 },
+      uSpots: { value: Array.from({ length: 6 }, () => new Vector4(0, 1, 0, 0)) },
+      uSpotCount: { value: 0 },
+      uSpotDT: { value: 0 },
+      uFlare: { value: new Vector4(0, 0, 0, 0) },
+      uContrast: { value: 1 },
+      ...surfaceUniforms,
+    },
+    vertexShader: starSurfaceVert,
+    fragmentShader: starSurfaceFrag,
+  });
+}
+
+/**
+ * A star's convection cells, baked one cube-map face at a time (render/starCells.ts; shaders/starCells.frag.glsl):
+ * drawn on a quad covering the face, no depth.
+ */
+export function createStarCellsMaterial(): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uFace: { value: 0 },
+      uSize: { value: 256 },
+      uGranFreq: { value: 0 },
+      uGiantFreq: { value: 0 },
+      uTime: { value: 0 },
+    },
+    vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: starCellsFrag,
+    depthTest: false,
+    depthWrite: false,
+  });
+}
+
 export function createRingMaterial(): ShaderMaterial {
   return new ShaderMaterial({
     uniforms: {
@@ -855,6 +911,39 @@ export function createClusterRingMaterial(): ShaderMaterial {
  * The galaxies beyond the Milky Way (shaders/galaxies.vert.glsl): instanced particle templates and
  * single splats, drawn into the Galaxy's target with the Milky Way model's splat settings.
  */
+/**
+ * A galaxy's photograph (shaders/galaxyPicture.*.glsl; scene/GalaxyPictures.tsx): light added into the Galaxy layer's
+ * target with the particles, both faces drawn (from behind a thin sheet of stars shows the same light, mirrored).
+ */
+export function createGalaxyPictureMaterial(): ShaderMaterial {
+  initBlackbodyUniforms();
+  return new ShaderMaterial({
+    uniforms: {
+      ...relativityUniforms,
+      uBigPass: galaxyUniforms.uBigPass,
+      uMap: { value: null as Texture | null },
+      uRel: { value: new Vector3() },
+      uSky: { value: new Vector3() },
+      uRight: { value: new Vector3() },
+      uUp: { value: new Vector3() },
+      uNormal: { value: new Vector3() },
+      uLos: { value: new Vector3(0, 0, -1) },
+      uDist: { value: 1 },
+      uSurface: { value: 0 },
+      uLnT: { value: Math.log(5000) },
+      uLn1pz: { value: 0 },
+    },
+    vertexShader: galaxyPictureVert,
+    fragmentShader: galaxyPictureFrag,
+    side: DoubleSide,
+    blending: AdditiveBlending,
+    premultipliedAlpha: true,
+    depthTest: false,
+    depthWrite: false,
+    transparent: false,
+  });
+}
+
 export function createGalaxiesMaterial(): ShaderMaterial {
   const g = galaxyUniforms;
   return new ShaderMaterial({

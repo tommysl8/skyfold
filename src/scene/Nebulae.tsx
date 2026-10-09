@@ -35,6 +35,17 @@ export function subscribeShownPictures(f: () => void): () => void {
   return () => listeners.delete(f);
 }
 export const shownPicturesVersion = (): number => shownPictures.version;
+/** Each source's pictures on screen (the nebulae here, the galaxies' in scene/GalaxyPictures.tsx), largest first. */
+const bySource = new Map<string, { id: string; px: number }[]>();
+/** Report one source's pictures drawn this frame: the list is theirs and the others', largest first. */
+export function reportShownPictures(source: string, shown: { id: string; px: number }[]): void {
+  bySource.set(source, shown);
+  const ids = [...bySource.values()].flat().sort((a, b) => b.px - a.px).map((c) => c.id);
+  if (ids.join() === shownPictures.ids.join()) return;
+  shownPictures.ids = ids;
+  shownPictures.version++;
+  listeners.forEach((f) => f());
+}
 /** A card is drawn once it is this many CSS pixels across (faint at first, in full from FULL_PX). */
 export const MIN_PX = 0.5;
 export const FULL_PX = 6;
@@ -174,9 +185,7 @@ export function Nebulae() {
     const ids = credits.map((c) => c.id);
     if (ids.join() !== shown.current.join()) {
       shown.current = ids;
-      shownPictures.ids = ids;
-      shownPictures.version++;
-      listeners.forEach((f) => f());
+      reportShownPictures('nebulae', credits);
     }
   });
 

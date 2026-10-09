@@ -25,7 +25,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc -b",
     "data:stars": "node scripts/build-stars3d.mjs && node scripts/build-constellations.mjs && node scripts/build-stars3d-bright.mjs && node --max-old-space-size=10000 scripts/build-stars3d-ext.mjs",
-    "data:asteroids": "node --max-old-space-size=6000 scripts/build-asteroids.mjs",
+    "data:asteroids": "node --max-old-space-size=6000 scripts/build-asteroids.mjs && node --max-old-space-size=6000 scripts/asteroids/notable.mjs",
     "data:exoplanets": "node scripts/build-exoplanets.mjs",
     "data:exoplanets-featured": "node scripts/build-exoplanets-featured.mjs",
     "data:cosmic-web": "node scripts/build-cosmic-web.mjs",

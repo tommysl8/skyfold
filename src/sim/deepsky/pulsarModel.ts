@@ -14,12 +14,16 @@
  *    timing; for the others they are chosen (from the name, so each pulsar keeps its own);
  *  - a pair's period is the catalogue's, its masses and eccentricity published (PAIRS), else 1.35 and 1.25 solar
  *    masses and a circle; its size follows from Kepler's law; a recycled pulsar's spin is taken as aligned with the
- *    orbit, as the Double Pulsar's is (Ferdman et al. 2013, ApJ 767, 85).
+ *    orbit, as the Double Pulsar's is (Ferdman et al. 2013, ApJ 767, 85);
+ *  - a magnetar (McGill catalogue) has radio beams only if it has been seen pulsing in radio, and close to the star a
+ *    twisted magnetosphere: dipole loops whose two footpoints are turned about the magnetic axis by about a radian,
+ *    the twist that carries the currents thought to power its X-rays (Thompson, Lyutikov & Kulkarni 2002, ApJ 574,
+ *    332); the loops are a model, the twist's size an illustration of theirs.
  */
 import { Vector3 } from 'three';
 import { C_KM_S } from '../../physics/constants';
 import { raDecToWorld } from '../frames';
-import type { Pulsar } from './format';
+import type { Magnetar, Pulsar } from './format';
 
 /** A neutron star's radius, km (NICER: Riley et al. 2021, Miller et al. 2021). */
 export const NS_RADIUS_KM = 12;
@@ -79,8 +83,10 @@ export interface PulsarModel {
   /** Whether the spin axis's direction is measured or chosen. */
   orientation: 'measured' | 'chosen';
   pair: Pair | null;
-  /** The size the view is framed by, km: the light cylinder, or a pair's orbit. */
+  /** The size the view is framed by, km: the light cylinder, or a pair's orbit (a magnetar's twisted loops). */
   sizeKm: number;
+  /** A magnetar's close field: the twist of its loops, rad, and its surface field, G (NaN: not measured). */
+  magnetar: { twistRad: number; bG: number } | null;
 }
 
 /** The beam's half-width for a spin period, rad. */
@@ -191,8 +197,18 @@ export function shownPulse(p0: number): { periodS: number; slowedBy: number } {
 /** Kepler's third law: the relative orbit's semi-major axis, km, for a period (s) and total mass (M☉). */
 export const semiMajorAxisKm = (periodS: number, mTotal: number): number => Math.cbrt((GM_SUN * mTotal * periodS * periodS) / (4 * Math.PI * Math.PI));
 
+/** How far a magnetar's twisted loops reach, in star radii (the largest of MAGNETAR_LOOPS). */
+export const MAGNETAR_LOOP_REACH = 12;
+/** The twist of a magnetar's loops, rad: about a radian (Thompson, Lyutikov & Kulkarni 2002). */
+export const MAGNETAR_TWIST_RAD = 1;
+/** Loop sizes (dipole L, in star radii) of a magnetar's close field. */
+const MAGNETAR_LOOPS = [1.8, 2.6, 4, 6.5, 12];
+
+/** Whether a magnetar has been seen pulsing in radio (the catalogue's bands include R). */
+export const radioMagnetar = (m: Pick<Magnetar, 'bands'>): boolean => m.bands.includes('R');
+
 /** The model of a catalogue pulsar, or null without a spin period. */
-export function pulsarModel(p: Pick<Pulsar, 'jname' | 'raDeg' | 'decDeg' | 'p0' | 'pbDays' | 'companion'>): PulsarModel | null {
+export function pulsarModel(p: Pick<Pulsar, 'jname' | 'raDeg' | 'decDeg' | 'p0' | 'pbDays' | 'companion'> & { magnetar?: Pick<Magnetar, 'bands' | 'bG'> }): PulsarModel | null {
   if (!(p.p0 > 0)) return null;
   const rnd = hashes(p.jname);
   const toEarth = raDecToWorld(p.raDeg, p.decDeg).negate();
@@ -208,7 +224,7 @@ export function pulsarModel(p: Pick<Pulsar, 'jname' | 'raDeg' | 'decDeg' | 'p0' 
   const rho = beamHalfWidth(p.p0);
   const alphaDeg = measured?.alpha ?? pair?.alpha;
   const alpha = alphaDeg !== undefined ? alphaDeg * DEG : Math.max(5 * DEG, zeta - 0.5 * rho);
-  const spin = spinOf(p.p0, axis, magneticAxis(axis, toEarth, alpha), alpha, true);
+  const spin = spinOf(p.p0, axis, magneticAxis(axis, toEarth, alpha), alpha, p.magnetar ? radioMagnetar(p.magnetar) : true);
   let pairModel: Pair | null = null;
   if (p.pbDays > 0 && p.companion === 'NS') {
     const periodS = p.pbDays * 86400;
@@ -254,8 +270,43 @@ export function pulsarModel(p: Pick<Pulsar, 'jname' | 'raDeg' | 'decDeg' | 'p0' 
     betaRad: zeta - alpha,
     orientation: measured || pair?.incl !== undefined ? 'measured' : 'chosen',
     pair: pairModel,
-    sizeKm: pairModel ? pairModel.aKm : spin.lightCylinderKm,
+    sizeKm: pairModel ? pairModel.aKm : p.magnetar ? MAGNETAR_LOOP_REACH * NS_RADIUS_KM : spin.lightCylinderKm,
+    magnetar: p.magnetar ? { twistRad: MAGNETAR_TWIST_RAD, bG: p.magnetar.bG } : null,
   };
+}
+
+/**
+ * A magnetar's close field: closed dipole loops r = L sin²θ from footpoint to footpoint, each turned about the
+ * magnetic axis progressively along its length so its two ends differ by `twistRad` in azimuth (a twisted
+ * magnetosphere), in the magnetic frame, km. All lines are closed (open = 0).
+ */
+export function twistedFieldLines(twistRad = MAGNETAR_TWIST_RAD, starKm = NS_RADIUS_KM, azimuths = 10): FieldLines {
+  const pos: number[] = [];
+  const s: number[] = [];
+  const open: number[] = [];
+  for (const [j, l] of MAGNETAR_LOOPS.entries()) {
+    const big = l * starKm;
+    const th0 = Math.asin(Math.sqrt(starKm / big));
+    for (let k = 0; k < azimuths; k++) {
+      const ph0 = (2 * Math.PI * (k + 0.5 * (j % 2))) / azimuths;
+      const n = 64;
+      let prev: [number, number, number] | null = null;
+      for (let i = 0; i <= n; i++) {
+        const u = i / n;
+        const th = th0 + (Math.PI - 2 * th0) * u;
+        const r = big * Math.sin(th) ** 2;
+        const ph = ph0 + twistRad * (u - 0.5);
+        const p: [number, number, number] = [r * Math.sin(th) * Math.cos(ph), r * Math.sin(th) * Math.sin(ph), r * Math.cos(th)];
+        if (prev) {
+          pos.push(...prev, ...p);
+          s.push((i - 1) / n, u);
+          open.push(0, 0);
+        }
+        prev = p;
+      }
+    }
+  }
+  return { positions: new Float32Array(pos), s: new Float32Array(s), open: new Float32Array(open) };
 }
 
 /** The magnetic axis at a spin phase (0 to 1: 0 is when its beam is towards us). */
