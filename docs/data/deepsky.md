@@ -287,4 +287,6 @@ for.
 
 **Cost**: nothing while the switch is off (nothing is even built). With it on, near a pulsar: its lines (about 25,000
 segments for a pulsar, 11,500 for a magnetar, 9,000 for the Double Pulsar's B) built once in a few milliseconds, and the
-wind's sheet (96 × 128 quads). GPU time measured on this machine is in the table below.
+wind's sheet (96 × 128 quads). Measured with `window.__ls.perf.ab` in "The Crab pulsar's magnetosphere" (3,200 × 1,584 at
+pixel ratio 2, 9 October 2026), the GPU shared with other work and the rounds noisy: about 1.1 ms between the best
+frames (15.5 ms off, 16.7 ms on).

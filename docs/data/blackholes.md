@@ -1697,5 +1697,7 @@ are.
 off), also in Journeys; the next scene turns the switch back.
 
 **Cost**: nothing while the switch is off (the chunk is not even loaded). With it on, near one of these holes: about
-13,800 segments (27,600 vertices), two images, one exact solve per vertex per image; measured in the table of the
-report below (`window.__ls.perf.measure`).
+13,800 segments (27,600 vertices), two images, one exact solve per vertex per image. Measured with
+`window.__ls.perf.ab` (switch off against on, three rounds) in the scene "Sgr A*'s magnetic field", 3,200 × 1,584 at
+pixel ratio 2, 9 October 2026, the GPU shared with other work: 1.1 ms (rounds 0.78, 1.18 and 1.10 ms) on frames of
+16 ms.
