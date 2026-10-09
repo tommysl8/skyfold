@@ -8,17 +8,21 @@ camera hovers in height above the horizon; scenes add orbits and moments seen at
 through the horizons of Sgr A* and M87*. Round Sgr A* two labelled models fill in what cannot be seen from Earth: the
 nuclear star cluster, and the gas falling into the hole, which "Radio eyes" shows at 1.3 mm as the Event Horizon
 Telescope sees it. Cygnus X-1 has its thin accretion disc, a labelled model, with every image the lens makes of it.
+The second table (§13) adds twenty-nine more: thirteen X-ray binaries of the Milky Way with dynamically measured
+masses, LMC X-1 and LMC X-3 in the Large Magellanic Cloud and M33 X-7 in M33, each with its companion, four of them with
+thin discs of a typical state, and the supermassive black holes at the centres of thirteen nearby galaxies: forty in all.
 
 Sections 1 to 3 say what ships, how it is rebuilt and what is data rather than model; 4 is the physics and how it is
 checked; 5 the black holes' data; 6 the nuclear star cluster; 7 the accretion flow; 8 the sources and licences; 9 the
 known limitations; 10 how the app uses it all; 11 the measured cost and the checks on the GPU; 12 Cygnus X-1's thin
-disc and the 1.3 mm "Radio eyes".
+disc and the 1.3 mm "Radio eyes"; 13 the second table: the X-ray binaries of BlackCAT, the Magellanic Clouds and M33,
+the galaxies' black holes, their discs and the tour.
 
 ## 1. Outputs
 
 | Path | What it is | Size | Used |
 | --- | --- | --- | --- |
-| `src/sim/blackholes/blackholes.json` | The eleven black holes, the eight companion stars and the eight binaries: masses, distances, astrometry, orbits, spins, notes, the EHT pictures' credits, every value with the key of its paper (§5) | 66 kB, 14 kB gzipped | bundled |
+| `src/sim/blackholes/blackholes.json` | The forty black holes, the 24 companion stars and the 24 binaries: masses, distances, astrometry, orbits, spins, notes, the EHT pictures' credits, the catalogue galaxies' places, every value with the key of its paper (§5, §13) | 224 kB, 42 kB gzipped | bundled |
 | `src/sim/blackholes/sgraFlow.json` | Sgr A*'s accretion flow: the model's parameters and emission constants, its axis, the fitted fluxes, the flux against viewing angle, the numbers the scene of the gas may quote (§7) | 7 kB | bundled |
 | `public/data/nsc-stars.bin.gz` | 60,000 stars of the model of the nuclear star cluster and disc, brightest first as seen from Sgr A* (§6) | 876 kB | loaded within 3 kpc of Sgr A* |
 | `src/sim/galaxy/nuclearGlow.json` | The cluster's and disc's laws, their point-share tables for 60,000, 30,000 and 10,000 points, M87's light profile, the build's checks (§6) | 23 kB | bundled |
@@ -45,6 +49,7 @@ The code, each module with a header saying what it does, how, why, what it costs
 | `src/scene/BlackHoleLens.tsx`, `AccretionFlow.tsx`, `AccretionDisk.tsx`, `NuclearCluster.tsx`, `LensRings.tsx` | Their scene components |
 | `src/ui/flight/HoleStrip.tsx`, `src/ui/viewport/EhtFigure.tsx`, `FlowControls.tsx`, `DiskControls.tsx` | The panel near a hole; the EHT's picture and the flow's switches on Sgr A*'s card; the disc's line and switch on Cygnus X-1's |
 | `src/dev/perf.ts`, `lensTest.ts` | Development only: `window.__ls.perf` (timing) and `window.__ls.lensTest` (the lens's own hooks) |
+| `scripts/blackholes-more.mjs` | The second table: the X-ray binaries of BlackCAT, the Magellanic Clouds and M33, and the galaxies' black holes (§13) |
 | `scripts/build-blackholes.mjs`, `build-nsc.py`, `schwarzschild/`, `sgra-flow/`, `thin-disk/`, `lens-check/`, `check-shaders.mjs` | The builders and the independent references |
 
 ## 2. Build commands
@@ -128,6 +133,10 @@ view, opens, beside the Guide's section):
 | 24 | **The classical view near a moving hole** shows an observer at rest relative to the Sun, as the classical view does everywhere (hovering there differs by the hole's speed, at most 0.19 % of c: Gaia BH3, 570 km/s) | the split view's label; Guide |
 | 25 | **Cygnus X-1's disc is a model**: a thin Novikov–Thorne disc at 2 % of its Eddington luminosity, from the innermost stable orbit of a hole that does not spin to 10¹¹ cm (a model choice), in the orbit's plane, each ring a blackbody, drawn with all its light (bolometric, on its own scale with its contrast raised, γ = 2, so the screen shows its falloff) or its visible light; turning 1,000 times slower than real; its swirls illustrative; its exposure metered on its peak (§12) | Cygnus X-1's card (the disc's line beside its switch, and a note under Sources); data sheet; the View menu's hint; the disc scenes' notes |
 | 26 | **Radio eyes** is the flow model's 1.3 mm view (label 13) chosen from the View menu: "Radio light (1.3 mm), like the EHT"; the sky goes dark behind it (starlight does not show at 1.3 mm); Sgr A* only (§12) | the View menu; the radio scene's note |
+| 27 | **The other discs are models of a typical state, not live**: LMC X-1, LMC X-3, M33 X-7 and GRS 1915+105 (whose drawn disc is its bright years', 1992–2018), as label 25, each at its paper's share of its Eddington luminosity or a choice inside its thin-disc range (§13) | each one's card (its disc line and the disc's switch); data sheet; the disc scenes' and the tour's notes |
+| 28 | **Assumed phase** (GRS 1915+105: its ephemeris does not say which conjunction it marks): its companion is put nearest to us at J2000.0 and its place is illustrative | its card and data sheet |
+| 29 | **Ranges drawn at a stated value**: GX 339−4's mass, tilt and distance at the middles of their ranges; XTE J1650−500's mass at the middle of its limits, with the tilt it needs; Nova Velorum 1993 for a normal donor | each one's card and data sheet |
+| 30 | **The galaxies' black holes**: masses scaled from their papers' distances to the app's; no gas round them and none of their galaxy's starlight close by (the sky there is darker than it would be); no fall offered | each one's card and data sheet |
 
 Labels 1, 2, 10, 12, 13, 14, 18 and 22 are also in the captions and text of the Learn article *Black holes*
 (`src/content/learn/articles/black-holes.md`), where the lensing hint's **Read more** leads.
@@ -259,8 +268,7 @@ number, `[below, above]` where the paper gives them unequal, or `{ stat, sys }`.
 | `xte-j1118` (XTE J1118+480) | binary | 7.46 +0.34 −0.69 (González Hernández et al. 2014) | 1,720 ± 100 pc | `xte-j1118-star`: K7–M1 V, 0.18 M☉, 0.34 R☉, about 4,000 K (estimated for its type) | 0.16993404 d, T0 = HJD 2451868.8921, i = 73.5° | Ω, sense, e = 0, T_eff |
 | `ogle-2011-blg-0462` (OGLE-2011-BLG-0462) | alone, held fixed | 7.15 ± 0.83 (Sahu et al. 2025; 7.1 ± 1.3 in Sahu et al. 2022, 1.6–4.4 in Lam et al. 2022) | 1,520 ± 150 pc | none | — | position to 0.1″; its 51 km/s not followed |
 
-Left out: GRO J1655-40 (no ephemeris transcribed; distance disputed), GRS 1915+105 (its donor is invisible in visible
-light), LMC X-1 and VFTS 243 (no position or phase in the sources read). Not black holes, and nowhere called one: HR 6819
+Left out of the first table: GRO J1655-40, GRS 1915+105 and LMC X-1, now in the second (§13), and VFTS 243. Not black holes, and nowhere called one: HR 6819
 (Frost et al. 2022; catalogue star 2446) and LB-1 (Shenar et al. 2020).
 
 **The binaries.** Each is a barycentre in straight-line motion (heliocentric, J2000 ecliptic, pc and km/s) from its
@@ -666,6 +674,37 @@ The main sources:
   933, L23); Eggleton 1983 (ApJ 268, 368); Pecaut & Mamajek 2013 (ApJS 208, 9). Positions and proper motions of five
   systems from Gaia DR3 (Gaia Collaboration, Vallenari et al. 2023, A&A 674, A1) via SIMBAD (CDS), retrieved 28
   September 2026.
+- **The second table's X-ray binaries** (§13): Corral-Santana et al. 2016 (A&A 587, A61; BlackCAT, CDS
+  J/A+A/587/A61), the guide; Reid et al. 2014 (ApJ 796, 2), Steeghs et al. 2013 (ApJ 768, 185), McClintock et al. 2006
+  (ApJ 652, 518), Mills et al. 2021 (ApJ 914, 6), Motta et al. 2021 (MNRAS 503, 152), Miller et al. 2020 (ApJ 904, 30):
+  GRS 1915+105; Greene, Bailyn & Orosz 2001 (ApJ 554, 1290), González Hernández, Rebolo & Israelian 2008 (A&A 478, 203),
+  Orosz & Bailyn 1997 (ApJ 477, 876), Beer & Podsiadlowski 2002 (MNRAS 331, 351), Foellmi et al. 2006 (A&A 457, 249),
+  Shafee et al. 2006 (ApJ 636, L113): GRO J1655−40; Heida et al. 2017 (ApJ 846, 132), Zdziarski et al. 2019 (MNRAS 488,
+  1026), Miller et al. 2008 (ApJ 679, L113), Zdziarski et al. 2025 (ApJL 981, L15): GX 339−4; Orosz et al. 1998 (ApJ
+  499, 375), Orosz 2003 (IAU Symp. 212, 365), Jonker & Nelemans 2004 (MNRAS 354, 355), Morningstar & Miller 2014 (ApJL
+  793, L33): 4U 1543−475; Orosz et al. 2002, 2011 (ApJ 568, 845; 730, 75), Steiner et al. 2011 (MNRAS 416, 941), Corbel
+  et al. 2002 (Science 298, 196): XTE J1550−564; MacDonald et al. 2014 (ApJ 784, 2), Orosz et al. 2001 (ApJ 555, 489):
+  V4641 Sgr; Wu et al. 2015, 2016 (ApJ 806, 92; 825, 46), Chen et al. 2016 (ApJ 825, 45), González Hernández et al.
+  2017 (MNRAS 465, L15): Nova Muscae 1991; Filippenko et al. 1999 (PASP 111, 969), Shahbaz et al. 1996 (MNRAS 282, L47):
+  Nova Velorum 1993; Harlaftis, Horne & Filippenko 1996 (PASP 108, 762), Casares et al. 2022 (MNRAS 516, 2023),
+  Rodriguez et al. 2020 (ApJ 889, 58): GS 2000+25; Orosz et al. 2004 (ApJ 616, 376), Homan et al. 2003, 2006 (ApJ 586,
+  1262; MNRAS 366, 235), Miller et al. 2009 (ApJ 697, 900), Casares 2016 (ApJ 822, 99): XTE J1650−500; Harlaftis et al.
+  1997 (AJ 114, 1170), Remillard et al. 1996 (ApJ 459, 226), Dashwood Brown, Gandhi & Zhao 2024 (MNRAS 527, L82):
+  H1705−250; Webb et al. 2000 (MNRAS 317, 528), Gelino & Harrison 2003 (ApJ 599, 1254): GRO J0422+32; Yanes-Rizo et al.
+  2022 (MNRAS 517, 1476), Motta et al. 2022 (MNRAS 517, 1469), Mall et al. 2024 (MNRAS 527, 12053), Hynes et al. 2002
+  (MNRAS 331, 169): XTE J1859+226; Orosz et al. 2007, 2009, 2014 (Nature 449, 872; ApJ 697, 573; 794, 154), Gou et al.
+  2009 (ApJ 701, 1076), Song et al. 2010 (AJ 140, 794), Steiner et al. 2010, 2014 (ApJL 718, L117; 793, L29), Liu et al.
+  2008, 2010 (ApJL 679, L37; 719, L109), Ramachandran et al. 2022 (A&A 667, A77), Pietrzyński et al. 2019 (Nature 567,
+  200), Duflot, Figon & Meyssonnier 1995 (A&AS 114, 269): LMC X-1, LMC X-3 and M33 X-7; Bailer-Jones et al. 2021 (AJ 161,
+  147), Gaia's distances. Positions, Gaia DR3 proper motions and magnitudes via SIMBAD (CDS), retrieved 9 October 2026.
+- **The galaxies' black holes** (§13): Kormendy & Ho 2013 (ARA&A 51, 511), Tables 2–3; Bender et al. 2005 (ApJ 631,
+  280); van den Bosch & de Zeeuw 2010 (MNRAS 401, 1770); Nguyen et al. 2017, 2018 (ApJ 836, 237; 858, 118); Cappellari et
+  al. 2009 (MNRAS 394, 660); Neumayer 2010 (PASA 27, 449); Jardel et al. 2011 (ApJ 739, 21); Reid, Pesce & Riess 2019
+  (ApJL 886, L27); Humphreys et al. 2013 (ApJ 775, 13); Walsh, Barth & Sarzi 2010 (ApJ 721, 762); Shen & Gebhardt 2010
+  (ApJ 711, 484); Rusli et al. 2013 (AJ 146, 45); Emsellem, Dejonghe & Bacon 1999 (MNRAS 303, 495); McConnell et al.
+  2011, 2012 (Nature 480, 215; ApJ 756, 179); Davis et al. 2020 (MNRAS 496, 4061); and, as Kormendy & Ho quote them,
+  Bower et al. 2000 (BAAS 32, 1566) and Devereux et al. 2003 (AJ 125, 1226). The catalogue galaxies' places are the
+  app's own NGC file's (OpenNGC, CC BY-SA 4.0; Cosmicflows-4, CC BY 4.0).
 - **The nuclear star cluster and M87's light** (§6): Schödel et al. 2014, 2018, 2020 (A&A 566, A47; 609, A27; 641,
   A102); Gallego-Cano et al. 2018 (A&A 609, A26); Feldmeier-Krause et al. 2017 (MNRAS 464, 194); Nogueras-Lara et al.
   2020 (Nature Astronomy 4, 377); Launhardt, Zylka & Mezger 2002 (A&A 384, 112); Sormani et al. 2022 (MNRAS 512,
@@ -1295,6 +1334,9 @@ The other black holes get none, each for its own reason:
 | Cygnus X-1 | **drawn** (a model, label 25) | a persistent disc, its luminosity measured (Zhao et al. 2021) |
 | V404 Cygni, A0620-00, XTE J1118+480, MAXI J1820+070 | not drawn (label 16) | quiet between outbursts: their discs are cool (a few thousand kelvin), cut off far from the hole (the inner flow a hot, thin gas out to ~10³–10⁴ r_s in the models of their quiescent spectra) and not in a steady state, so no thin-disc model applies and neither the truncation radius nor the accretion rate is measured well enough to draw one honestly |
 | Gaia BH1–3, OGLE-2011-BLG-0462 | none | dormant: nothing is falling in |
+| LMC X-1, LMC X-3, M33 X-7, GRS 1915+105 | **drawn** (models of a typical state, label 27) | persistent, or bright for 26 years; their thermal discs measured by continuum fitting (§13) |
+| the second table's transients (GRO J1655−40, GX 339−4, …) | not drawn (label 16) | quiet between outbursts, as V404 Cygni |
+| the galaxies' black holes | none | not thin discs of the kind modelled here, or not measured |
 | Sgr A*, M87* | the hot flow (§7) for Sgr A*; nothing for M87* | not thin discs |
 
 **The model** (`src/physics/thinDisk.ts`). A geometrically thin, optically thick Novikov–Thorne disc (Novikov & Thorne
@@ -1419,3 +1461,175 @@ infinitely thin, so seen exactly edge-on it vanishes); its own gravity; the ligh
 companion's wind; and stars drawn as points behind it, which it does not hide (at the disc's exposure they are far
 below it). From far away, where its outer edge is under 3 px, it is not drawn at all: its light there is outshone by
 its companion's and is not added to the hole's point.
+
+## 13. The second table: more X-ray binaries, the Magellanic Clouds and M33, and the galaxies' black holes
+
+**What.** Twenty-nine more black holes, from `scripts/blackholes-more.mjs` (the second table, which
+`scripts/build-blackholes.mjs` imports and writes into the same `blackholes.json`; the first table's eleven are
+unchanged to the byte, and a rebuild reproduces them):
+
+- **Thirteen X-ray binaries of the Milky Way with dynamically measured masses** that the first table did not have: the
+  confirmed black holes of BlackCAT (Corral-Santana et al. 2016, A&A 587, A61; its VizieR table was the guide, the
+  values are the original papers' and newer ones'), less the four the first table has and GS 1354−64 (left out, below).
+- **Three persistent X-ray binaries in other galaxies**: LMC X-1 and LMC X-3 in the Large Magellanic Cloud, M33 X-7 in
+  the Triangulum Galaxy.
+- **Thirteen supermassive black holes** at the centres of nearby galaxies the app has: ten whose galaxies it
+  registers with the others (M31*, M32's, M81*, Centaurus A's, the Sombrero's, NGC 404's, and those of M84, M60, M49
+  and NGC 4889, galaxies of `public/data/more-galaxies.json.gz`) and three at the centres of galaxies only in the NGC
+  catalogue, which the app registers on demand (M106, M105, the Spindle Galaxy). M87* and Sgr A* are the first
+  table's and are not repeated.
+
+Every number was read from its paper (the arXiv full text, the journal's table, or VizieR) and carries the key of that
+paper; the research notes recorded where each was read (abstract, Table N, Sect. N). Where a paper gives a 95 %
+interval, the 1σ drawn and shown is half of it over 1.96 and the note says so (GRO J1655−40).
+
+**The binaries** (masses M☉; the companion's radius is its Roche lobe's, Eggleton 1983, where none is published, and
+its temperature, where none is measured, that of a dwarf of its type from Pecaut & Mamajek 2013, said on its card):
+
+| Id (name) | Black hole | Distance (method in the record) | Companion | Orbit | Phase | Disc |
+| --- | --- | --- | --- | --- | --- | --- |
+| `grs-1915` (GRS 1915+105) | 12.4 +2.0 −1.8 (Reid et al. 2014) | 8,600 +2,000 −1,600 pc, radio parallax (Reid et al. 2014) | K III, 0.47 M☉, 16.0 R☉ (lobe), 4,300 K (estimated) | 33.85 d, i = 60° (its jet) | assumed | **20 %** |
+| `gro-j1655` (GRO J1655−40) | 6.3 ± 0.26 (Greene et al. 2001; ± 0.5 at 95 %) | 3,270 +560 −410 pc, Gaia DR3 (Bailer-Jones et al. 2021) | F6 IV, 2.4 M☉, 5.0 R☉, 6,100 K | 2.6212 d, 70.2° | T0 JD 2453110.5637 | — |
+| `gx-339-4` (GX 339−4) | 5.9, the middle of 2.3–9.5 (Heida et al. 2017) | 10,000 pc, the middle of 8–12 kpc (Zdziarski et al. 2019) | K1–K2 IV, 0.95 M☉ (middle of 0.5–1.4), 2.76 R☉ (lobe), 4,700 K (middle) | 1.7587 d, 57.5° (middle of 37–78°) | T0 MJD 57529.397 | — |
+| `4u-1543` (4U 1543−475) | 9.4 ± 1.0 (Orosz 2003) | 7,500 ± 500 pc, from its donor (Jonker & Nelemans 2004) | A2 V, 2.45 M☉, 2.84 R☉, 9,000 K | 1.116407 d, 20.7° | T0 HJD 2450629.37 | — |
+| `xte-j1550` (XTE J1550−564) | 9.10 ± 0.61 (Orosz et al. 2011) | 4,380 +580 −410 pc, its dynamical model | K3 III, 0.30 M☉, 1.75 R☉, 4,450 K | 1.5420333 d, 74.69° | T0 HJD 2452053.9306 | — |
+| `v4641-sgr` (V4641 Sgr) | 6.4 ± 0.6 (MacDonald et al. 2014) | 6,200 ± 700 pc, its light-curve model | B9 III, 2.9 M☉, 5.3 R☉, 10,250 K | 2.8173 d, 72.3° | T0 HJD 2451441.8187 | — |
+| `gs-1124` (Nova Muscae 1991) | 11.0 +2.1 −1.4 (Wu et al. 2016) | 4,950 +690 −650 pc, its light-curve model | K5 V, 0.89 M☉, 1.06 R☉, 4,400 K | 0.43260249 d, 43.2° | T0 HJD 2454946.7946 | — |
+| `grs-1009` (Nova Velorum 1993) | 4.4, for a normal donor (Filippenko et al. 1999) | 5,700 ± 700 pc, from its donor | K7–M0 V, 0.6 M☉ (assumed), 0.71 R☉ (lobe), 3,990 K (estimated) | 0.285206 d, 78° (for that donor) | T0 HJD 2450834.9948 | — |
+| `gs-2000` (GS 2000+25) | 7.82 ± 0.89 (Casares et al. 2022) | 2,700 ± 700 pc, from its donor | K5 V, 0.33 M☉ (q M), 0.67 R☉ (lobe), 4,440 K (estimated) | 0.3440915 d, 67.5° | T0 HJD 2449920.8549 | — |
+| `xte-j1650` (XTE J1650−500) | 5.0, the middle of its limits 2.73–7.3 (Orosz et al. 2004) | 2,600 ± 700 pc, its change of state (Homan et al. 2006) | K4 V, 0.13 M☉ (q M), 0.47 R☉ (lobe), 4,600 K (estimated) | 0.3205 d, 56° (what that mass needs) | T0 HJD 2452436.51988 | — |
+| `h1705` (H1705−250) | 6.4 ± 1.5 (Dashwood Brown et al. 2024) | 8,600 ± 2,000 pc, from its donor | K5 V, 0.34 M☉, 0.88 R☉ (lobe), 4,440 K (estimated) | 0.5228 d, 70 ± 10° | T0 HJD 2450212.98 | — |
+| `gro-j0422` (GRO J0422+32) | 2.7 +0.7 −0.5 (Casares et al. 2022) | 2,490 ± 300 pc, from its donor (Gelino & Harrison 2003) | M1 V, 0.31 M☉ (q M), 0.47 R☉ (lobe), 3,900 K (adopted) | 0.21216 d, 55.6° | T0 HJD 2450274.4156 | — |
+| `xte-j1859` (XTE J1859+226) | 7.8 ± 1.9 (Yanes-Rizo et al. 2022) | 6,300 ± 1,700 pc, its outburst's disc (Hynes et al. 2002) | K5–K7 V, 0.55 M☉, 0.68 R☉ (lobe), 4,300 K (estimated) | 0.276 d, 66.6° | T0 HJD 2457957.593 | — |
+| `lmc-x-1` (LMC X-1) | 10.91 ± 1.41 (Orosz et al. 2009) | 49,590 ± 550 pc, the Cloud's (Pietrzyński et al. 2019) | O7–O8 III, 31.79 M☉, 17.0 R☉, 33,200 K, log L 5.50 | 3.90917 d, 36.38° | T0 HJD 2453391.3436 | **16 %** |
+| `lmc-x-3` (LMC X-3) | 6.98 ± 0.56 (Orosz et al. 2014) | 49,590 ± 550 pc, the Cloud's | B3–B5 V, 3.63 M☉, 4.25 R☉, 15,250 K | 1.7048089 d, 69.24° | T0 HJD 2454454.9964 (Song et al. 2010) | **10 %** |
+| `m33-x-7` (M33 X-7) | 15.65 ± 1.45 (Orosz et al. 2007) | 840,000 ± 20,000 pc, M33's (Orosz et al. 2007) | O7–O8 III, 70.0 M☉, 19.6 R☉, 35,000 K, log L 5.72 | 3.453014 d, 74.6° | mid-eclipse HJD 2453967.157 | **9 %** |
+
+Contested values are on each card's mass line and data sheet: GRS 1915+105 10.1 ± 0.6 before its parallax; GRO
+J1655−40 5.4 to 7.02 in other analyses, and a distance below 1.7 kpc argued; GX 339−4 only ranges, its spin 0.93 from
+its iron line but model-dependent; 4U 1543−475's distance 5.2 kpc from Gaia; XTE J1550−564 8.9–13.9 across models;
+V4641 Sgr 9.61 earlier and 4.7 kpc from Gaia; Nova Muscae 1991 6.95 earlier; Nova Velorum 1993's mass ratio and tilt;
+GRO J0422+32 3.97 ± 0.95 at 45°; XTE J1859+226's spin 0.149 or 0.986; M33 X-7 11.4 M☉ with a 38 M☉ companion
+(Ramachandran et al. 2022). Spins where estimated are on the card ("drawn without").
+
+**Phase.** Each ephemeris T0 used is the donor's inferior conjunction (the donor nearest to us, its radial velocity
+crossing from approach to recession), as in §5: where the paper's T0 is the donor's greatest recession (4U 1543−475,
+V4641 Sgr, Nova Velorum 1993, XTE J1650−500) the build is given that time less a quarter period, and M33 X-7's is the
+mid-eclipse of its X-rays (the O star in front). GRS 1915+105's paper calls its T0 only "donor star conjunction", so its
+phase is **assumed** (`phaseAssumed`): the donor is put nearest to us at J2000.0, the card says so ("its companion's place
+is illustrative") and the position note ends with it; the test checks the donor in front there. With a period's
+uncertainty carried over the light-time, almost every new binary's present phase is illustrative anyway, and its
+position note says so as in §5.
+
+**Places and motions.** Positions are SIMBAD's (retrieved 9 October 2026; Gaia DR3 positions at J2000 where the star is
+in Gaia), proper motions Gaia DR3's where Gaia measured them; where it did not (GRS 1915+105, Nova Velorum 1993,
+GS 2000+25, XTE J1650−500, GRO J0422+32, XTE J1859+226, M33 X-7) the motion across the sky is taken as none and the
+data sheet says so, and the systemic velocity is the paper's (taken as none for XTE J1650−500 and GRO J0422+32, whose
+papers give none). LMC X-1 and LMC X-3 are placed at the Cloud's distance, 49.59 kpc (Pietrzyński et al. 2019, as the
+app places the Cloud; their papers adopt 48.1 kpc), the Cloud's depth and tilt left out; M33 X-7 at M33's 840 kpc. A
+binary in another galaxy carries its galaxy (`host`, `hostName`): its record's `blackHole.hostGalaxy`, its card's
+"in the Large Magellanic Cloud", and "Where to?" lists it with the galaxies. No new companion is a star of the catalogue
+(their Gaia DR3 ids are in none of the catalogue's source lists), so none needs a pinned index.
+
+**Discs.** Four systems get a thin Novikov–Thorne disc as Cygnus X-1 has (§12), in the binary's orbital plane, each
+labelled a model of a **typical state, not live**:
+
+| Hole | L / L_Edd drawn | Source | Why a disc |
+| --- | --- | --- | --- |
+| LMC X-1 | 0.16 (0.145–0.171 over 18 spectra) | Gou et al. 2009, Sect. 5.1, Table 2 | persistent since 1969, its disc thermal and steady |
+| LMC X-3 | 0.10, a choice inside the 5–30 % of the thermal-state spectra fitted | Steiner et al. 2014, Sect. 2 | persistent; its inner edge constant over 26 years (Steiner et al. 2010) |
+| M33 X-7 | 0.09 (0.07–0.11 over 15 spectra) | Liu et al. 2008, Sect. 3, Table 1 | persistent, eclipsing |
+| GRS 1915+105 | 0.20, a choice below the 30 % limit of the thin-disc spectra fitted | McClintock et al. 2006, Sect. 5 | bright from August 1992 to July 2018; faint and hidden by its own gas since 2019 (Motta et al. 2021; Miller et al. 2020): the drawn disc is its bright years' |
+
+L_Edd is each paper's own, 1.3 × 10³⁸ (M/M☉) erg/s. The outer edge is 10¹¹ cm, as Cygnus X-1's (a model choice; inside
+each hole's Roche lobe, 4.0–46.5 × 10¹¹ cm, which the build checks; beyond a few hundred GM/c² the disc is too faint to
+show at its contrast). GX 339−4 and the other transients get none: between outbursts their discs are cool and truncated
+(§12), and GX 339−4's mass and tilt are only ranges. The card's spin line says where a fast spin is estimated (LMC X-1
+0.92, M33 X-7 0.84, GRS 1915+105 above 0.98): the disc would then reach closer in.
+
+**The galaxies' black holes.** A mass from motions seen on the sky (stars, gas, masers) grows in proportion to the
+distance assumed, so each published mass (`massPublished`, at its paper's or Kormendy & Ho's distance) is scaled by the
+build to the distance the app places the galaxy at (`mass`, whose note gives both); the 1σ ranges are Kormendy & Ho's
+(their Tables 2 and 3) where the mass is theirs:
+
+| Id (name) | Galaxy | Published | Drawn (M☉, at the app's distance) | Weighed by |
+| --- | --- | --- | --- | --- |
+| `m31-star` (M31*) | Andromeda Galaxy | 1.43 (1.12–2.34) × 10⁸ at 0.774 Mpc (K&H, Bender et al. 2005) | 1.41 × 10⁸ (0.761 Mpc) | its stars' motions |
+| `m32-bh` | M32 | 2.45 (1.43–3.46) × 10⁶ at 0.805 Mpc (K&H, van den Bosch & de Zeeuw 2010) | 2.31 × 10⁶ | its stars' motions |
+| `m81-star` (M81*) | Bode's Galaxy | 6.5 (5–9) × 10⁷ at 3.604 Mpc (K&H, stars and gas averaged) | 6.54 × 10⁷ | its stars and its gas |
+| `cen-a-bh` | Centaurus A | 5.69 (4.65–6.73) × 10⁷ at 3.62 Mpc (K&H, Cappellari et al. 2009) | 5.70 × 10⁷ | its stars' motions |
+| `m104-bh` | Sombrero Galaxy | 6.65 (6.24–7.05) × 10⁸ at 9.87 Mpc (K&H, Jardel et al. 2011) | 6.40 × 10⁸ | its stars' motions |
+| `ngc-404-bh` | NGC 404 | 5.5 +1.6 −0.8 × 10⁵ at 3.06 Mpc (Davis et al. 2020) | 5.35 × 10⁵ | molecular gas (ALMA); contested |
+| `ngc-4258-bh` | M106 (NGC 4258) | 3.98 ± 0.04 × 10⁷ at 7.576 Mpc (Reid et al. 2019) | 4.01 × 10⁷ | water masers |
+| `m84-bh` | M84 | 9.25 (8.38–10.23) × 10⁸ at 18.51 Mpc (K&H, Walsh et al. 2010) | 9.17 × 10⁸ (18.35 Mpc) | a disc of ionised gas |
+| `m60-bh` | M60 | 4.72 (3.67–5.76) × 10⁹ at 16.46 Mpc (K&H, Shen & Gebhardt 2010) | 4.93 × 10⁹ (17.21 Mpc) | its stars' motions |
+| `m49-bh` | M49 | 2.5 (2.4–2.8) × 10⁹ at 17.14 Mpc (Rusli et al. 2013, as published) | 2.49 × 10⁹ (17.05 Mpc) | its stars' motions |
+| `m105-bh` | M105 | 4.16 (3.12–5.20) × 10⁸ at 10.70 Mpc (K&H, van den Bosch & de Zeeuw 2010) | 4.19 × 10⁸ | its stars' motions |
+| `ngc-3115-bh` | Spindle Galaxy | 8.97 (6.20–9.54) × 10⁸ at 9.54 Mpc (K&H, Emsellem et al. 1999) | 8.99 × 10⁸ | its stars' motions |
+| `ngc-4889-bh` | NGC 4889 | 2.08 (0.49–3.66) × 10¹⁰ at 102.0 Mpc (K&H, McConnell et al. 2012) | 1.96 × 10¹⁰ (96.16 Mpc, the Coma cluster's) | its stars' motions |
+
+M49's is Rusli et al.'s published value, not Kormendy & Ho's (theirs, from the preprint, does not rescale to the
+published table). NGC 1277, asked for, is left out: the app has no galaxy for it (the NGC file holds NGC 1275 and its
+Perseus neighbours, not NGC 1277). A galaxy registered with the others (named.json's, the Local Volume Database's, or
+more-galaxies.json.gz's, whose Virgo and Coma members are placed within their clusters by their own distances: M84 at
+18.35 Mpc, M60 17.21, M49 17.05, NGC 4889 at the Coma cluster's 96.16) gives its hole its record as parent, its place,
+its anchor in the expanding universe and its id as `hostGalaxy` (as M87*, `galaxyHoleRecord`); the build reads each
+such galaxy's placed distance from those files to scale the mass. A galaxy only in the NGC catalogue is copied by the
+build from `public/data/deepsky/ngc-galaxies.json.gz` (its comoving place and its group's anchor, Cosmicflows-4's
+distance; the hole's `galaxy`), and its hole is a body of its own at that place (`catalogueGalaxyHoleRecord`; no parent,
+since the galaxy comes and goes), with that anchor and its galaxy's deep-sky id as `hostGalaxy` for "Where to?". All
+are framed from 50 r_s, labelled just ahead of their galaxy, offer no fall (no starlight of their galaxy is drawn round
+them: M87's alone has a model, §6), and their cards say so. From inside a galaxy the app's sky is dark (its particles
+fade near the camera) and the NGC catalogue's other galaxies are markers, so the lens there has little to bend: the tour
+looks back at the Milky Way from beyond M31* instead (below).
+
+**Registration.** The binaries register with the stars (`registerBinaryHoles`), the galaxies' holes at the end of
+`registerCosmos` (`registerGalaxyHoles`, after M87*). `blackHoleStatus` says which data each waits for. Registration
+is once; nothing per frame but the gravity state's loop over the holes (40 now; a few comparisons each).
+
+**The card.** Every new hole's card gives its mass with its uncertainty and source and, for these, a line "weighed by
+…" (`massMethod`); the data sheet a row "Weighed by". The binaries' cards say what is assumed (orientation, and phase
+where it is), the gas not drawn, or the disc's model line (DiskControls, as Cygnus X-1's).
+
+**Scenes and journeys** (`src/content/scenes.ts`; tested in `src/content/moreBlackHoles.test.ts`):
+
+| Scene | Camera | What it shows |
+| --- | --- | --- |
+| `lmc-x-1-disk` (journey *A black hole in another galaxy*) | 30 r_s from LMC X-1, 10° above its disc, the disc's axis up | its disc, the far side bent over the shadow; its note worded from the record (mass, distance, the disc's share of Eddington) |
+| `grs-1915-disk` | 60 r_s on the line to the Sun: the disc at our own angle, 60° from its axis | the disc of its bright years, nearly edge-on |
+| `black-hole-tour` (journey *A tour of black holes*) | five stops, 16 s each, moving on while the camera is not moved: GRO J0422+32 from 10⁴ r_s; GRS 1915+105 as above; LMC X-1 as above; M33 X-7 at 50 r_s on the line to the Sun; M31* from 8,100 au beyond it on the line from the Milky Way's centre, where the Milky Way behind it closes into a ring 3° across (r = 4M/θ²) | the lightest hole, three discs, and a supermassive hole's Einstein ring of our own Galaxy |
+
+**Checked** (`src/sim/blackholes/more.test.ts`, `src/content/moreBlackHoles.test.ts`, and the first table's tests run
+over the whole file): spot checks of the transcribed numbers against their papers (LMC X-1, LMC X-3, M33 X-7, GRS
+1915+105, XTE J1550−564, NGC 4258, Kormendy & Ho's M31, NGC 4889 and Centaurus A with their ranges); each galaxy's hole's
+mass equal to its published mass scaled by the placed distance over the paper's; the holes of M84, M60, M49 and NGC 4889
+children of those galaxies' bodies, at their places, with them as host; the three other catalogue galaxies' places equal
+to the NGC file's rows, and their records there; every binary's donor in front of its hole at T0 (at J2000.0 where the
+phase is assumed) with its radial velocity crossing from approach to recession; the radial-velocity amplitudes from the
+drawn orbits against the published K (within 6 %; 0.03 % for LMC X-1; GX 339−4, drawn at the middles of its ranges,
+within 12 %); the discs physical (L/L_Edd between 0.01 and 0.3, L_Edd = 1.3 × 10³⁸ M, Ṁ = l L_Edd/ηc² to 10⁻⁹ and
+between 10¹⁷ and 10¹⁹ g/s, the inner edge at 6 M, the hottest ring 1–10 × 10⁶ K, the outer edge inside the Roche lobe
+and the orbit table's reach); every new hole registered, found by "Where to?" under its names and listed where it lives,
+and framed by Go there with the lens about it at 10⁴ or 50 r_s; the two disc scenes' cameras and notes; the tour stop by
+stop. The card tests (`bodyCard.test.ts`) run over all forty.
+
+**Cost.** Measured in a Chrome tab of the development server on the target laptop, at 3,200 × 1,584 device px (pixel
+ratio 2), whole-frame GPU medians (`window.__ls.perf.measure`), the disc on against off in `lmc-x-1-disk`, interleaved
+rounds, with other work on the machine (the rounds spread by about ±2 ms): on 20.7, 24.3, 21.0, 21.6, 21.6 ms against off
+20.0, 20.0, 23.1, 22.2, 20.9 ms, a median difference of about 0.7 ms (an earlier pair, 1.3–1.6 ms). It is Cygnus X-1's
+disc shader with other numbers (§12: 0.55–0.83 ms at 2,048 × 1,104), and costs nothing away from a disc. The data file
+is now 224 kB (42 kB gzipped), bundled.
+
+**Left out, and why.** GS 1354−64 (BW Cir): its mass is only a lower limit (7.6 M☉), its inclination unknown, and its
+distance, at least 25 kpc from its spectrum, is contradicted by Gaia's parallax (about 1 kpc). Swift J1357.2−0933: a
+lower limit only. VFTS 243, a dormant black hole in the Large Magellanic Cloud: not researched for this table. NGC 1277:
+no galaxy for it in the app.
+
+**Limitations.** Masses that are ranges or model-dependent are drawn at a stated value (GX 339−4, XTE J1650−500, Nova
+Velorum 1993). Many distances are photometric and disputed (said on each card). Positions of the faint counterparts
+without Gaia motions do not move across the sky. The galaxies' holes have no starlight of their galaxy round them and
+no gas. The discs are a typical state, not today's (GRS 1915+105 has been hidden since 2019).
+
+**Refreshing.** Edit the second table (`scripts/blackholes-more.mjs`), run `node scripts/build-blackholes.mjs` and
+`npx vitest run src/sim/blackholes src/content/moreBlackHoles.test.ts`. A new galaxy's hole needs only its galaxy's id
+or NGC designation; the build finds its place and distance.

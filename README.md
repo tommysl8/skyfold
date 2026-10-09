@@ -31,7 +31,7 @@ It started as a way to see what relativity actually looks like, and grew from th
   close things are: about 15 seconds gets you out of the Solar System, and holding Shift gets you out of the Milky Way
   in about three.
 - **Go anywhere by name.** Press `/` and type: Europa, Betelgeuse, K2-18 b, the Orion Nebula, Andromeda.
-- **Visit a black hole.** Eleven real ones, from Sagittarius A\* and M87\* to Gaia BH1. The lensing is exact general
+- **Visit a black hole.** Forty real ones, from Sagittarius A\* and M87\* to Gaia BH1, LMC X-1 and M31\*. The lensing is exact general
   relativity. Hover just above the horizon and watch your clock slow, or fall in.
 - **Just look.** `Shift+F` hides everything but the view.
 - **Read about it.** Learn has longer reads on the science behind what you're seeing, with their sources.

@@ -28,7 +28,7 @@ import type { LocalGalaxiesDoc, NamedDoc } from './localGalaxies';
 import type { MoreGalaxiesDoc } from './moreGalaxies';
 import { pictureImages, type PicturesDoc } from './pictures';
 import { bodyIdOf, CLUSTER_RADIUS_MPC, cosmosRecords, type GalaxyShape } from './records';
-import { registerM87Star } from '../blackholes/load';
+import { registerGalaxyHoles, registerM87Star } from '../blackholes/load';
 import type { Template } from './templates';
 import type { Vec3 } from './frames';
 
@@ -79,8 +79,10 @@ export function registerCosmos(local: LocalGalaxiesDoc, named: NamedDoc, more: M
   if (fresh.length) registerBodies(fresh);
   setExpansionMembers(anchors);
   setBoundSpheres(clusterCores());
-  // M87*, at the centre of M87 (sim/blackholes), in the expanding universe with its galaxy.
+  // M87*, at the centre of M87, and the other galaxies' black holes (sim/blackholes), in the expanding universe with
+  // their galaxies.
   registerM87Star();
+  registerGalaxyHoles();
   cosmosState.shapes = shapes;
   cosmosState.named = named;
   cosmosState.local = local;

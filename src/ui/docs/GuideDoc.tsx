@@ -746,6 +746,15 @@ function Universe() {
           of a star behind it.
         </p>
         <p>
+          Twenty-nine more come from a second table: thirteen more X-ray binaries of the Milky Way, among them{' '}
+          <b>GRS 1915+105</b> and <b>GRO J0422+32</b>, one of the lightest black holes known; <b>LMC X-1</b> and{' '}
+          <b>LMC X-3</b> in the Large Magellanic Cloud and <b>M33 X-7</b> in the Triangulum Galaxy; and the black holes at
+          the centres of thirteen nearby galaxies, from <b>M31*</b> in Andromeda to <b>NGC 4889</b>’s, about 20 billion
+          times the Sun’s mass. Each card says how its hole was weighed. LMC X-1, LMC X-3, M33 X-7 and GRS 1915+105 are drawn
+          with thin discs of hot gas, as Cygnus X-1 is: models of a typical state, not of today. <b>A tour of black
+          holes</b>, under Journeys, visits five of them.
+        </p>
+        <p>
           A black hole has no surface to draw. What you see is its <b>lens</b>: the light of everything behind and around
           it, bent by its gravity, worked out exactly for a black hole that does not spin (<Ch to="seeing" /> says how to
           read it). From <b>Go there</b>’s distance of 4,000 au, Sagittarius A*’s dark shadow is far below a pixel, but the
@@ -951,7 +960,7 @@ function Universe() {
           <b>M87’s own starlight</b> round M87* is a smooth model of its measured light profile, not stars.
         </li>
         <li>
-          <b>Not drawn:</b> the X-ray binaries’ discs of hot gas, Cygnus X-1’s jet and wind, M87*’s jet, V404 Cygni’s
+          <b>Not drawn:</b> the discs of hot gas of the X-ray binaries quiet between outbursts, the jets of Cygnus X-1, GRS 1915+105 and M87*, Cygnus X-1’s wind, V404 Cygni’s
           distant third star, and <b>the dust</b> near the black holes: the Sun seen from beyond Sgr A* would really be
           dimmed by some 30 magnitudes.
         </li>
