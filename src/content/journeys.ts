@@ -138,4 +138,7 @@ export const JOURNEYS: Journey[] = [
   journey({ id: 'kilonova', title: 'Two neutron stars collide', sub: 'GW170817: the last minute of the inspiral, then the kilonova, blue then red', scene: 'kilonova-gw170817', clock: '17 August 2017: real time, then faster' }),
   journey({ id: 'm87-jet', title: 'The jet of M87', sub: 'A jet at nearly the speed of light, its far side beamed out of sight', scene: 'm87-jet' }),
   journey({ id: 'aurora', title: 'The northern lights from space', sub: 'Earth’s auroral oval on the night side', scene: 'aurora' }),
+  journey({ id: 'sun-future', title: 'The Sun’s future', sub: 'Its whole life in a minute and a half: red giant, planetary nebula, white dwarf', scene: 'sun-future', clock: 'The Sun’s own age runs; the date stays' }),
+  journey({ id: 'constellations-drift', title: 'The constellations drift', sub: 'The Big Dipper and Orion over 200,000 years of the stars’ own motions', scene: 'constellations-drift', clock: '1 s here = 5,500 years' }),
+  journey({ id: 'stars-that-change', title: 'Stars that change', sub: 'Algol’s eclipse, Delta Cephei and Mira pulsing, Betelgeuse’s Great Dimming', scene: 'stars-that-change', clock: '4,000 to 2 million times faster' }),
 ];

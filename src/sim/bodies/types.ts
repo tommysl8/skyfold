@@ -206,6 +206,11 @@ export interface BodyPhysical {
      * each frame (sim/phenomena), and the point of light takes the new colour (scene/Glints.tsx).
      */
     variable?: boolean;
+    /**
+     * The radiance of its disc against its system's brightest star (≤ 1), so that the stars of a close pair are exposed
+     * together and the dim one shows dark against the bright one in an eclipse (Algol: sim/stars/records.ts). Absent: 1.
+     */
+    discRadiance?: number;
   };
 }
 
@@ -604,6 +609,8 @@ export interface StarInfo {
   constellation?: string;
   /** References of the physical values, as citations. */
   refs?: readonly string[];
+  /** A variable star: how it varies, in a line for the card (sim/stars/variables.ts). */
+  variable?: string;
 }
 
 /**

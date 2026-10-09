@@ -74,6 +74,9 @@ import { inspiralAt, kilonovaAt, MERGER_MS } from '../sim/phenomena/kilonova';
 import { startPace } from '../sim/phenomena/pace';
 import { bodyFixedDir, geomagneticPole } from '../sim/phenomena/aurora';
 import { registerDestinations, type Destination } from './destinations';
+import { playSunFuture, setSunAge } from '../sim/stars/sunFuture';
+import { startDrift, stopDrift, type DriftRun } from '../sim/stars/drift';
+import { ALGOL_EPHEMERIS } from '../sim/stars/variables';
 
 // ─── Targets ────────────────────────────────────────────────────────────────────────────
 
@@ -299,6 +302,9 @@ export const NAMED_SCENES = [
   'm87-jet',
   'centaurus-a-jets',
   'aurora',
+  'sun-future',
+  'constellations-drift',
+  'stars-that-change',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -433,6 +439,9 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'm87-jet': 'The jet of M87',
   'centaurus-a-jets': 'The jets and lobes of Centaurus A',
   'aurora': 'The northern lights from space',
+  'sun-future': 'The Sun’s future',
+  'constellations-drift': 'The constellations drift',
+  'stars-that-change': 'Stars that change',
 };
 
 /** Define (or replace) a named scene. */
@@ -942,6 +951,9 @@ export function runScene(spec: string, opts: { note?: string } = {}): boolean {
   // A new scene replaces anything the last one still had to do, and the views it turned on.
   cancelSceneStep();
   restoreSceneViews();
+  // The Sun back to today's age, and the constellations' clock handed back (sim/stars).
+  setSunAge(null);
+  stopDrift();
   // Scenes are written for the present at real time: each starts there (a date scene sets its own date,
   // and a scene that runs time faster sets its own pace), not at the date or the pace the last one left.
   if (s.kind !== 'date') backToPresent();
@@ -989,7 +1001,7 @@ function start(s: Scene, note: string): boolean {
  * has changed it since), so the CMB map does not stay over Jupiter after the CMB scene, nor the
  * flow stay hidden after a lens scene.
  */
-const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur'] as const;
+const SCENE_VIEWS = ['showCmb', 'showOrbits', 'constellations', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur'] as const;
 type SceneView = (typeof SCENE_VIEWS)[number];
 type SceneViews = Partial<Pick<UIState, SceneView>>;
 
@@ -1001,6 +1013,7 @@ function currentViews(): Pick<UIState, SceneView> {
   return {
     showCmb: s.showCmb,
     showOrbits: s.showOrbits,
+    constellations: s.constellations,
     retarded: s.retarded,
     relMode: s.relMode,
     relDoppler: s.relDoppler,
@@ -1864,6 +1877,161 @@ defineScene('m87-star-close', {
       const dir = sunward(M87_STAR);
       const rM = (M87_CLOSE_AU * AU_KM) / holeMKm(M87_STAR);
       toHole(M87_STAR, rM, dir, hoverStep(M87_STAR, rM, dir));
+    }),
+});
+
+// ─── Stars in time (sim/stars: sunFuture.ts, drift.ts, variability.ts) ──────────────────
+
+defineScene('sun-future', {
+  label: PENDING_LABELS['sun-future'],
+  note: 'The Sun’s whole life in a minute and a half, from the MIST stellar-evolution tracks: it brightens slowly for 5 billion years, swells into a red giant 0.8 au across its radius that swallows Mercury and Venus, flashes into helium burning, swells again on the asymptotic giant branch, sheds half its mass as a planetary nebula, and ends a white dwarf the size of Earth. Only the Sun ages, not the clock: the planets keep today’s places, their orbits widening as the Sun loses mass. Its card says where it is; its slider and Today are there too.',
+  unavailable: needs('sun', 'mercury'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ selected: 'sun', bodyCard: true, showOrbits: true, showLabels: true, sizeMode: 'visible' });
+      setWarp(1);
+      setPaused(false);
+      controller.goTo('sun', { distance: 3.2 * AU_KM, direction: new Vector3(0.3, 1, 0.5).normalize() });
+      afterSlew('sun', () => playSunFuture());
+    }),
+});
+
+/** The constellations' journey: each stop looks from beside the Sun towards a fixed galaxy or nebula in the figure's direction. */
+interface DriftStop {
+  /** A body that does not move, to look at: the camera stands 1,000 au from the Sun towards it. */
+  toward: BodyId;
+  run: DriftRun;
+  note: string;
+}
+
+const DRIFT_STOPS: readonly DriftStop[] = [
+  {
+    toward: 'm101',
+    run: { fromYr: -100_000, toYr: 100_000, seconds: 36 },
+    note: 'The Big Dipper (Ursa Major) from the Sun, from 100,000 years ago to 100,000 years ahead, about 5,500 years a second. Five of its stars move together (the Ursa Major moving group); Dubhe and Alkaid, at the ends, go their own ways, and the dipper bends. Each star moves in a straight line from its measured motion (Gaia, Hipparcos).',
+  },
+  {
+    toward: 'orion-nebula',
+    run: { fromYr: -100_000, toYr: 100_000, seconds: 36 },
+    note: 'Orion over the same 200,000 years. Its stars are far away (250 to 1,300 light-years), so it holds its shape better; Betelgeuse drifts out of the shoulder. Then back to today.',
+  },
+];
+
+function driftStop(i: number): void {
+  const s = DRIFT_STOPS[i];
+  const at = s ? sim.bodies[s.toward] : undefined;
+  if (!s || !at) {
+    resetToNow();
+    return;
+  }
+  resetToNow();
+  updateEphemeris();
+  useUI.setState({ journeyNote: s.note, constellations: 'on', showLabels: false, selected: null });
+  const d = at.pos.length();
+  controller.goTo(s.toward, { distance: d - 1000 * AU_KM, direction: at.pos.clone().negate().normalize() });
+  afterSlew(s.toward, () => startDrift(s.run, i + 1 < DRIFT_STOPS.length ? () => driftStop(i + 1) : null));
+}
+
+defineScene('constellations-drift', {
+  label: PENDING_LABELS['constellations-drift'],
+  note: DRIFT_STOPS[0].note,
+  unavailable: () => needs(...DRIFT_STOPS.map((s) => s.toward))() ?? (starStatus() === 'ready' ? null : LOADING_STARS),
+  run: (note) =>
+    scene(note, () => {
+      driftStop(0);
+    }),
+});
+
+/** A stop of "Stars that change": a star up close (or, with `fromHome`, from beside the Sun) with time sped up. */
+interface VariableStop {
+  id: BodyId;
+  /** Camera distance in the star's radii; or from the Sun's side, looking at it. */
+  radii?: number;
+  fromHome?: boolean;
+  /** The date to start from: a function of the star (an eclipse's time), and how fast time runs then. */
+  start?: () => number;
+  warp: number;
+  holdS: number;
+  note: string;
+}
+
+const JD_MS = (jd: number) => (jd - 2_440_587.5) * 86_400_000;
+
+const VARIABLE_STOPS: readonly VariableStop[] = [
+  {
+    id: 'algol-a',
+    radii: 16,
+    // The next eclipse as seen from beside Algol: the orbit there runs a light-time (D/c) ahead of what Earth sees.
+    start: () => {
+      const d = sim.bodies['algol-a'].pos.length() / C_KM_S / 86_400;
+      const jd = Date.now() / 86_400_000 + 2_440_587.5 + d;
+      const n = Math.ceil((jd - ALGOL_EPHEMERIS.minJd) / ALGOL_EPHEMERIS.periodDays);
+      return JD_MS(ALGOL_EPHEMERIS.minJd + n * ALGOL_EPHEMERIS.periodDays - d - 0.25);
+    },
+    warp: 4000,
+    holdS: 18,
+    note: 'Algol up close, from our side, time 4,000 times faster: its dim companion, a cool subgiant, crosses the bright blue star every 2.87 days, and from Earth Algol fades from magnitude 2.1 to 3.4 for ten hours. The orbit is CHARA’s measurement; the eclipse is the stars’ own geometry, not a recorded curve.',
+  },
+  {
+    id: 'delta-cephei',
+    radii: 5,
+    warp: 40_000,
+    holdS: 16,
+    note: 'Delta Cephei, the first Cepheid, 40,000 times faster: it swells and shrinks every 5.37 days, brightest and hottest (6,900 K) just as it starts to swell, 5,600 K at its coolest. Cepheids’ periods tell their luminosities: how distances to galaxies were first measured.',
+  },
+  {
+    id: 'mira',
+    radii: 5,
+    warp: 2_000_000,
+    holdS: 16,
+    note: 'Mira, a red giant on its last legs, two million times faster: every 332 days it brightens from invisible to the naked eye to magnitude 3.5 and fades again, swelling by a fifth and cooling as it does.',
+  },
+  {
+    id: 'betelgeuse',
+    fromHome: true,
+    start: () => Date.UTC(2019, 8, 1),
+    warp: 1_000_000,
+    holdS: 22,
+    note: 'Betelgeuse from Earth, autumn 2019 to spring 2020, a million times faster: the Great Dimming. By February it had fallen to magnitude 1.6, fainter than Bellatrix in the other shoulder, as a cloud of dust it had shed blocked part of its light, then it recovered by April. Its brightness follows the measured magnitudes.',
+  },
+];
+
+function variableStop(i: number): void {
+  const s = VARIABLE_STOPS[i];
+  if (!s || !isBody(s.id)) {
+    resetToNow();
+    return;
+  }
+  setWarp(1);
+  const start = s.start?.();
+  if (start !== undefined && setEpoch(start)) updateEphemeris();
+  else if (start === undefined) resetToNow();
+  setPaused(false);
+  useUI.setState({ journeyNote: `${i + 1} of ${VARIABLE_STOPS.length}. ${s.note}`, selected: s.id, showLabels: !s.fromHome, constellations: s.fromHome ? 'on' : useUI.getState().constellations });
+  const b = sim.bodies[s.id];
+  if (s.fromHome) controller.goTo(s.id, { distance: b.pos.length() - 1000 * AU_KM, direction: b.pos.clone().negate().normalize() });
+  else controller.goTo(s.id, { distance: (s.radii ?? 4) * displayRadiusKm(getBody(s.id)!), direction: b.pos.clone().negate().normalize().addScaledVector(UP, 0.12).normalize() });
+  afterSlew(s.id, () => {
+    // The slew took time on the clock: back to the stop's start, then faster.
+    if (start !== undefined && setEpoch(start)) updateEphemeris();
+    setPaused(false);
+    setWarp(s.warp);
+    if (i + 1 >= VARIABLE_STOPS.length) return;
+    const timer = setTimeout(() => {
+      pendingStep = null;
+      variableStop(i + 1);
+    }, s.holdS * 1000);
+    pendingStep = () => clearTimeout(timer);
+  });
+}
+
+defineScene('stars-that-change', {
+  label: PENDING_LABELS['stars-that-change'],
+  note: VARIABLE_STOPS[0].note,
+  unavailable: needs(...VARIABLE_STOPS.map((s) => s.id)),
+  run: (note) =>
+    scene(note, () => {
+      variableStop(0);
     }),
 });
 

@@ -3,15 +3,18 @@
  * render/stellarNebulaMaterials.ts):
  *  - Eta Carinae's Homunculus, its two lobes at the shape Smith (2006) measured, growing with the simulation's date
  *    as it has since the 1840s (absent before 1845);
- *  - WR 104's dust pinwheel, turning once every 241.5 days on the simulation's clock.
+ *  - WR 104's dust pinwheel, turning once every 241.5 days on the simulation's clock;
+ *  - the Sun's planetary nebula, while the Sun is shown at that age (sim/stars/sunFuture.ts): a shell expanding at
+ *    25 km/s since the Sun shed its envelope, lit while the core is hot (a model).
  *
  * Each is built the first time the camera comes near its star and drawn only while the camera is within a few
  * times its size, fading in; nothing is drawn or allocated otherwise.
  */
 import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { BufferGeometry, Float32BufferAttribute, LatheGeometry, Mesh, Points, Quaternion, Vector2, Vector3, type ShaderMaterial } from 'three';
-import { createHomunculusMaterial, createPinwheelMaterial } from '../render/stellarNebulaMaterials';
+import { BufferGeometry, Float32BufferAttribute, LatheGeometry, Mesh, Points, Quaternion, SphereGeometry, Vector2, Vector3, type ShaderMaterial } from 'three';
+import { createHomunculusMaterial, createPinwheelMaterial, createPlanetaryNebulaMaterial } from '../render/stellarNebulaMaterials';
+import { sunFuture } from '../sim/stars/sunFuture';
 import { psfUniforms } from '../render/materials';
 import { sim } from '../sim/sim';
 import { smoothstep } from '../sim/deepsky/markers';
@@ -80,10 +83,11 @@ const q = new Quaternion();
 export function StellarNebulae() {
   const homunculus = useRef<{ mesh: Mesh; mat: ShaderMaterial } | null>(null);
   const pinwheel = useRef<{ points: Points; mat: ShaderMaterial } | null>(null);
+  const nebula = useRef<{ mesh: Mesh; mat: ShaderMaterial } | null>(null);
   const group = useRef<import('three').Group>(null!);
   useEffect(
     () => () => {
-      for (const o of [homunculus.current?.mesh, pinwheel.current?.points]) {
+      for (const o of [homunculus.current?.mesh, pinwheel.current?.points, nebula.current?.mesh]) {
         if (!o) continue;
         o.geometry.dispose();
         (o.material as ShaderMaterial).dispose();
@@ -150,6 +154,27 @@ export function StellarNebulae() {
       u.uViewH.value = sim.viewport.height / 2 / Math.tan((sim.camera.fovDeg * Math.PI) / 360);
       u.uGain.value = 2.4 * oP;
     } else if (pinwheel.current) pinwheel.current.points.visible = false;
+
+    // ─── The Sun's planetary nebula ───
+    const pn = sunFuture.nebula;
+    const sun = sim.bodies.sun;
+    if (pn && pn.glow > 0.005 && sun) {
+      if (!nebula.current) {
+        const mat = createPlanetaryNebulaMaterial();
+        const mesh = new Mesh(new SphereGeometry(1, 48, 24), mat);
+        mesh.frustumCulled = false;
+        mesh.renderOrder = 3;
+        g.add(mesh);
+        nebula.current = { mesh, mat };
+      }
+      const { mesh, mat } = nebula.current;
+      mesh.visible = true;
+      mesh.position.copy(sun.apparentPos).sub(sim.camera.pos);
+      mesh.scale.setScalar(pn.radiusKm);
+      mat.uniforms.uCentre.value.copy(mesh.position);
+      mat.uniforms.uR.value = pn.radiusKm;
+      mat.uniforms.uGain.value = 0.35 * pn.glow;
+    } else if (nebula.current) nebula.current.mesh.visible = false;
   });
 
   return <group ref={group} />;
