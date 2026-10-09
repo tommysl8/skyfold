@@ -259,7 +259,7 @@ export function updateSunFuture(): void {
 // ─── Words ───────────────────────────────────────────────────────────────────────────────
 
 const gyr = (yr: number): string => {
-  if (yr >= 1e9) return `${(yr / 1e9).toFixed(yr >= 1e10 ? 2 : 2)} billion years`;
+  if (yr >= 1e9) return `${(yr / 1e9).toFixed(2)} billion years`;
   return `${Math.round(yr / 1e6).toLocaleString('en-GB')} million years`;
 };
 
