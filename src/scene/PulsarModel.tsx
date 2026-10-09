@@ -126,13 +126,13 @@ function buildStar(spin: Spin, sphereGeo: SphereGeometry, coneGeo: ConeGeometry,
     // No sweep-back this close in; brighter than a pulsar's field, magenta (false colour).
     twistedMat.uniforms.uRlc.value = spin.lightCylinderKm;
     twistedMat.uniforms.uTwist.value = 0;
-    twistedMat.uniforms.uColor.value.set('#ff7ae0').multiplyScalar(4);
+    twistedMat.uniforms.uColor.value.set('#ff7ae0').multiplyScalar(7);
     twisted = new LineSegments(g, twistedMat);
     twisted.frustumCulled = false;
     twisted.renderOrder = 1;
     group.add(twisted);
   }
-  if (spin.beams || magnetar) {
+  if (spin.beams) {
     const f = fieldLines(spin.lightCylinderKm, NS_RADIUS_KM, 5);
     const g = new BufferGeometry();
     g.setAttribute('position', new Float32BufferAttribute(f.positions, 3));

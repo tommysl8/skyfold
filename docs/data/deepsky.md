@@ -99,10 +99,10 @@ catalogue gives (its reference code turned into the ADS bibcode linked on the ca
 period and a distance, and SGR 1935+2154, whose distance the catalogue leaves blank, at 6.6 ± 0.7 kpc from its remnant
 G57.2+0.8 (Zhou et al. 2020, ApJ 905, 99). Left out: SGR 1833−0832 (no distance) and five candidates with no period.
 
-The magnetars are loaded with the pulsars and merged into them (`mergeMagnetars`): the 14 that the ATNF catalogue also
+The magnetars are loaded with the pulsars and merged into them (`mergeMagnetars`): the 15 that the ATNF catalogue also
 lists (matched by position within 30″, or 1.5 times the McGill position error where larger: Swift J1818.0−1607's
 position is a burst's) keep their ATNF entry and id, gain the McGill values and the McGill distance, and are named by
-their usual names ("SGR 1806−20", the ATNF J name an alias); the 11 others are added (ids `magnetar-…`). Each is a body
+their usual names ("SGR 1806−20", the ATNF J name an alias); the 10 others are added (ids `magnetar-…`). Each is a body
 while the pulsars are loaded (there are few), with its own marker (magenta, a dot in a faint ring, beating with its
 spin, shown from 1.5–6 kpc), and a card: its field, Ṗ, spin-down power, X-ray luminosity and age; a line when its X-ray
 light outshines its spin-down power (the field's decay powers it); and the story of the four known for an event:
@@ -115,8 +115,8 @@ Up close (`scene/PulsarModel.tsx`, `pulsarModel.ts`) a magnetar is the pulsar mo
 shells of closed dipole loops from 1.8 to 12 star radii, each turned about the magnetic axis along its length so its
 footpoints differ by one radian, the twist that carries the currents thought to power magnetars' X-rays (Thompson,
 Lyutikov & Kulkarni 2002, ApJ 574, 332); the loops and the size of the twist are a model, drawn in false colour. Its hot
-spots are where loops of four star radii meet the surface, 30° from the magnetic poles. It has radio beams only if it
-has been seen pulsing in radio (the catalogue's bands include R: 1E 1547.0−5408, PSR J1622−4950, SGR J1745−2900,
+spots are where loops of four star radii meet the surface, 30° from the magnetic poles. It has radio beams, and the
+pulsar model's outer field out to its light cylinder, only if it has been seen pulsing in radio (the catalogue's bands include R: 1E 1547.0−5408, PSR J1622−4950, SGR J1745−2900,
 XTE J1810−197, Swift J1818.0−1607, SGR 1935+2154). It is framed by its loops, not its light cylinder.
 
 ### Supernova remnants (Ranasinghe & Leahy 2022, 215 remnants)

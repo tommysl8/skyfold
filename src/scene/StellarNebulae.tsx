@@ -35,7 +35,7 @@ const HOMUNCULUS_POLAR_AU = 21_690;
 /** Shown within these multiples of its size, gone beyond the next. */
 const HOMUNCULUS_SHOW: readonly [number, number] = [8, 30];
 const PINWHEEL_SHOW: readonly [number, number] = [40, 160];
-const PINWHEEL_PARTICLES = 40_000;
+const PINWHEEL_PARTICLES = 24_000;
 /** How many coils of the spiral are drawn. */
 const PINWHEEL_COILS = 2.6;
 
@@ -118,7 +118,7 @@ export function StellarNebulae() {
       const u = mat.uniforms;
       u.uStar.value.copy(mesh.position);
       u.uScale.value = sizeKm;
-      u.uGain.value = 0.012 * oH;
+      u.uGain.value = 0.02 * oH;
     } else if (homunculus.current) homunculus.current.mesh.visible = false;
 
     // ─── WR 104's pinwheel ───
@@ -148,7 +148,7 @@ export function StellarNebulae() {
       u.uStandoff.value = wr104StandoffAu() * AU_KM;
       u.uCoil.value = coilKm;
       u.uViewH.value = sim.viewport.height / 2 / Math.tan((sim.camera.fovDeg * Math.PI) / 360);
-      u.uGain.value = 1.2 * oP;
+      u.uGain.value = 2.4 * oP;
     } else if (pinwheel.current) pinwheel.current.points.visible = false;
   });
 

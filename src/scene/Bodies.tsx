@@ -58,6 +58,7 @@ import { sim } from '../sim/sim';
 import { useUI } from '../state/ui';
 import { createOrbitMaterial, createPlanetMaterial, createRingMaterial, createStarSurfaceMaterial, createSunMaterial, SUN_CENTRE_RADIANCE } from '../render/materials';
 import { roundStarGeometry, starShapeGeometry } from '../render/starShape';
+import { StarCells } from '../render/starCells';
 import { bandsExtent, bandsTexture, extentFactor } from '../render/rings';
 import { loadShape } from '../render/shapes';
 import { acquireTexture, pumpTextureUploads, releaseTexture, setPinnedTextures, type TextureOptions } from '../render/textures';
@@ -458,7 +459,8 @@ export function StarBody({ id }: { id: BodyId }) {
       u.uTPole.value = teff * surface.poleTeffRatio;
       u.uLimbU.value.set(...surface.limbU);
       u.uGranFreq.value = Math.sqrt(surface.granules / (4 * Math.PI));
-      u.uGranContrast.value = surface.granuleContrast;
+      // Granules finer than the baked map holds are left out (they would be under a pixel unless very close).
+      u.uGranContrast.value = StarCells.holds(u.uGranFreq.value) ? surface.granuleContrast : 0;
       u.uGiantFreq.value = Math.sqrt(surface.giantCells / (4 * Math.PI));
       u.uGiantContrast.value = surface.giantContrast;
       const spots = surface.spots;
@@ -484,8 +486,12 @@ export function StarBody({ id }: { id: BodyId }) {
     const lo = surface ? starShapeGeometry(surface, 48, 24) : null;
     return { hi: hi ?? STAR_SPHERE_HI, lo: lo ?? STAR_SPHERE_LO, own: !!hi };
   }, [surface]);
+  // The baked convection cells (render/starCells.ts), made while the disc is large.
+  const cells = useRef<StarCells | null>(null);
   useEffect(
     () => () => {
+      cells.current?.dispose();
+      cells.current = null;
       material.dispose();
       if (shapes.own) {
         shapes.hi.dispose();
@@ -494,7 +500,7 @@ export function StarBody({ id }: { id: BodyId }) {
     },
     [material, shapes],
   );
-  useFrame(() => {
+  useFrame(({ gl }) => {
     const b = sim.bodies[id];
     if (!b) return;
     const m = mesh.current;
@@ -522,9 +528,20 @@ export function StarBody({ id }: { id: BodyId }) {
     // stretched to 2.4 stops a stop (the card says so), from afar it is exact.
     u.uContrast.value = 1 + 1.4 * k;
     if (!surface) return;
-    // The surface's own clock: the wall clock sped up (closeup.ts surfaceSpeedup), in turnovers.
+    // The surface's own clock: the wall clock sped up (closeup.ts surfaceSpeedup), in turnovers. Its cells are
+    // baked while the disc is over 40 px (one cube face a frame), dropped below 20 px.
     const shownS = (performance.now() / 1000) * surface.speedup;
-    u.uTime.value = (shownS / surface.turnoverS) % 1000;
+    const hasCells = u.uGranContrast.value > 0 || u.uGiantContrast.value > 0;
+    if (hasCells && !cells.current && b.radiusPx > 40) cells.current = new StarCells(u.uGranFreq.value, u.uGiantFreq.value);
+    else if (cells.current && b.radiusPx < 20) {
+      cells.current.dispose();
+      cells.current = null;
+    }
+    if (cells.current) {
+      cells.current.update(gl, (shownS / surface.turnoverS) % 1000);
+      u.uCells.value = cells.current.target.texture;
+      u.uHasCells.value = cells.current.ready ? 1 : 0;
+    } else u.uHasCells.value = 0;
     const flares = surface.flares;
     if (flares) {
       // One flare in each slot of a day's share; it rises in a twentieth of its length and decays over the rest.

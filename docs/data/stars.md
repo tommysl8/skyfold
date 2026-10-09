@@ -997,7 +997,10 @@ spots and contrast below appear only once the disc is large on screen. Every sta
   Betelgeuse. Their temperature contrast is ±3.5% (a model), fading out between 6,500 and 8,500 K, above which stars
   have no surface convection to show. Each cell lives about 8 minutes (the Sun's granules: Nordlund, Stein & Asplund
   2009, Living Rev. Sol. Phys. 6, 2) times its size over the Sun's. Cells smaller than about two pixels fade to their
-  mean, so nothing aliases.
+  mean, so nothing aliases. The cells are baked into a 256² cube map while the disc is over 40 px wide, one face a
+  frame (`render/starCells.ts`): evaluated per pixel they cost 21 ms a frame on the target laptop with Betelgeuse
+  filling the view. The map holds cells down to four texels (up to about 13,000 over the star): red supergiants'
+  granules are in it, a Sun-like star's millions are not drawn.
 - **Time.** The cells are shown on the wall clock, sped up by the least power of ten that brings a turnover under a
   minute (`surfaceSpeedup`): the Sun's granules 10 times, Betelgeuse's giant cells a million times. Cards say how much.
 - **Contrast.** The display's AgX tone curve compresses a stop of brightness to a few per cent of its range, and the
@@ -1086,7 +1089,7 @@ lobe. It shows within 8–30 times its size of the star.
 0.28 ± 0.02 mas a day (1,260 km/s at 2.6 kpc: 176 au between coils; they quote 170), its dust beginning 13.3 mas (35
 au) from the centre, its position angle 269° on 1998 April 14 (JD 2450918), turning clockwise on the sky (position
 angle falling: the images at longer wavelengths are "advanced … (clockwise)", §2.2), in a plane tilted 12° (0–16°)
-from the sky at position angle 84°. 40,000 dust particles carry their age in coils and are placed on the spiral in the
+from the sky at position angle 84°. 24,000 dust particles carry their age in coils and are placed on the spiral in the
 vertex shader for the date (`wr104ArmAngleDeg` is its pure twin), so the pattern turns on the simulation's clock. The
 arm's width (9% of its radius, after the shock cone's ≈ 20° half-angle) and the dust's fading outwards (∝ r^−1.6, over
 2.6 coils) are a model; the dust shines in the infrared, where the spiral was imaged, and is shown in false colour. It

@@ -89,7 +89,7 @@ export const CLOSE_UPS: Readonly<Record<string, CloseUpSpec>> = {
   'uy-scuti': { giantCells: RSG_CELLS },
   'stephenson-2-18': { giantCells: RSG_CELLS },
   proxima: {
-    spots: { count: 5, radiusRad: 0.2, deltaTK: -400, periodDays: 83.5, ref: `${cite('benedict1998')} for the rotation; spots a few hundred kelvin cooler, as on other M dwarfs (${cite('berdyugina2005')})` },
+    spots: { count: 5, radiusRad: 0.3, deltaTK: -400, periodDays: 83.5, ref: `${cite('benedict1998')} for the rotation; spots a few hundred kelvin cooler, as on other M dwarfs (${cite('berdyugina2005')})` },
     // 66 flares in 37.6 days above 10²⁹ erg; extended down to 0.5% in brightness, 63 a day.
     flares: { perDay: 63, durationS: 600, ref: cite('davenport2016') },
   },
@@ -119,6 +119,8 @@ export interface ExtremeStarDef {
   notes: string[];
   facts: [string, string][];
   article?: string;
+  /** What it is, in a word or two, where its spectral type would not say it ("M4" alone reads as a dwarf). */
+  kindText?: string;
 }
 
 const R_SUN_AU = 695_700 / 149_597_870.7;
@@ -160,6 +162,7 @@ export const EXTREME_STARS: readonly ExtremeStarDef[] = [
       luminosityLsun: Math.round(10 ** 5.13),
       refs: { all: 'montarges2019' },
     }),
+    kindText: 'Red supergiant',
     distancePc: 641,
     distanceSource: `641 (+148/−144) pc, scaled from Betelgeuse’s by the size of their molecular layers (${cite('montarges2019')}); its Hipparcos parallax, 0.55 ± 0.20 mas, gives only a rough 1,800 pc`,
     distancePrecision: 'about 23%',
@@ -187,6 +190,7 @@ export const EXTREME_STARS: readonly ExtremeStarDef[] = [
       massErr: 8,
       refs: { all: 'wittkowski2012' },
     }),
+    kindText: 'Red supergiant',
     distancePc: 1170,
     distanceSource: `1.17 ± 0.08 kpc from the parallaxes of its masers (${cite('wittkowski2012')})`,
     distancePrecision: 'about 7%',
@@ -210,6 +214,7 @@ export const EXTREME_STARS: readonly ExtremeStarDef[] = [
     }),
     raDeg: 276.902_199_408_6,
     decDeg: -12.466_372_792_96,
+    kindText: 'Red supergiant',
     distancePc: UY_SCT_DISTANCE_PC,
     distanceSource: `its Gaia DR3 parallax, 0.517 ± 0.049 mas, with the global zero-point (${cite('gaiaDr3')})`,
     distancePrecision: 'about 10%',
@@ -237,6 +242,7 @@ export const EXTREME_STARS: readonly ExtremeStarDef[] = [
     }),
     raDeg: 279.759_865_251_8,
     decDeg: -6.086_286_370_06,
+    kindText: 'Red supergiant',
     distancePc: STEPHENSON_2_PC,
     distanceSource: `the kinematic distance of the cluster Stephenson 2, 5.83 (+1.91/−0.78) kpc (${cite('davies2007')}), if it is a member`,
     distancePrecision: 'uncertain: its membership of the cluster is in doubt',
@@ -262,6 +268,7 @@ export const EXTREME_STARS: readonly ExtremeStarDef[] = [
       luminosityLsun: 5_000_000,
       refs: { radius: 'vanBoekel2003', luminosity: 'davidson1997', distance: 'smith2006' },
     }),
+    kindText: 'Luminous blue variable (a binary)',
     distancePc: 2350,
     distanceSource: `2,350 ± 50 pc from the expansion of its nebula, the Homunculus (${cite('smith2006')})`,
     distancePrecision: 'about 2%',
@@ -291,6 +298,7 @@ export const EXTREME_STARS: readonly ExtremeStarDef[] = [
       massMsun: 6.1,
       refs: { radius: 'domiciano2014', teff: 'domiciano2012', mass: 'domiciano2012' },
     }),
+    kindText: 'Be star, a fast rotator',
     distancePc: NaN,
     distanceSource: '',
     distancePrecision: '',
@@ -313,6 +321,7 @@ export const EXTREME_STARS: readonly ExtremeStarDef[] = [
     }),
     raDeg: 270.517_183_147_5,
     decDeg: -23.628_381_585_45,
+    kindText: 'Wolf-Rayet star and companion',
     distancePc: 2600,
     distanceSource: `2.6 ± 0.7 kpc, from its dust spiral’s expansion of 0.28 mas a day and the Wolf-Rayet star’s wind speed (${cite('tuthill2008')})`,
     distancePrecision: 'about 27%',

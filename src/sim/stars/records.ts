@@ -637,7 +637,7 @@ export function extremeStarRecord(def: ExtremeStarDef, stars: Stars3D): BodyReco
   notes.unshift(...def.notes);
   // A star the catalogue lacks: its place is Gaia DR3's.
   const dataSource = i === null ? `Position: Gaia DR3 ${j.gaiaDr3} (${EXTREME_REFS.gaiaDr3.cite}); ${rec.star?.refs?.length ? `size, temperature and distance: ${rec.star.refs.join('; ')}` : ''}` : rec.dataSource;
-  return { ...rec, modelNotes: notes, article: def.article ?? rec.article, dataSource };
+  return { ...rec, modelNotes: notes, article: def.article ?? rec.article, dataSource, kindText: def.kindText ?? rec.kindText };
 }
 
 /** Every star record from the data: systems first (barycentres, then their stars), then the named stars, then the extreme stars. */

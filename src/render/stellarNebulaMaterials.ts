@@ -9,7 +9,7 @@
  *    their age (so the whole spiral turns on the simulation's clock), glowing warm. They shine in the infrared,
  *    where the spiral was imaged: shown in false colour.
  */
-import { AdditiveBlending, Color, DoubleSide, ShaderMaterial, Vector3 } from 'three';
+import { AdditiveBlending, Color, FrontSide, ShaderMaterial, Vector3 } from 'three';
 
 const HOMUNCULUS_VERT = /* glsl */ `
 #include <common>
@@ -107,7 +107,9 @@ export function createHomunculusMaterial(): ShaderMaterial {
     },
     vertexShader: HOMUNCULUS_VERT,
     fragmentShader: HOMUNCULUS_FRAG,
-    side: DoubleSide,
+    // The near wall only: the far wall doubled the fill cost (2.5 ms with both on the target laptop) for light the
+    // near wall's limb brightening already suggests.
+    side: FrontSide,
     blending: AdditiveBlending,
     depthWrite: false,
     transparent: true,
@@ -123,7 +125,7 @@ export function createPinwheelMaterial(pixelRatio: { value: number }): ShaderMat
       uPsi: { value: 0 },
       uStandoff: { value: 1 },
       uCoil: { value: 1 },
-      uSizePx: { value: 24 },
+      uSizePx: { value: 9 },
       uPixelRatio: pixelRatio,
       uViewH: { value: 1000 },
       uColor: { value: new Color(1.0, 0.6, 0.32) },
