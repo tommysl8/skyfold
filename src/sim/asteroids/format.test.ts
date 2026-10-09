@@ -67,7 +67,7 @@ describe('small-body files', () => {
       const b = back.sections[k];
       const { cols: ca, ...ha } = a;
       const { cols: cb, ...hb } = b;
-      expect(hb).toEqual({ ...ha, hMin: Math.fround(ha.hMin), hMax: Math.fround(ha.hMax), rMin: Math.fround(ha.rMin), rMax: Math.fround(ha.rMax) });
+      expect(hb).toEqual({ sample: false, ...ha, hMin: Math.fround(ha.hMin), hMax: Math.fround(ha.hMax), rMin: Math.fround(ha.rMin), rMax: Math.fround(ha.rMax) });
       for (const key of Object.keys(ca)) expect(Array.from((cb as unknown as Record<string, ArrayLike<number>>)[key]), key).toEqual(Array.from((ca as unknown as Record<string, ArrayLike<number>>)[key]));
     }
   });
@@ -114,8 +114,10 @@ describe('the shipped small-body data', () => {
       expect(f.sections.map((s) => [s.id, s.count])).toEqual(entry.sections.map((s) => [s.id, s.count]));
       total += f.sections.reduce((n, s) => n + s.count, 0);
     });
-    expect(total).toBe(ix.total);
-    expect(total).toBeGreaterThan(1_400_000);
+    // The bodies with a card, and the drawn-only sample of the rest (scripts/asteroids/notable.mjs).
+    const { sampled } = ix as AsteroidIndex & { sampled?: number };
+    expect(total).toBe(ix.total + (sampled ?? 0));
+    expect(ix.total).toBeGreaterThan(30_000);
   });
 
   it('leave out the bodies the registry draws, and find the rest by number', () => {

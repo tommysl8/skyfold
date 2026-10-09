@@ -1,40 +1,14 @@
-Small bodies (scripts/build-asteroids.mjs), built 2026-10-01 from the JPL SBDB Query API
-rows read: 1573284
-kept: 1465911
-  Near-Earth asteroid: 30127
-  Main-belt asteroid: 1405193
-  Hilda asteroid: 6694
-  Jupiter Trojan: 14855
-  Centaur: 806
-  Trans-Neptunian object: 4636
+Small bodies cut to the notable ones (scripts/asteroids/notable.mjs), from the full layer of 1465911 bodies
+notable: 32569
+  Near-Earth asteroid: 1161
+  Main-belt asteroid: 25776
+  Hilda asteroid: 181
+  Jupiter Trojan: 393
+  Centaur: 31
+  Trans-Neptunian object: 1427
   Comet: 3600
-  about the barycentre (q >= 7 au): 4880
-left out:
-  orbit condition code 8 or 9: 106941
-  comet with perihelion before 1900: 343
-  comet lost, defunct or without a reliable orbit (D/, X/): 39
-  asteroid without a condition code: 21
-  drawn by the registry with an accurate track: 18
-  periodic comet with elements from before 1990: 9
-  asteroid without an absolute magnitude: 2
-files: 19, sections: 41, 18083 kB gzip in all
-  00.bin.gz: 451 kB, neo 1079 (H 9.2-18.0), main 19627 (H 4.1-14.0), main 40 (H 8.6-14.0), hilda 454 (H 7.6-14.0), trojan 4506 (H 7.3-14.0), trojan 2 (H 9.2-10.6), centaur 536 (H 9.2-22.2), centaur 270 (H 5.5-14.6), tno 4109 (H 3.1-9.0), tno 9 (H 3.5-8.2), tno 2 (H 6.2-7.1), comet 3525 (H 4.0-23.4), comet 75 (H 4.4-13.2)
-  01.bin.gz: 1186 kB, tno 413 (H 9.0-14.1), tno 16 (H 10.3-17.9), tno 2 (H 10.3-10.9), tno 76 (H 10.5-18.1), main 86260 (H 14.0-15.5), hilda 6214 (H 14.0-19.3)
-  02.bin.gz: 199 kB, trojan 10308 (H 14.0-17.9), main 5375 (H 14.0-25.3), trojan 39 (H 14.2-17.0), hilda 26 (H 14.9-19.4)
-  03.bin.gz: 1086 kB, main 86260 (H 15.5-16.1)
-  04.bin.gz: 1081 kB, main 86260 (H 16.1-16.4)
-  05.bin.gz: 1077 kB, main 86260 (H 16.4-16.7), tno 9 (H 16.5-21.4)
-  06.bin.gz: 1072 kB, main 86260 (H 16.7-17.0)
-  07.bin.gz: 1065 kB, main 86260 (H 17.0-17.2)
-  08.bin.gz: 1060 kB, main 86260 (H 17.2-17.4)
-  09.bin.gz: 1055 kB, main 86260 (H 17.4-17.6)
-  10.bin.gz: 1055 kB, main 86260 (H 17.6-17.8)
-  11.bin.gz: 1053 kB, main 86260 (H 17.8-17.9)
-  12.bin.gz: 1052 kB, main 86260 (H 17.9-18.2)
-  13.bin.gz: 368 kB, neo 29045 (H 18.0-34.1)
-  14.bin.gz: 1049 kB, main 86260 (H 18.2-18.4), neo 3 (H 18.4-22.6)
-  15.bin.gz: 1047 kB, main 86260 (H 18.4-18.6)
-  16.bin.gz: 1046 kB, main 86260 (H 18.6-18.9)
-  17.bin.gz: 1041 kB, main 86260 (H 18.9-19.4)
-  18.bin.gz: 1041 kB, main 86251 (H 19.4-23.6)
-names: 26555 named, 3600 comets, numbers to 895910: 638 kB
+  of them named: 26554
+sample (drawn only, 1 in 20 of the rest): 71676
+files: 2, sections: 24, 1331 kB gzip in all, labels and names 256 kB + labels
+  00.bin.gz: 222 kB, neo 1079, main 9738, hilda 145, trojan 382, centaur 10, centaur 21, tno 1425, tno 2, comet 3525, comet 75
+  01.bin.gz: 1109 kB, main 16038, hilda 36, trojan 11, neo 82, tno (sample) 167, centaur (sample) 16, tno (sample) 1, hilda (sample) 314, trojan (sample) 715, main (sample) 68987, tno (sample) 2, centaur (sample) 22, tno (sample) 1, neo (sample) 1451
