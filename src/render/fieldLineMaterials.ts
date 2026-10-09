@@ -10,8 +10,8 @@
  *  - Each vertex says whether it is drawn (aVis, rewritten when the magnetopause moves; flat, so a segment is all in
  *    or all out): 0 not drawn, 1 closed, 2 open, 3 the current sheet, 4 the far end of a closed line the magnetopause
  *    cuts (coloured by its own foot's polarity).
- *  - The Sun's spirals reach 3 au, past the camera: they fade out within a third of their distance from the Sun of
- *    the camera (no streaks across the view), and over their last third.
+ *  - The Sun's spirals reach 3 au, past the camera: they fade out within half their distance from the Sun of the
+ *    camera (no streaks across the view), and over their last third.
  */
 import { AdditiveBlending, Color, ShaderMaterial } from 'three';
 
@@ -36,7 +36,7 @@ void main() {
   float fade = uNearOpacity;
   if (r > uFarFrom) {
     float dc = length(mv.xyz) / max(r * uUnitKm, 1.0);
-    fade = uFarOpacity * smoothstep(0.08, 0.33, dc) * (1.0 - smoothstep(0.66 * uFarEnd, uFarEnd, r));
+    fade = uFarOpacity * smoothstep(0.25, 0.6, dc) * (1.0 - smoothstep(0.66 * uFarEnd, uFarEnd, r));
   }
   vVis = aVis;
   vPol = aData.z;

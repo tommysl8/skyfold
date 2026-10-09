@@ -71,8 +71,8 @@ at the equator B₀ = √(g₁⁰² + g₁¹² + h₁¹²), its tilt acos(|g₁�
 
 **Footpoints** (`lines.ts`): rings about the centred dipole at the latitudes of dipole shells L = 1.15 … 2.2
 stand-offs (λ = acos √(1/L), eight rings even in log L) and two rings nearer the pole, 10 longitudes each (alternate
-rings turned half a step), in both hemispheres. A closed line is kept from its outward foot only. 160 lines a planet,
-15,000–22,000 vertices.
+rings turned half a step), in both hemispheres. A closed line is kept from its outward foot only, and a line that dips straight back into the surface is
+dropped: 104–130 lines a planet, 2,600–8,700 vertices.
 
 ## 3. The Sun
 
@@ -111,7 +111,8 @@ mean, so the quiet Sun and the polar holes have lines), traced to the surface (c
 feet) or to the source surface (open). Each open line goes on as a Parker spiral (Parker 1958) for a 400 km/s wind:
 at fixed latitude, its longitude in the Sun's turning frame falls by Ω (r − R_ss) / v (Ω the Carrington rate), out to
 3 au; 47° from the radial at 1 au. The heliospheric current sheet: spirals from points of the source surface's
-neutral line (B_r = 0, found by marching over a 2° grid, points 10° apart), drawn white. The spiral pattern turns
+neutral line (B_r = 0, found by marching over a 2° grid, points 10° apart), drawn white. About 230 lines, 7,600
+vertices (CR 2315). The spiral pattern turns
 rigidly with the Sun, as a steady wind's does.
 
 ## 4. Where the lines are cut: magnetopauses
@@ -146,17 +147,28 @@ are). Lines where the field leaves the body are warm (#ff8a4c), where it enters 
 shading from the outward foot to the inward; the current sheet white and dim. Pulses run along each line in the
 field's direction, spaced in proportion to the distance from the centre (each vertex carries ∫ ds / r). A planet's
 lines show once its magnetopause's stand-off is 10 px across and are full at 40; the Sun's loops once the Sun is 2 px
-across, its spirals while 3 au is 20 px or more across, from within 0.3 au of the Sun (drawn to three times the
+across, its spirals while 3 au is 20 px or more across, from within 0.3 au of the Sun (drawn to twice the
 camera's distance) or from 4 to 60 au (among the inner planets their lines would only cross the view).
 
 ## 6. Cost
 
 Off: nothing. On: the chunk (`FieldLines`, with the models' coefficients and the IGRF table) and the worker, fetched
-once; the Sun's 120 kB file once it is near; tracing in the worker (Jupiter about 0.5 s, the Sun about 0.25 s). Per
-frame: a few uniforms per body shown, and the magnetopause cut when the Sun's direction has moved. GPU time measured
-with `window.__ls.perf.measure(10, 3)`, on and off, on the development machine (§ below).
+once; the Sun's 120 kB file once it is near; tracing in the worker
+(in Node on the development machine: Jupiter 0.43 s, Earth 0.36 s, Saturn 0.35 s, the Sun 0.21 s, Uranus, Neptune,
+Mercury and Ganymede under 0.07 s; several times longer in a busy browser). Per
+frame: a few uniforms per body shown, and the magnetopause cut when the Sun's direction has moved. GPU time, the view on
+against off, interleaved:
 
-GPU_TABLE
+| View (its scene) | Frame, off → on (median of batch medians) | Differences, on − off, three interleaved rounds |
+| --- | --- | --- |
+| Jupiter from 260 R_J, 114 lines cut every frame at 300× (magnetic-jupiter) | 17.7 → 18.4 ms | −4.0, +1.8, −1.4 ms (median −1.4) |
+| The Sun from 7 R☉, loops and open lines (magnetic-sun) | 17.2 → 19.7 ms | −8.9, +2.6, −0.4 ms (median −0.4); best 15.9 → 16.4 |
+| The spirals and the current sheet from 9 au (heliospheric-current-sheet) | 22.4 → 19.5 ms | +0.2, −2.9, −0.3 ms (median −0.3); best 15.9 → 15.4 |
+
+Measured on 9 October 2026 with `window.__ls.perf.ab` (each round `measure(20, 4)` with the view off, then on), on the
+development machine, in the browser pane, a 3,200 × 1,584 canvas at pixel ratio 2, while other work
+shared the machine (frames swung by several milliseconds between rounds). The lines' cost is below that noise in every
+view: at most about half a millisecond (the best frames), as expected of one draw of 3,000–9,000 line vertices a body.
 
 ## 7. Checks (fields.test.ts)
 

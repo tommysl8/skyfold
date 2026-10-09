@@ -2095,12 +2095,15 @@ function fieldViewDirection(id: BodyId, elevationDeg: number): Vector3 {
   return side.normalize().multiplyScalar(Math.cos(e)).addScaledVector(north, Math.sin(e)).normalize();
 }
 
-/** Set up a body's field: the view on, the camera, then the body's card (with its field's line) and the pace. */
+/**
+ * Set up a body's field: the view on, the camera, then the body's card (with its field's line) and the pace. The orbit
+ * lines are hidden about the Sun, where the planets' orbits, seen edge on, would cross its field.
+ */
 function fieldScene(note: string, id: BodyId, distanceKm: number, warp: number, elevationDeg = 15): boolean {
   return scene(note, () => {
     setWarp(1);
     setPaused(false);
-    useUI.setState({ fieldLines: true });
+    useUI.setState(id === 'sun' ? { fieldLines: true, showOrbits: false } : { fieldLines: true });
     controller.goTo(id, { distance: distanceKm, direction: fieldViewDirection(id, elevationDeg) });
     afterSlew(id, () => {
       useUI.setState({ selected: id, bodyCard: true });

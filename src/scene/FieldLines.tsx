@@ -14,7 +14,7 @@
  *    planets their lines would only cross the view).
  *
  * Guides, not light: drawn in the classical view (GUIDES_LAYER), as the orbit lines are. Cost: one draw of line
- * segments per body shown (15,000–25,000 vertices each, the Sun's about 40,000); measured in docs/data/fields.md §6.
+ * segments per body shown (2,600–8,700 vertices each, the Sun's about 7,600); measured in docs/data/fields.md §6.
  */
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
@@ -309,9 +309,9 @@ function SunField() {
     u.uNearOpacity.value = near;
     u.uFarOpacity.value = far;
     u.uFarFrom.value = SOURCE_SURFACE * 1.0001;
-    // Seen from near the Sun, the spirals are drawn out to three times the camera's distance (beyond, their lines would
+    // Seen from near the Sun, the spirals are drawn out to twice the camera's distance (beyond, their lines would
     // only run off to vanishing points across the view); from afar, to 3 au.
-    u.uFarEnd.value = Math.min(SPIRAL_END_RSUN, (3 * dist) / SUN_RADIUS_KM);
+    u.uFarEnd.value = Math.min(SPIRAL_END_RSUN, (2 * dist) / SUN_RADIUS_KM);
     u.uUnitKm.value = SUN_RADIUS_KM;
     u.uTime.value = (performance.now() / 1000) % 10_000;
     mesh.visible = true;
@@ -320,7 +320,7 @@ function SunField() {
 }
 
 // For the development tools: window.__fieldLines.meshes.
-if (import.meta.env.DEV) Object.assign(window, { __fieldLines: fieldLinesDebug });
+if (import.meta.env.DEV) Object.assign(window, { __fieldLines: Object.assign(fieldLinesDebug, { traced, tracing }) });
 
 /** The field lines of every body with a model. */
 export default function FieldLines() {
