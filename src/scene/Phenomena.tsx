@@ -23,6 +23,7 @@ import { eqjToWorld } from '../sim/frames';
 import { getBody } from '../sim/bodies';
 import { sim } from '../sim/sim';
 import { useUI } from '../state/ui';
+import { controller } from '../controls/cameraController';
 import { MODEL_REACH, phenomena, remnantShown } from '../sim/phenomena';
 import { auroraBrightness, bodyFixedDir, BLUE_NM, fluxPerKr, geomagneticPole, GREEN_NM, lineColour, ovalTable, RED_NM } from '../sim/phenomena/aurora';
 import { RING_1987A, SUPERNOVAE, type Supernova, type SupernovaState } from '../sim/phenomena/supernovae';
@@ -45,10 +46,19 @@ function updateLaw(camera: PerspectiveCamera): void {
   law.fadeLo = 10 ** (-0.4 * MW_MU_FADE[1]) * ARCSEC2_PER_SR;
   law.fadeHi = 10 ** (-0.4 * MW_MU_FADE[0]) * ARCSEC2_PER_SR;
 }
-function applyLaw(m: ShaderMaterial, opacity: number): void {
+/**
+ * The law's uniforms, and the exposure: an explosion up close is blinding (a kilonova's or a supernova's photosphere is
+ * millions of times the Sun's surface brightness), so where the brightest part (S at its peak, flux per sr) would be
+ * drawn above PEAK_Y the view of the model is stopped down to it, as the eye or a camera would be, and its structure
+ * and colour show. The stars round it are left as they are: next to it they would be lost in its glare anyway.
+ */
+const PEAK_Y = 2.5;
+function applyLaw(m: ShaderMaterial, opacity: number, peakS = 0): void {
   m.uniforms.uScale.value = law.scale;
   m.uniforms.uFadeS.value.set(law.fadeLo, law.fadeHi);
   m.uniforms.uOpacity.value = opacity;
+  const y = Math.sqrt(law.scale * peakS);
+  m.uniforms.uExposure.value = y > PEAK_Y ? PEAK_Y / y : 1;
 }
 
 const smooth = (a: number, b: number, x: number) => {
@@ -327,7 +337,7 @@ function drawSupernova(slot: SnSlot, st: SupernovaState, at: Vector3, dist: numb
   u.uShellS.value = (wRem * sTarget) / 0.6;
   u.uShellCol.value.setRGB(SHELL_COLOUR[0], SHELL_COLOUR[1], SHELL_COLOUR[2]);
   u.uSeed.value = sn.raDeg;
-  applyLaw(material, opacity);
+  applyLaw(material, opacity, Math.max(u.uPhotS.value, u.uCoreS.value * 2 * coreR, u.uShellS.value * 1.05));
   if (sn.id === 'supernova-1987a') placeRing(slot, st, centre, opacity);
 }
 
@@ -340,12 +350,7 @@ export const ORBIT_SLOWDOWN = 100;
 
 function Kilonova() {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
-  const material = useMemo(() => {
-    const m = createBlobMaterial();
-    // Blinding up close: eased so that its colour shows (render/phenomenaMaterials.ts).
-    m.uniforms.uKnee.value = 6;
-    return m;
-  }, []);
+  const material = useMemo(createBlobMaterial, []);
   phenomena.materials.kilonova = material;
   useEffect(() => () => material.dispose(), [material]);
   const mesh = useRef<Mesh>(null);
@@ -378,7 +383,9 @@ function Kilonova() {
       u.uLum.value[count].set(col[0] * lum, col[1] * lum, col[2] * lum);
       count++;
     };
-    const centre = tmp.copy(b.apparentPos).sub(sim.camera.pos);
+    // Its centre from the camera: exactly from the orbit when the camera orbits it (a world coordinate 40 Mpc out is
+    // 10⁵ km coarse, the inspiral a few hundred km across), else from the world positions.
+    const centre = controller.orbitOffsetKm(KILONOVA_ID, tmp) ? tmp.negate() : tmp.copy(b.apparentPos).sub(sim.camera.pos);
     let unit: number;
     const sNs = 10 ** (-0.4 * NS_MU) * ARCSEC2_PER_SR;
     const white = blackbodyRgb(25000);
@@ -419,9 +426,16 @@ function Kilonova() {
     u.uUnitKm.value = unit;
     u.uCentre.value.copy(centre).divideScalar(unit);
     m.position.copy(centre);
-    m.scale.setScalar(2.2 * unit);
+    m.scale.setScalar(2.4 * unit);
     m.visible = count > 0;
-    applyLaw(material, 1);
+    // The brightest blob's centre, S (its luminosity over 2π σ_a σ_p, units cancel: uLum is per unit²).
+    let peak = 0;
+    for (let i = 0; i < count; i++) {
+      const l = u.uLum.value[i] as Vector3;
+      const sig = u.uSig.value[i];
+      peak = Math.max(peak, (0.2126 * l.x + 0.7152 * l.y + 0.0722 * l.z) / (2 * Math.PI * sig.x * sig.y));
+    }
+    applyLaw(material, 1, peak);
   });
   return <mesh ref={mesh} geometry={SPHERE} material={material} frustumCulled={false} renderOrder={4} visible={false} />;
 }

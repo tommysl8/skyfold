@@ -454,6 +454,17 @@ export class CameraController implements ControllerHoleApi {
     return true;
   }
 
+  /**
+   * The camera's place relative to the body it orbits, km, exactly as the orbit puts it (not world − world: 40 Mpc out a
+   * world coordinate is 10⁵ km coarse, and a kilonova's inspiral is a few hundred km across). False outside orbit mode
+   * about `id` (or over a black hole, whose own modes keep their exact place).
+   */
+  orbitOffsetKm(id: BodyId, out: Vector3): boolean {
+    if (this.mode !== 'orbit' || this.target !== id || this.holeRs > 0) return false;
+    this.orbitDirInto(this.az, this.el, out).multiplyScalar(Math.exp(this.logDist));
+    return true;
+  }
+
   /** The distance the orbit camera is easing to, km (NaN outside orbit mode). */
   get orbitGoalKm(): number {
     return this.mode === 'orbit' ? Math.exp(this.goalLogDist) : NaN;

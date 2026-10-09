@@ -38,11 +38,9 @@ const FADE_GLSL = /* glsl */ `
 uniform float uScale;   // uStarGain² Ω_psf 10^(0.4 m0)
 uniform vec2 uFadeS;    // S where light starts to show, and where it shows in full
 uniform float uOpacity;
-uniform float uKnee;    // > 0: luminance eased under it, y k / (k + y), so a blinding surface keeps its colour (as the brightest points are: point.frag.glsl)
+uniform float uExposure; // ≤ 1: the view of a blinding explosion stopped down to its glare (the scene's CPU sets it from its brightest part)
 vec3 display(vec3 colour, float S) {
-  float y = sqrt(uScale * S);
-  if (uKnee > 0.0) y = y * uKnee / (uKnee + y);
-  return colour * y * smoothstep(uFadeS.x, uFadeS.y, S) * uOpacity;
+  return colour * sqrt(uScale * S) * uExposure * smoothstep(uFadeS.x, uFadeS.y, S) * uOpacity;
 }
 `;
 
@@ -116,7 +114,12 @@ uniform float uSeed;
 ${FADE_GLSL}
 varying vec3 vWorld;
 
-float hash3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+// Hash without sine (Hoskins), stable in float32 on every GPU.
+float hash3(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.zyx + 31.32);
+  return fract((p.x + p.y) * p.z);
+}
 float noise3(vec3 p) {
   vec3 i = floor(p);
   vec3 f = fract(p);
@@ -124,8 +127,9 @@ float noise3(vec3 p) {
   return mix(mix(mix(hash3(i), hash3(i + vec3(1, 0, 0)), f.x), mix(hash3(i + vec3(0, 1, 0)), hash3(i + vec3(1, 1, 0)), f.x), f.y),
              mix(mix(hash3(i + vec3(0, 0, 1)), hash3(i + vec3(1, 0, 1)), f.x), mix(hash3(i + vec3(0, 1, 1)), hash3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
 }
-float clumps(vec3 n) {
-  return 0.35 + 1.3 * noise3(n * 6.0 + uSeed) * noise3(n * 15.0 - uSeed);
+// Knots and filaments of the debris (a model): smooth noise of the place, in shock radii.
+float clumps(vec3 p) {
+  return 0.35 + 1.3 * noise3(p * 5.0 + uSeed) * noise3(p * 13.0 - uSeed);
 }
 
 // Length of the ray from the camera (t ≥ 0) inside the sphere of radius r about the origin, and where it enters.
@@ -183,7 +187,7 @@ void main() {
     if (core.x > 0.0 && uCoreS > 0.0) {
       vec3 p = ro + rd * (tC + 0.5 * core.x);
       float len = tP < 1e29 ? max(0.0, min(tP, core.y) - tC) : core.x;
-      float s = uCoreS * len * clumps(normalize(p) * 1.7 + 3.0);
+      float s = uCoreS * len * clumps(p * 1.4 + 3.0);
       col += uCoreCol * s;
       S += s;
     }
@@ -196,7 +200,7 @@ void main() {
 const AURORA_VERT = SPHERE_VERT;
 
 function fadeUniforms() {
-  return { uScale: { value: 1 }, uFadeS: { value: new Vector2(1, 2) }, uOpacity: { value: 1 }, uKnee: { value: 0 } };
+  return { uScale: { value: 1 }, uFadeS: { value: new Vector2(1, 2) }, uOpacity: { value: 1 }, uExposure: { value: 1 } };
 }
 
 function additive(uniforms: Record<string, { value: unknown }>, fragmentShader: string): ShaderMaterial {
@@ -244,7 +248,6 @@ export function createShellMaterial(): ShaderMaterial {
       uCoreS: { value: 0 },
       uCoreCol: { value: new Color(1, 1, 1) },
       uSeed: { value: 0 },
-      uKnee: { value: 6 },
     },
     SHELL_FRAG,
   );
