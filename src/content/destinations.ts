@@ -34,6 +34,7 @@ export const DESTINATION_GROUPS = [
   { id: 'clusters', title: 'Star clusters' },
   { id: 'nebulae', title: 'Nebulae' },
   { id: 'pulsars', title: 'Pulsars' },
+  { id: 'transients', title: 'Supernovae and a kilonova' },
   { id: 'galaxies', title: 'Galaxies' },
   { id: 'universe', title: 'Clusters, the cosmic web and the CMB' },
   { id: 'mergers', title: 'Gravitational-wave events' },
@@ -243,6 +244,8 @@ export function bodyGroup(r: BodyRecord): DestinationGroup {
       return 'pulsars';
     case 'merger':
       return 'mergers';
+    case 'transient':
+      return 'transients';
     case 'galaxy':
       return r.id === 'milky-way' ? 'milky-way' : 'galaxies';
     default:

@@ -40,6 +40,11 @@ export type BodyKind =
    * probably happened, not a body that can be seen.
    */
   | 'merger'
+  /**
+   * A star that exploded where Earth saw it: a supernova or a kilonova (sim/phenomena). A place that shines as its
+   * light curve says while it was seen, and up close a model of the explosion growing into its remnant.
+   */
+  | 'transient'
   /** A point, not a body: the centre of mass of a system. Never drawn, labelled or visited. */
   | 'barycentre';
 
@@ -192,7 +197,16 @@ export interface BodyPhysical {
    * A body that shines by itself (a star): its apparent V magnitude seen from `atKm`, and its
    * effective temperature for the colour of its light. Without it the body shines by sunlight.
    */
-  luminous?: { vmag: number; atKm: number; teffK: number };
+  luminous?: {
+    vmag: number;
+    atKm: number;
+    teffK: number;
+    /**
+     * Its brightness and colour change with the date (a supernova's light curve): `vmag` and `teffK` are rewritten
+     * each frame (sim/phenomena), and the point of light takes the new colour (scene/Glints.tsx).
+     */
+    variable?: boolean;
+  };
 }
 
 /** A ring system around the body. */

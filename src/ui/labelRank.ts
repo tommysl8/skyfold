@@ -21,6 +21,7 @@ export const KIND_RANK: Record<BodyKind, number> = {
   'black-hole': 14,
   pulsar: 14.5,
   merger: 14.2,
+  transient: 11.5,
   barycentre: 99,
 };
 

@@ -91,7 +91,7 @@ const labelNow = (e: Entry, far: boolean, beyondGalaxy = false): string =>
 /** A star fainter than this (the eye's limit, and the half magnitude over which the star field fades it out) gets no label of its own. */
 const LABEL_MAG_LIMIT = STAR_MAG_LIMIT + 0.5;
 
-const DEEP_SKY: ReadonlySet<string> = new Set(['cluster', 'nebula', 'galaxy', 'merger']);
+const DEEP_SKY: ReadonlySet<string> = new Set(['cluster', 'nebula', 'galaxy', 'merger', 'transient']);
 /** A deep-sky object's label shows from this radius on screen, CSS px (or once it is as bright as a star that shows). */
 export const DEEP_SKY_LABEL_PX = 4;
 

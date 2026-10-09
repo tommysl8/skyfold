@@ -11,6 +11,7 @@ import { MW_MU_FADE, NEBULA_MU_PEAK, surfaceScale } from '../sim/galaxy/backgrou
 import { galaxyState, galaxyVersion, subscribeGalaxy } from '../sim/galaxy/load';
 import { apparentCard, nebulaCard, type CardLens, type CardMotion, type CardView, type NebulaCard } from '../sim/galaxy/cards';
 import { relView } from '../render/relativisticView';
+import { remnantScale } from '../sim/phenomena';
 import { sim } from '../sim/sim';
 import { useUI } from '../state/ui';
 
@@ -135,9 +136,13 @@ export function Nebulae() {
       rel[0] = x;
       rel[1] = y;
       rel[2] = z;
-      let { px, inView } = apparentCard(rel, card.radiusPc, view, moving ? motion : null, lensOn ? cardLens : null);
+      // A supernova's remnant seen before it had grown to its picture's size (sim/phenomena): the card as large as it
+      // then was, and none before the explosion was seen.
+      const grown = remnantScale(card.json.id, sim.timeMs);
+      const radiusPc = card.radiusPc * grown;
+      let { px, inView } = apparentCard(rel, radiusPc, view, moving ? motion : null, lensOn ? cardLens : null);
       if (moving && relView.split) {
-        const still = apparentCard(rel, card.radiusPc, view, null, lensOn ? cardLens : null);
+        const still = apparentCard(rel, radiusPc, view, null, lensOn ? cardLens : null);
         px = Math.max(px, still.px);
         inView ||= still.inView;
       }
@@ -163,13 +168,13 @@ export function Nebulae() {
       }
       // How squarely the card faces the camera (it fades out edge-on).
       const facing = Math.abs(x * card.normal[0] + y * card.normal[1] + z * card.normal[2]) / Math.max(1e-30, Math.hypot(x, y, z));
-      const visible = s.loaded && px >= MIN_PX && facing > EDGE_ON;
+      const visible = s.loaded && px >= MIN_PX && facing > EDGE_ON && grown > 0;
       if (s.mesh) s.mesh.visible = visible;
       if (!visible) continue;
       const u = s.material.uniforms;
       u.uRel.value.set(x, y, z);
-      u.uRight.value.set(card.right[0], card.right[1], card.right[2]);
-      u.uUp.value.set(card.up[0], card.up[1], card.up[2]);
+      u.uRight.value.set(card.right[0] * grown, card.right[1] * grown, card.right[2] * grown);
+      u.uUp.value.set(card.up[0] * grown, card.up[1] * grown, card.up[2] * grown);
       u.uNormal.value.set(card.normal[0], card.normal[1], card.normal[2]);
       // Faint when it is only a few pixels (the picture is then a smudge), full from FULL_PX.
       u.uOpacity.value = Math.min(1, Math.max(0, (px - MIN_PX) / (FULL_PX - MIN_PX)));

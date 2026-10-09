@@ -130,4 +130,12 @@ export const JOURNEYS: Journey[] = [
     sub: 'The biggest, flattest and wildest stars, up close: Betelgeuse to WR 104’s pinwheel',
     scene: 'monsters-among-the-stars',
   }),
+  journey({ id: 'sn-1054', title: 'The new star of 1054', sub: 'From Earth: the supernova that made the Crab Nebula, seen by day for 23 days', scene: 'sn-1054-from-earth', clock: 'July 1054, faster and faster' }),
+  journey({ id: 'sn-1572', title: 'Tycho’s new star, 1572', sub: 'From Earth: as bright as Venus, fading and reddening as Tycho recorded', scene: 'sn-1572-from-earth', clock: 'November 1572, faster and faster' }),
+  journey({ id: 'sn-1604', title: 'Kepler’s star beside Jupiter, 1604', sub: 'From Earth: the last supernova seen in our Galaxy', scene: 'sn-1604-from-earth', clock: 'October 1604, faster and faster' }),
+  journey({ id: 'sn-1987a', title: 'Supernova 1987A', sub: 'From Earth: a new star in the Large Magellanic Cloud', scene: 'sn-1987a-from-earth', clock: 'February 1987, faster and faster' }),
+  journey({ id: 'sn-1572-close', title: 'Tycho’s star explodes', sub: 'A model up close: the fireball, then the debris growing to today’s remnant', scene: 'sn-1572-up-close', clock: 'Each few seconds e times older' }),
+  journey({ id: 'kilonova', title: 'Two neutron stars collide', sub: 'GW170817: the last minute of the inspiral, then the kilonova, blue then red', scene: 'kilonova-gw170817', clock: '17 August 2017: real time, then faster' }),
+  journey({ id: 'm87-jet', title: 'The jet of M87', sub: 'A jet at nearly the speed of light, its far side beamed out of sight', scene: 'm87-jet' }),
+  journey({ id: 'aurora', title: 'The northern lights from space', sub: 'Earth’s auroral oval on the night side', scene: 'aurora' }),
 ];

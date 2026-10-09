@@ -434,6 +434,7 @@ const KIND_TEXT: Record<BodyKind, string> = {
   'black-hole': 'Black hole',
   pulsar: 'Pulsar',
   merger: 'Gravitational-wave event',
+  transient: 'Supernova',
   barycentre: 'Barycentre',
 };
 

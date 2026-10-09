@@ -56,7 +56,7 @@ function outerRadiusKm(b: BodyRecord): number {
  * Kinds with no surface to stop short of: galaxies, groups and clusters of galaxies or stars, nebulae, and the region
  * where a gravitational-wave merger probably happened.
  */
-const NO_SURFACE: ReadonlySet<BodyRecord['kind']> = new Set(['galaxy', 'cluster', 'nebula', 'merger']);
+const NO_SURFACE: ReadonlySet<BodyRecord['kind']> = new Set(['galaxy', 'cluster', 'nebula', 'merger', 'transient']);
 
 /**
  * How far from a body's centre a flight to it ends, km, for a ship setting out `fromKm` from that

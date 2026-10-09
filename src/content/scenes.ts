@@ -67,6 +67,13 @@ import { emitPulse } from '../sim/pulses';
 import { frameCosmicWeb, frameFromOurSide, frameLocalGroup, frameMilkyWay, goToBody, goToStarSystem, goToSystem, showCmbMap } from '../ui/navigation';
 import { afterArrival, planOneG, startTrip } from '../ui/tripActions';
 import { formatIsoDate } from './learn/catalogue';
+import { eqjToWorld } from '../sim/frames';
+import { KILONOVA_ID, supernovaById } from '../sim/phenomena';
+import { nakedEyeEndMs, shockRadiusKm } from '../sim/phenomena/supernovae';
+import { inspiralAt, kilonovaAt, MERGER_MS } from '../sim/phenomena/kilonova';
+import { startPace } from '../sim/phenomena/pace';
+import { bodyFixedDir, geomagneticPole } from '../sim/phenomena/aurora';
+import { registerDestinations, type Destination } from './destinations';
 
 // ─── Targets ────────────────────────────────────────────────────────────────────────────
 
@@ -280,6 +287,18 @@ export const NAMED_SCENES = [
   'grs-1915-disk',
   'black-hole-tour',
   'monsters-among-the-stars',
+  'sn-1006-from-earth',
+  'sn-1054-from-earth',
+  'sn-1181-from-earth',
+  'sn-1572-from-earth',
+  'sn-1604-from-earth',
+  'sn-1987a-from-earth',
+  'sn-1572-up-close',
+  'sn-1987a-up-close',
+  'kilonova-gw170817',
+  'm87-jet',
+  'centaurus-a-jets',
+  'aurora',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -402,6 +421,18 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'grs-1915-disk': 'GRS 1915+105 as we see it',
   'black-hole-tour': 'A tour of black holes',
   'monsters-among-the-stars': 'Monsters among the stars',
+  'sn-1006-from-earth': 'The brightest star in history: SN 1006',
+  'sn-1054-from-earth': 'The new star of 1054',
+  'sn-1181-from-earth': 'The new star of 1181',
+  'sn-1572-from-earth': 'Tycho’s new star, 1572',
+  'sn-1604-from-earth': 'Kepler’s star beside Jupiter, 1604',
+  'sn-1987a-from-earth': 'Supernova 1987A',
+  'sn-1572-up-close': 'Tycho’s star explodes (a model)',
+  'sn-1987a-up-close': 'SN 1987A and its ring (a model)',
+  'kilonova-gw170817': 'Two neutron stars collide: GW170817',
+  'm87-jet': 'The jet of M87',
+  'centaurus-a-jets': 'The jets and lobes of Centaurus A',
+  'aurora': 'The northern lights from space',
 };
 
 /** Define (or replace) a named scene. */
@@ -1835,6 +1866,203 @@ defineScene('m87-star-close', {
       toHole(M87_STAR, rM, dir, hoverStep(M87_STAR, rM, dir));
     }),
 });
+
+// ─── Phenomena (sim/phenomena) ──────────────────────────────────────────────────────────
+
+/** A supernova seen from Earth at the time: each one's scene and what its note says (the curve's sources are on its card). */
+const SN_SKY: Record<string, { scene: NamedSceneId; note: string }> = {
+  'sn-1006': {
+    scene: 'sn-1006-from-earth',
+    note: 'Spring 1006, looking from Earth towards Lupus, low in the south for the observers of China, Egypt and Iraq. On 30 April (Julian; 6 May in the app’s Gregorian dates) a new star appeared there and rose to about magnitude −7.5, many times brighter than Venus: the brightest star in recorded history. Watch it fade over two years as the clock runs faster and faster. Its own records are sparse: the shape of its light curve is Tycho’s supernova’s.',
+  },
+  'sn-1054': {
+    scene: 'sn-1054-from-earth',
+    note: 'July 1054, looking from Earth towards Taurus, near the Sun: on 4 July (Julian; 10 July in the app’s Gregorian dates) Song dynasty astronomers recorded a “guest star” there, as bright as Venus and seen in daylight for 23 days. It stayed visible at night for 642 days. Its debris is the Crab Nebula. Between the three recorded points the light curve is a model.',
+  },
+  'sn-1181': {
+    scene: 'sn-1181-from-earth',
+    note: 'August 1181, looking from Earth towards Cassiopeia: a new star recorded in China and Japan from 6 August (Julian; 13 August in the app’s dates), about magnitude −0.5 and seen for 185 days. Its remnant is the nebula Pa 30. The shape of its light curve is a type Iax template.',
+  },
+  'sn-1572': {
+    scene: 'sn-1572-from-earth',
+    note: 'November 1572, looking from Earth towards Cassiopeia: the star Tycho Brahe saw on 11 November (Julian) rises to magnitude −4, as bright as Venus, then fades and reddens as he recorded, and is gone by March 1574. Its light curve is Tycho’s and his contemporaries’ estimates.',
+  },
+  'sn-1604': {
+    scene: 'sn-1604-from-earth',
+    note: 'October 1604, looking from Earth towards Ophiuchus, where Jupiter, Saturn and Mars were gathered: on 9 October a new star appeared beside them and rose to magnitude −3, brighter than Jupiter. Kepler followed it for a year. Its light curve is the European and Korean records’.',
+  },
+  'supernova-1987a': {
+    scene: 'sn-1987a-from-earth',
+    note: 'February 1987, looking from Earth towards the Large Magellanic Cloud: on 24 February a star of magnitude 5 appeared beside the Tarantula Nebula, the first supernova seen by eye since Kepler’s. It brightened to 3 by May, then faded, measured night by night.',
+  },
+};
+
+/** Watch a supernova from Earth: the clock two days before its first sighting, the camera just beyond Earth towards it, time speeding up as its light fades. */
+function supernovaFromEarth(id: string, note: string): boolean {
+  const sn = supernovaById(id);
+  if (!sn || !ready() || !setEpoch(sn.firstSeenMs - 2 * 86_400_000)) return false;
+  updateEphemeris();
+  const at = sim.bodies[id];
+  const earth = sim.bodies.earth;
+  if (!at?.present || !earth) return false;
+  setWarp(1);
+  setPaused(false);
+  useUI.setState({ journeyNote: note, journeysOpen: false, selected: id, showLabels: true, sizeMode: 'true' });
+  // Orbiting the supernova from just beyond Earth (40,000 km out, on its side), looking at it: the sky from Earth.
+  const toEarth = earth.pos.clone().sub(at.pos);
+  const d = toEarth.length();
+  controller.goTo(id, { distance: d - 40_000, direction: toEarth.normalize() });
+  afterSlew(id, () => {
+    startPace({ target: id, zeroMs: sn.explosionMs, realUntilMs: -Infinity, efoldS: 7, maxWarp: 2e6, endMs: nakedEyeEndMs(sn) + 60 * 86_400_000, distanceKm: () => NaN });
+  });
+  return true;
+}
+
+for (const [id, { scene: name, note }] of Object.entries(SN_SKY)) {
+  defineScene(name, { label: PENDING_LABELS[name], note, unavailable: needs(id, 'earth'), run: (n) => supernovaFromEarth(id, n) });
+}
+
+/** A supernova up close: from its first days to its remnant today, the camera easing out with the shock, each few seconds e times older. */
+function supernovaUpClose(id: string, note: string, startDays: number): boolean {
+  const sn = supernovaById(id);
+  if (!sn || !ready()) return false;
+  const start = sn.explosionMs + startDays * 86_400_000;
+  if (!setEpoch(start)) return false;
+  updateEphemeris();
+  setWarp(1);
+  setPaused(false);
+  useUI.setState({ journeyNote: note, journeysOpen: false, selected: id, showLabels: false });
+  const size = (ms: number) => {
+    const age = (ms - sn.explosionMs) / 1000;
+    return Math.max(shockRadiusKm(sn, age), sn.photosphereKmS * Math.min(age, 200 * 86_400));
+  };
+  const at = sim.bodies[id];
+  const earth = sim.bodies.earth;
+  // From a little off our line of sight, so the shell is seen much as Earth sees it.
+  const dir = earth.pos.clone().sub(at.pos).normalize().addScaledVector(UP, 0.35).normalize();
+  controller.goTo(id, { distance: 4 * size(start), direction: dir });
+  afterSlew(id, () => {
+    startPace({ target: id, zeroMs: sn.explosionMs, realUntilMs: -Infinity, efoldS: 3.5, maxWarp: 3e9, endMs: Date.now(), distanceKm: (ms) => 3.6 * size(ms) });
+  });
+  return true;
+}
+
+defineScene('sn-1572-up-close', {
+  label: PENDING_LABELS['sn-1572-up-close'],
+  note: 'A model of Tycho’s supernova from a few days after its light reached Earth: the white-hot fireball swelling at 10,000 km/s and fading as its light curve says, then its debris, the forward shock running out at the measured speeds and slowing to today’s 4′ remnant. Each few seconds here the explosion is e times older; the camera eases out with it. The remnant shines mostly in X-rays: its shell is shown in false colour.',
+  unavailable: needs('sn-1572'),
+  run: (note) => supernovaUpClose('sn-1572', note, 3),
+});
+
+defineScene('sn-1987a-up-close', {
+  label: PENDING_LABELS['sn-1987a-up-close'],
+  note: 'A model of SN 1987A from its first day: the fireball, then the ring of gas the star had shed 20,000 years before, lit up by the explosion’s flash, and from 1995 the blast reaching it and lighting it in a string of hot spots. The ring is drawn at its measured size and tilt; its brightness through the years and the shock inside it (in false colour) are a model.',
+  unavailable: needs('supernova-1987a'),
+  run: (note) => supernovaUpClose('supernova-1987a', note, 1),
+});
+
+defineScene('kilonova-gw170817', {
+  label: PENDING_LABELS['kilonova-gw170817'],
+  note: 'NGC 4993, 17 August 2017: two neutron stars of 1.46 and 1.27 solar masses, a few hundred kilometres apart and closing, the last minute of an inspiral heard by LIGO and Virgo. The chirp runs at its real pace (the orbit is drawn 100 times slower than it turned). They merge at 12:41:04 UTC; then the clock speeds up as the debris glows, blue at first and red within days, as the kilonova AT 2017gfo was seen. The debris’s shape is a model.',
+  unavailable: needs(KILONOVA_ID),
+  run: (note) =>
+    scene(note, () => {
+      setWarp(1);
+      setPaused(false);
+      useUI.setState({ selected: KILONOVA_ID, showLabels: false });
+      const at = sim.bodies[KILONOVA_ID];
+      const dir = sim.bodies.earth.pos.clone().sub(at.pos).normalize().addScaledVector(UP, 0.5).normalize();
+      controller.goTo(KILONOVA_ID, { distance: 2500, direction: dir });
+      afterSlew(KILONOVA_ID, () => {
+        if (!setEpoch(MERGER_MS - 45_000)) return;
+        updateEphemeris();
+        setWarp(1);
+        setPaused(false);
+        startPace({
+          target: KILONOVA_ID,
+          zeroMs: MERGER_MS,
+          realUntilMs: MERGER_MS + 1500,
+          efoldS: 2.5,
+          maxWarp: 2e5,
+          endMs: MERGER_MS + 21 * 86_400_000,
+          distanceKm: (ms) => (ms < MERGER_MS ? Math.max(5 * inspiralAt(ms).separationKm, 250) : Math.max(3.4 * kilonovaAt(ms).blueKm, 250)),
+        });
+      });
+    }),
+});
+
+/** A view of a galaxy's jets: `offDeg` off our line of sight towards position angle `paDeg`, at `distanceKm`. */
+function jetView(id: string, note: string, distanceKm: number, offDeg: number, paDeg: number): boolean {
+  return scene(note, () => {
+    useUI.setState({ jets: true, selected: id, showLabels: true });
+    const at = sim.bodies[id];
+    const toEarth = sim.bodies.earth.pos.clone().sub(at.pos).normalize();
+    // The sky's east and north there (as sim/phenomena/jets.ts lays the jets out), and a direction off our line.
+    const pole = eqjToWorld(0, 0, 1);
+    const away = toEarth.clone().negate();
+    const east = new Vector3().crossVectors(pole, away).normalize();
+    const north = new Vector3().crossVectors(away, east);
+    const pa = (paDeg * Math.PI) / 180;
+    const side = east.multiplyScalar(Math.sin(pa)).addScaledVector(north, Math.cos(pa));
+    const o = (offDeg * Math.PI) / 180;
+    controller.goTo(id, { distance: distanceKm, direction: toEarth.multiplyScalar(Math.cos(o)).addScaledVector(side, Math.sin(o)).normalize() });
+  });
+}
+
+defineScene('m87-jet', {
+  label: PENDING_LABELS['m87-jet'],
+  note: 'M87’s jet in its own light, 5,000 light-years long on our sky and nearly 20,000 along the jet, leaving the black hole M87* at almost the speed of light. Its knots (HST-1, D, E, F, I, A, B, C) sit where Hubble sees them, as bright as measured from Earth; seen from here, 40° off our line, the jet coming towards us is dimmer than from Earth and the counter-jet still hundreds of times fainter: relativistic beaming. Its width and the light between the knots are a model.',
+  unavailable: needs('m87'),
+  run: (note) => jetView('m87', note, 10 * KPC_KM, 40, 290),
+});
+
+defineScene('centaurus-a-jets', {
+  label: PENDING_LABELS['centaurus-a-jets'],
+  note: 'Centaurus A, the nearest radio galaxy: its jet runs out north-east at about half the speed of light into the inner lobe, a fainter counter-jet the other way, and the giant lobes reach about 600 kiloparsecs from end to end, 16 full Moons across our sky. All of it is radio and X-ray light, shown in false colour at a brightness chosen to be seen; how the lobes lie along our line of sight is not known.',
+  unavailable: needs('centaurus-a'),
+  run: (note) => jetView('centaurus-a', note, 650 * KPC_KM, 25, 55),
+});
+
+defineScene('aurora', {
+  label: PENDING_LABELS.aurora,
+  note: 'The northern auroral oval from 10,000 km above the night side: green light of oxygen 100–150 km up, red above it, round the geomagnetic pole of the date (IGRF), where Starkov’s model puts the oval for the activity chosen in View › Aurora (Kp 3, a moderate night, by default). The ovals stay facing the Sun as Earth turns beneath them; the curtains’ folds and motion are a model.',
+  unavailable: needs('earth', 'sun'),
+  run: (note) =>
+    scene(note, () => {
+      setWarp(1);
+      setPaused(false);
+      useUI.setState({ aurora: true, selected: null });
+      const e = sim.bodies.earth;
+      const sun = sim.bodies.sun.pos.clone().sub(e.pos).normalize();
+      const year = 1970 + sim.timeMs / (365.2425 * 86_400_000);
+      const p = geomagneticPole(year);
+      const b = bodyFixedDir(p.latDeg, p.lonDeg);
+      const pole = new Vector3(b[0], b[1], b[2]).applyQuaternion(e.quat).normalize();
+      // Above the oval's midnight side: over the pole, tipped away from the Sun.
+      controller.goTo('earth', { distance: 16_400, direction: pole.multiplyScalar(0.75).addScaledVector(sun, -0.65).normalize() });
+    }),
+});
+
+/** The phenomena that are views rather than bodies, for "Where to?": the aurora and the jets. */
+const PHENOMENA_VIEWS: readonly Destination[] = (
+  [
+    ['aurora-view', 'Aurora (northern lights)', ['aurora', 'northern lights', 'aurora borealis', 'southern lights', 'aurora australis', 'auroral oval'], 'Earth’s auroral ovals', 'sun-planets', 'aurora', ['earth']],
+    ['m87-jet-view', 'The jet of M87', ['M87 jet', 'relativistic jet', 'jet', 'HST-1', 'Virgo A jet'], 'A relativistic jet', 'galaxies', 'm87-jet', ['m87']],
+    ['centaurus-a-jets-view', 'The jets and lobes of Centaurus A', ['Centaurus A jets', 'Cen A lobes', 'radio lobes', 'radio galaxy'], 'Radio jets and lobes (false colour)', 'galaxies', 'centaurus-a-jets', ['centaurus-a']],
+  ] as const
+).map(([id, name, aliases, kind, group, spec, bodies]) => ({
+  id,
+  name,
+  aliases,
+  kind,
+  group,
+  distanceKm: () => NaN,
+  unavailable: () => (bodies.every((b) => isBody(b)) ? null : 'Loading…'),
+  go: () => {
+    runScene(spec);
+  },
+}));
+registerDestinations(() => (isBody('m87') ? PHENOMENA_VIEWS : PHENOMENA_VIEWS.slice(0, 1)));
 
 // ─── Cygnus X-1's disc ──────────────────────────────────────────────────────────────────
 

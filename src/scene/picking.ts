@@ -213,7 +213,7 @@ function bodyPick(id: BodyId): Picked {
   return pickedImage.image > 0 ? { kind: 'body', id, image: pickedImage.image as 1 | 2, x: pickedImage.x, y: pickedImage.y } : { kind: 'body', id };
 }
 
-const DEEP_SKY: ReadonlySet<string> = new Set(['cluster', 'nebula', 'galaxy', 'merger']);
+const DEEP_SKY: ReadonlySet<string> = new Set(['cluster', 'nebula', 'galaxy', 'merger', 'transient']);
 
 /**
  * The body or planet-host ring under the pointer. A resolved disc under the pointer wins (not a
