@@ -590,9 +590,12 @@ function Limitations() {
           times fainter in a pessimistic model; it is smooth and steady where the real flow flickers tenfold within hours.
           The stars within a few parsecs of the hole are a statistical model of the nuclear star cluster and disc following
           published fits, not real stars (S2, S29, S38 and S55 apart); the fainter ones, and any within 0.01 pc of you, are a
-          smooth glow. M87’s own starlight is a smooth model of its measured light profile. The X-ray binaries’ discs, the
-          jets of Cygnus X-1 and M87* and V404 Cygni’s third star are not drawn; the orientation of four X-ray binaries’
-          orbits on the sky is assumed, and Cygnus X-1’s is taken from the direction of its jet.
+          smooth glow. M87’s own starlight is a smooth model of its measured light profile. The discs of Cygnus X-1, LMC X-1,
+          LMC X-3, M33 X-7 and GRS 1915+105 are models of a typical state; the other X-ray binaries’ discs, the jets of
+          Cygnus X-1, GRS 1915+105 and M87* and V404 Cygni’s third star are not drawn; the orientation of the X-ray binaries’
+          orbits on the sky is assumed (Cygnus X-1’s is taken from the direction of its jet), and so is GRS 1915+105’s
+          phase; GX 339−4’s and XTE J1650−500’s masses, known only as ranges, are drawn at stated values; the galaxies’
+          black holes have none of their galaxy’s starlight round them, and their masses are scaled to the app’s distances.
         </li>
         <li>Constant-speed trips start and stop instantaneously. The 1 g drive is the physically realisable profile.</li>
         <li>

@@ -38,7 +38,7 @@ function place(records: readonly BodyRecord[]): BodyId[] {
 }
 
 /**
- * The binaries with a black hole (Gaia BH1–3, Cygnus X-1 and four X-ray binaries): barycentres, holes and
+ * The binaries with a black hole (Gaia BH1–3, Cygnus X-1 and twenty X-ray binaries): barycentres, holes and
  * companions. Their ids (sim/stars/load.ts calls this at the end of registerStars, with the catalogue).
  */
 export function registerBinaryHoles(stars: Stars3D | null = catalogue): BodyId[] {

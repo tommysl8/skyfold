@@ -1812,8 +1812,8 @@
       "mass": {
         "value": 141000000,
         "unc": [
-          30500000,
-          89500000
+          30000000,
+          89000000
         ],
         "ref": "KormendyHo2013",
         "note": "1.43 × 10⁸ M☉ at the 0.774 Mpc the paper assumed, scaled to the 0.761 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -1927,8 +1927,8 @@
       "mass": {
         "value": 65400000,
         "unc": [
-          15100000,
-          25100000
+          15000000,
+          25000000
         ],
         "ref": "KormendyHo2013",
         "note": "6.5 × 10⁷ M☉ at the 3.604 Mpc the paper assumed, scaled to the 3.625 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -1992,8 +1992,8 @@
       "mass": {
         "value": 57000000,
         "unc": [
-          10400000,
-          10400000
+          10000000,
+          10000000
         ],
         "ref": "KormendyHo2013",
         "note": "5.69 × 10⁷ M☉ at the 3.62 Mpc the paper assumed, scaled to the 3.628 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -2049,8 +2049,8 @@
       "mass": {
         "value": 640000000,
         "unc": [
-          39500000,
-          38500000
+          39000000,
+          39000000
         ],
         "ref": "KormendyHo2013",
         "note": "6.65 × 10⁸ M☉ at the 9.87 Mpc the paper assumed, scaled to the 9.504 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -2108,8 +2108,8 @@
       "mass": {
         "value": 535000,
         "unc": [
-          77900,
-          156000
+          78000,
+          160000
         ],
         "ref": "Davis2020",
         "note": "5.5 × 10⁵ M☉ at the 3.06 Mpc the paper assumed, scaled to the 2.979 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -2195,7 +2195,7 @@
       },
       "mass": {
         "value": 40100000,
-        "unc": 403000,
+        "unc": 400000,
         "ref": "Reid2019",
         "note": "3.98 × 10⁷ M☉ at the 7.576 Mpc the paper assumed, scaled to the 7.631 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
       }
@@ -2279,8 +2279,8 @@
       "mass": {
         "value": 806000000,
         "unc": [
-          75800000,
-          85400000
+          76000000,
+          85000000
         ],
         "ref": "KormendyHo2013",
         "note": "9.25 × 10⁸ M☉ at the 18.51 Mpc the paper assumed, scaled to the 16.12 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -2360,8 +2360,8 @@
       "mass": {
         "value": 4620000000,
         "unc": [
-          1030000000,
-          1020000000
+          1000000000,
+          1000000000
         ],
         "ref": "KormendyHo2013",
         "note": "4.72 × 10⁹ M☉ at the 16.46 Mpc the paper assumed, scaled to the 16.12 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -2442,8 +2442,8 @@
       "mass": {
         "value": 2350000000,
         "unc": [
-          94100000,
-          282000000
+          94000000,
+          280000000
         ],
         "ref": "Rusli2013",
         "note": "2.5 × 10⁹ M☉ at the 17.14 Mpc the paper assumed, scaled to the 16.12 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -2524,8 +2524,8 @@
       "mass": {
         "value": 419000000,
         "unc": [
-          105000000,
-          105000000
+          100000000,
+          100000000
         ],
         "ref": "KormendyHo2013",
         "note": "4.16 × 10⁸ M☉ at the 10.7 Mpc the paper assumed, scaled to the 10.77 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -2603,8 +2603,8 @@
       "mass": {
         "value": 899000000,
         "unc": [
-          277000000,
-          57100000
+          280000000,
+          57000000
         ],
         "ref": "KormendyHo2013",
         "note": "8.97 × 10⁸ M☉ at the 9.54 Mpc the paper assumed, scaled to the 9.556 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
@@ -2688,8 +2688,8 @@
       "mass": {
         "value": 21600000000,
         "unc": [
-          16500000000,
-          16400000000
+          16000000000,
+          16000000000
         ],
         "ref": "KormendyHo2013",
         "note": "2.08 × 10¹⁰ M☉ at the 102 Mpc the paper assumed, scaled to the 105.7 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"

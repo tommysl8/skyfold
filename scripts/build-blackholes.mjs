@@ -1157,7 +1157,9 @@ function scaledMass(h, dMpc) {
   const p = h.massPublished;
   const k = dMpc / p.distMpc;
   const s = (x) => Number((x * k).toPrecision(3));
-  const unc = typeof p.unc === 'number' ? s(p.unc) : Array.isArray(p.unc) ? p.unc.map(s) : undefined;
+  // (the value to three significant figures, its uncertainties to two)
+  const s2 = (x) => Number((x * k).toPrecision(2));
+  const unc = typeof p.unc === 'number' ? s2(p.unc) : Array.isArray(p.unc) ? p.unc.map(s2) : undefined;
   const note = `${sci(p.value)} M☉ at the ${p.distMpc} Mpc the paper assumed, scaled to the ${Number(dMpc.toPrecision(4))} Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)`;
   say(`  ${h.id}: ${sci(p.value)} M☉ at ${p.distMpc} Mpc → ${sci(s(p.value))} M☉ at ${dMpc.toFixed(4)} Mpc`);
   return { value: s(p.value), ...(unc !== undefined ? { unc } : {}), ref: p.ref, note };

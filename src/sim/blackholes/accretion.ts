@@ -340,5 +340,5 @@ export type DiskLight = 'visible' | 'all';
 /** The words of a thin accretion disc (Cygnus X-1's: render/disk/diskMap.ts) where the interface names it. */
 export const DISK_TEXTS = {
   menu: 'Accretion discs',
-  menuHint: 'Thin discs of hot gas where one really shines (Cygnus X-1): a model, turning 1,000 times slower than real.',
+  menuHint: 'Thin discs of hot gas where one really shines (Cygnus X-1, LMC X-1, LMC X-3, M33 X-7, GRS 1915+105): models of a typical state, turning 1,000 times slower than real.',
 } as const;
