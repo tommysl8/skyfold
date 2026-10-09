@@ -188,9 +188,9 @@ describe('search', () => {
   const first = (q: string) => deepSkyRuntime.search(q)[0];
 
   it('finds the new designations however they are typed', () => {
-    expect(first('NGC 4565')?.name).toBe('Needle Galaxy');
-    expect(first('ngc4565')?.name).toBe('Needle Galaxy');
-    expect(first('M101')?.name).toBe('M101');
+    expect(first('NGC 6744')?.name).toBe('NGC 6744');
+    expect(first('ngc6744')?.name).toBe('NGC 6744');
+    expect(first('NGC 2403')?.name).toBe('NGC 2403');
     expect(first('IC 342')?.name).toBe('IC 342');
     expect(first('PSR J0437-4715')?.name).toBe('PSR J0437−4715');
     expect(first('PSR J0437−4715')?.name).toBe('PSR J0437−4715');
@@ -206,6 +206,13 @@ describe('search', () => {
   it('leads a designation of the app’s own object to its record', () => {
     expect(first('NGC 224')?.id).toBe('andromeda');
     expect(first('NGC 1976')?.id).toBe('orion-nebula');
+    // The famous galaxies and the clusters' brightest are galaxies of their own (sim/cosmos/moreGalaxies.ts).
+    expect(first('NGC 4565')?.id).toBe('ngc-4565');
+    expect(first('ngc4565')?.id).toBe('ngc-4565');
+    expect(first('M101')?.id).toBe('m101');
+    expect(first('M 82')?.id).toBe('m82');
+    expect(first('NGC 4874')?.id).toBe('ngc-4874');
+    expect(sets.get('ngc-galaxies')!.entries.some((e) => e.id === 'ngc-3034' || e.id === 'ngc-4874')).toBe(false);
   });
 
   it('a found object becomes a body when chosen, and goes again when let go of', () => {

@@ -1,0 +1,739 @@
+{
+ "schema": "lightspeed.galaxy-pictures/1",
+ "note": "Each picture's centre (after its crop), size on the sky and orientation as its archive page gives it: north on the image is northAngleDeg counterclockwise from image-up, east 90 deg counterclockwise from north (the sky as seen, not mirrored). The app lays it on its galaxy's plane as seen from the Sun (src/sim/cosmos/pictures.ts).",
+ "imageProcessing": "1. resized so its longer side is at most MAX_PX (Lanczos), in linear light (sRGB decoded);\n  2. the sky's level, the median of each channel outside the galaxy's ellipse, subtracted;\n  3. stars: compact sources standing STAR_SIGMA above a median-filtered copy of the picture and nearly white are\n     replaced by that copy (the Milky Way's foreground stars; the galaxy's own H II regions are coloured and kept),\n     outside the galaxy's core;\n  4. everything outside the galaxy's ellipse (its D25 ellipse, MASK_MARGIN times larger, faded to nothing at\n     MASK_FADE times; plus circles round the companions it holds) faded to black, and the outer EDGE_FADE of each side;\n  5. stored as a light map: the photograph's colours times its luminance, so that the app's display law (luminance\n     as the square root of the light, as for the Milky Way and the galaxies' particles) shows the photograph's own\n     tones; meanLight, the map's mean luminance in linear light as decoded from the JPEG, lets the app give the whole\n     picture its galaxy's measured light. Saved as sRGB JPEG (quality JPEG_Q).",
+ "pictures": [
+  {
+   "id": "andromeda",
+   "includes": [
+    "lg-m-032",
+    "lg-ngc-0205"
+   ],
+   "image": "images/galaxies/andromeda.jpg",
+   "centerRaDeg": 10.54998,
+   "centerDecDeg": 41.30001,
+   "widthArcmin": 229.991,
+   "heightArcmin": 160.001,
+   "northAngleDeg": 1.9,
+   "pixels": [
+    1024,
+    712
+   ],
+   "meanLight": 0.00822841,
+   "bytes": 39132,
+   "imageSource": {
+    "archive": "ESA/Hubble",
+    "id": "heic1502b",
+    "title": "The area around the Andromeda Galaxy (ground-based image)",
+    "page": "https://esahubble.org/images/heic1502b/",
+    "file": "https://cdn.esahubble.org/archives/images/large/heic1502b.jpg",
+    "band": "visible",
+    "cropped": true
+   },
+   "credit": "NASA, ESA, Digitized Sky Survey 2 (Acknowledgement: Davide De Martin)",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: cropped, resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "triangulum",
+   "includes": [],
+   "image": "images/galaxies/triangulum.jpg",
+   "centerRaDeg": 23.46714,
+   "centerDecDeg": 30.67394,
+   "widthArcmin": 68.01,
+   "heightArcmin": 57.04,
+   "northAngleDeg": 90.0,
+   "pixels": [
+    1024,
+    859
+   ],
+   "meanLight": 0.0144499,
+   "bytes": 100481,
+   "imageSource": {
+    "archive": "ESO",
+    "id": "eso1424a",
+    "title": "VST snaps a very detailed view of the Triangulum Galaxy",
+    "page": "https://www.eso.org/public/images/eso1424a/",
+    "file": "https://cdn.eso.org/images/large/eso1424a.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "ESO",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "whirlpool",
+   "includes": [],
+   "image": "images/galaxies/whirlpool.jpg",
+   "centerRaDeg": 202.46924,
+   "centerDecDeg": 47.21047,
+   "widthArcmin": 14.72,
+   "heightArcmin": 9.82,
+   "northAngleDeg": 90.0,
+   "pixels": [
+    1024,
+    683
+   ],
+   "meanLight": 0.0125244,
+   "bytes": 44365,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-noao-m51-kpno-09m-2",
+    "title": "M51, the Whirlpool Nebula, NGC 5194/5195.",
+    "page": "https://noirlab.edu/public/images/noao-noao-m51-kpno-09m-2/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-noao-m51-kpno-09m-2.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "Todd Boroson/NOIRLab/NSF/AURA/",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m101",
+   "includes": [],
+   "image": "images/galaxies/m101.jpg",
+   "centerRaDeg": 210.84227,
+   "centerDecDeg": 54.35173,
+   "widthArcmin": 31.65,
+   "heightArcmin": 31.81,
+   "northAngleDeg": 89.9,
+   "pixels": [
+    1016,
+    1024
+   ],
+   "meanLight": 0.0171721,
+   "bytes": 75899,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m101ubviha",
+    "title": "M101; Pinwheel Galaxy",
+    "page": "https://noirlab.edu/public/images/noao-m101ubviha/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m101ubviha.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "T.A. Rector (University of Alaska Anchorage) and H. Schweiker (WIYN and NOIRLab/NSF/AURA)",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "sombrero",
+   "includes": [],
+   "image": "images/galaxies/sombrero.jpg",
+   "centerRaDeg": 189.99717,
+   "centerDecDeg": -11.62131,
+   "widthArcmin": 9.54,
+   "heightArcmin": 5.65,
+   "northAngleDeg": -4.8,
+   "pixels": [
+    1024,
+    606
+   ],
+   "meanLight": 0.0457735,
+   "bytes": 49945,
+   "imageSource": {
+    "archive": "ESA/Hubble",
+    "id": "heic2506a",
+    "title": "Sombrero Galaxy",
+    "page": "https://esahubble.org/images/heic2506a/",
+    "file": "https://cdn.esahubble.org/archives/images/large/heic2506a.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "ESA/Hubble & NASA, K. Noll",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m81",
+   "includes": [],
+   "image": "images/galaxies/m81.jpg",
+   "centerRaDeg": 148.86498,
+   "centerDecDeg": 69.08687,
+   "widthArcmin": 31.003,
+   "heightArcmin": 31.003,
+   "northAngleDeg": -90.2,
+   "pixels": [
+    1024,
+    1024
+   ],
+   "meanLight": 0.00833511,
+   "bytes": 26466,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m81m82",
+    "title": "Galaxies M81 & M82",
+    "page": "https://noirlab.edu/public/images/noao-m81m82/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m81m82.jpg",
+    "band": "visible",
+    "cropped": true
+   },
+   "credit": "T.A. Rector (University of Alaska Anchorage) and NOIRLab/NSF/AURA/",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: cropped, resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m82",
+   "includes": [],
+   "image": "images/galaxies/m82.jpg",
+   "centerRaDeg": 148.9772,
+   "centerDecDeg": 69.6759,
+   "widthArcmin": 18.91,
+   "heightArcmin": 18.5,
+   "northAngleDeg": -179.0,
+   "pixels": [
+    1024,
+    1002
+   ],
+   "meanLight": 0.00434822,
+   "bytes": 25538,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m82final",
+    "title": "M82",
+    "page": "https://noirlab.edu/public/images/noao-m82final/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m82final.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "KPNO/NOIRLab/NSF/AURA/Steve Peterson/Katy Garmany",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "centaurus-a",
+   "includes": [],
+   "image": "images/galaxies/centaurus-a.jpg",
+   "centerRaDeg": 201.38705,
+   "centerDecDeg": -43.00085,
+   "widthArcmin": 33.87,
+   "heightArcmin": 33.12,
+   "northAngleDeg": 0.0,
+   "pixels": [
+    1024,
+    1001
+   ],
+   "meanLight": 0.0146988,
+   "bytes": 59431,
+   "imageSource": {
+    "archive": "ESO",
+    "id": "eso1221a",
+    "title": "A deep look at the strange galaxy Centaurus A",
+    "page": "https://www.eso.org/public/images/eso1221a/",
+    "file": "https://cdn.eso.org/images/large/eso1221a.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "ESO",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m64",
+   "includes": [],
+   "image": "images/galaxies/m64.jpg",
+   "centerRaDeg": 194.18007,
+   "centerDecDeg": 21.68395,
+   "widthArcmin": 14.52,
+   "heightArcmin": 14.52,
+   "northAngleDeg": 1.3,
+   "pixels": [
+    1024,
+    1024
+   ],
+   "meanLight": 0.00330392,
+   "bytes": 14961,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m64",
+    "title": "M64, NGC 4826",
+    "page": "https://noirlab.edu/public/images/noao-m64/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m64.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "NOIRLab/NSF/AURA",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m63",
+   "includes": [],
+   "image": "images/galaxies/m63.jpg",
+   "centerRaDeg": 198.93893,
+   "centerDecDeg": 42.03705,
+   "widthArcmin": 20.41,
+   "heightArcmin": 15.49,
+   "northAngleDeg": 1.2,
+   "pixels": [
+    1024,
+    777
+   ],
+   "meanLight": 0.00171748,
+   "bytes": 11544,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m63",
+    "title": "M63, NGC 5055",
+    "page": "https://noirlab.edu/public/images/noao-m63/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m63.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "N.A.Sharp/NOIRLab/NSF/AURA/",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m65",
+   "includes": [],
+   "image": "images/galaxies/m65.jpg",
+   "centerRaDeg": 169.733,
+   "centerDecDeg": 13.0924,
+   "widthArcmin": 12.999,
+   "heightArcmin": 13.003,
+   "northAngleDeg": 90.0,
+   "pixels": [
+    1024,
+    1024
+   ],
+   "meanLight": 0.0103721,
+   "bytes": 20522,
+   "imageSource": {
+    "archive": "ESO",
+    "id": "eso1126a",
+    "title": "VST’s view of the Leo Triplet and beyond",
+    "page": "https://www.eso.org/public/images/eso1126a/",
+    "file": "https://cdn.eso.org/images/large/eso1126a.jpg",
+    "band": "visible",
+    "cropped": true
+   },
+   "credit": "ESO/INAF-VST/OmegaCAM. Acknowledgement: OmegaCen/Astro-WISE/Kapteyn Institute",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: cropped, resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m66",
+   "includes": [],
+   "image": "images/galaxies/m66.jpg",
+   "centerRaDeg": 170.0623,
+   "centerDecDeg": 12.99151,
+   "widthArcmin": 13.999,
+   "heightArcmin": 14.003,
+   "northAngleDeg": 90.0,
+   "pixels": [
+    1024,
+    1024
+   ],
+   "meanLight": 0.0112353,
+   "bytes": 29658,
+   "imageSource": {
+    "archive": "ESO",
+    "id": "eso1126a",
+    "title": "VST’s view of the Leo Triplet and beyond",
+    "page": "https://www.eso.org/public/images/eso1126a/",
+    "file": "https://cdn.eso.org/images/large/eso1126a.jpg",
+    "band": "visible",
+    "cropped": true
+   },
+   "credit": "ESO/INAF-VST/OmegaCAM. Acknowledgement: OmegaCen/Astro-WISE/Kapteyn Institute",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: cropped, resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "ngc-3628",
+   "includes": [],
+   "image": "images/galaxies/ngc-3628.jpg",
+   "centerRaDeg": 170.07068,
+   "centerDecDeg": 13.55211,
+   "widthArcmin": 18.0,
+   "heightArcmin": 18.0,
+   "northAngleDeg": 90.0,
+   "pixels": [
+    1024,
+    1024
+   ],
+   "meanLight": 0.0076719,
+   "bytes": 26732,
+   "imageSource": {
+    "archive": "ESO",
+    "id": "eso1126a",
+    "title": "VST’s view of the Leo Triplet and beyond",
+    "page": "https://www.eso.org/public/images/eso1126a/",
+    "file": "https://cdn.eso.org/images/large/eso1126a.jpg",
+    "band": "visible",
+    "cropped": true
+   },
+   "credit": "ESO/INAF-VST/OmegaCAM. Acknowledgement: OmegaCen/Astro-WISE/Kapteyn Institute",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: cropped, resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "ngc-1300",
+   "includes": [],
+   "image": "images/galaxies/ngc-1300.jpg",
+   "centerRaDeg": 49.92271,
+   "centerDecDeg": -19.40857,
+   "widthArcmin": 9.1,
+   "heightArcmin": 9.14,
+   "northAngleDeg": 3.0,
+   "pixels": [
+    1024,
+    1024
+   ],
+   "meanLight": 0.0115103,
+   "bytes": 34027,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-ngc1300",
+    "title": "NGC 1300 in Eridanus",
+    "page": "https://noirlab.edu/public/images/noao-ngc1300/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-ngc1300.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "Hillary Mathis/NOIRLab/NSF/AURA",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "ngc-4038",
+   "includes": [
+    "ngc-4039"
+   ],
+   "image": "images/galaxies/ngc-4038.jpg",
+   "centerRaDeg": 180.48432,
+   "centerDecDeg": -18.87258,
+   "widthArcmin": 17.58,
+   "heightArcmin": 11.77,
+   "northAngleDeg": 42.3,
+   "pixels": [
+    1024,
+    687
+   ],
+   "meanLight": 0.00598023,
+   "bytes": 15280,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-n4038twardy",
+    "title": "NGC 4038",
+    "page": "https://noirlab.edu/public/images/noao-n4038twardy/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-n4038twardy.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "KPNO/NOIRLab/NSF/AURA/Bob and Bill Twardy/Adam Block",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m87",
+   "includes": [],
+   "image": "images/galaxies/m87.jpg",
+   "centerRaDeg": 187.70187,
+   "centerDecDeg": 12.38102,
+   "widthArcmin": 12.4,
+   "heightArcmin": 8.36,
+   "northAngleDeg": 4.7,
+   "pixels": [
+    1024,
+    690
+   ],
+   "meanLight": 0.0052906,
+   "bytes": 14472,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m87block",
+    "title": "M87",
+    "page": "https://noirlab.edu/public/images/noao-m87block/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m87block.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "KPNO/NOIRLab/NSF/AURA/Adam Block",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m83",
+   "includes": [],
+   "image": "images/galaxies/m83.jpg",
+   "centerRaDeg": 204.254,
+   "centerDecDeg": -29.86543,
+   "widthArcmin": 18.996,
+   "heightArcmin": 19.001,
+   "northAngleDeg": 0.0,
+   "pixels": [
+    1024,
+    1024
+   ],
+   "meanLight": 0.0527747,
+   "bytes": 163737,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noirlab2429a",
+    "title": "The Outskirts of the Southern Pinwheel Galaxy",
+    "page": "https://noirlab.edu/public/images/noirlab2429a/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noirlab2429a.jpg",
+    "band": "visible",
+    "cropped": true
+   },
+   "credit": "CTIO/NOIRLab/DOE/NSF/AURA Image processing: T.A. Rector (University of Alaska Anchorage/NSF NOIRLab), D. de Martin (NSF NOIRLab) & M. Zamani (NSF NOIRLab)",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: cropped, resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "ngc-253",
+   "includes": [],
+   "image": "images/galaxies/ngc-253.jpg",
+   "centerRaDeg": 11.88798,
+   "centerDecDeg": -25.30102,
+   "widthArcmin": 33.0,
+   "heightArcmin": 32.083,
+   "northAngleDeg": -0.0,
+   "pixels": [
+    1024,
+    996
+   ],
+   "meanLight": 0.0132825,
+   "bytes": 39821,
+   "imageSource": {
+    "archive": "ESO",
+    "id": "eso1152a",
+    "title": "Wide-field view of NGC 253 from the VLT Survey Telescope",
+    "page": "https://www.eso.org/public/images/eso1152a/",
+    "file": "https://cdn.eso.org/images/large/eso1152a.jpg",
+    "band": "visible",
+    "cropped": true
+   },
+   "credit": "ESO/INAF-VST Acknowledgement: A. Grado/L. Limatola/INAF-Capodimonte Observatory",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: cropped, resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "ngc-4565",
+   "includes": [],
+   "image": "images/galaxies/ngc-4565.jpg",
+   "centerRaDeg": 189.072,
+   "centerDecDeg": 25.99435,
+   "widthArcmin": 18.75,
+   "heightArcmin": 14.88,
+   "northAngleDeg": 1.4,
+   "pixels": [
+    1024,
+    819
+   ],
+   "meanLight": 0.00310374,
+   "bytes": 13317,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-02286",
+    "title": "Edge-on spiral NGC 4565",
+    "page": "https://noirlab.edu/public/images/noao-02286/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-02286.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "NOIRLab/NSF/AURA",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m100",
+   "includes": [],
+   "image": "images/galaxies/m100.jpg",
+   "centerRaDeg": 185.73271,
+   "centerDecDeg": 15.83268,
+   "widthArcmin": 13.4,
+   "heightArcmin": 13.4,
+   "northAngleDeg": -0.4,
+   "pixels": [
+    1024,
+    1024
+   ],
+   "meanLight": 0.00235309,
+   "bytes": 26042,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m100",
+    "title": "M100, NGC 4321",
+    "page": "https://noirlab.edu/public/images/noao-m100/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m100.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "N.A.Sharp/NOIRLab/NSF/AURA/",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m60",
+   "includes": [
+    "ngc-4647"
+   ],
+   "image": "images/galaxies/m60.jpg",
+   "centerRaDeg": 190.90142,
+   "centerDecDeg": 11.57271,
+   "widthArcmin": 12.47,
+   "heightArcmin": 13.61,
+   "northAngleDeg": 0.8,
+   "pixels": [
+    939,
+    1024
+   ],
+   "meanLight": 0.0104791,
+   "bytes": 20726,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m60",
+    "title": "M60, NGC 4649",
+    "page": "https://noirlab.edu/public/images/noao-m60/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m60.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "NOIRLab/NSF/AURA",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m90",
+   "includes": [],
+   "image": "images/galaxies/m90.jpg",
+   "centerRaDeg": 189.20799,
+   "centerDecDeg": 13.18279,
+   "widthArcmin": 11.35,
+   "heightArcmin": 14.18,
+   "northAngleDeg": 0.8,
+   "pixels": [
+    819,
+    1024
+   ],
+   "meanLight": 0.00435671,
+   "bytes": 18184,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m90",
+    "title": "M90, NGC 4569",
+    "page": "https://noirlab.edu/public/images/noao-m90/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m90.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "NOIRLab/NSF/AURA",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m61",
+   "includes": [],
+   "image": "images/galaxies/m61.jpg",
+   "centerRaDeg": 185.4797,
+   "centerDecDeg": 4.47396,
+   "widthArcmin": 8.9,
+   "heightArcmin": 8.99,
+   "northAngleDeg": 0.9,
+   "pixels": [
+    1024,
+    1024
+   ],
+   "meanLight": 0.0055784,
+   "bytes": 49453,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m61",
+    "title": "M61, NGC 4303",
+    "page": "https://noirlab.edu/public/images/noao-m61/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m61.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "Hillary Mathis, N.A.Sharp/NOIRLab/NSF/AURA/",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "m88",
+   "includes": [],
+   "image": "images/galaxies/m88.jpg",
+   "centerRaDeg": 187.99857,
+   "centerDecDeg": 14.4334,
+   "widthArcmin": 12.42,
+   "heightArcmin": 8.32,
+   "northAngleDeg": -179.2,
+   "pixels": [
+    1024,
+    690
+   ],
+   "meanLight": 0.00568359,
+   "bytes": 20469,
+   "imageSource": {
+    "archive": "NSF NOIRLab",
+    "id": "noao-m88quinn",
+    "title": "M88",
+    "page": "https://noirlab.edu/public/images/noao-m88quinn/",
+    "file": "https://storage.noirlab.edu/media/archives/images/large/noao-m88quinn.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "KPNO/NOIRLab/NSF/AURA/Jim Quinn/Adam Block",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  },
+  {
+   "id": "ngc-4921",
+   "includes": [],
+   "image": "images/galaxies/ngc-4921.jpg",
+   "centerRaDeg": 195.36244,
+   "centerDecDeg": 27.8833,
+   "widthArcmin": 3.2,
+   "heightArcmin": 3.27,
+   "northAngleDeg": -28.3,
+   "pixels": [
+    1001,
+    1024
+   ],
+   "meanLight": 0.0367515,
+   "bytes": 74114,
+   "imageSource": {
+    "archive": "ESA/Hubble",
+    "id": "heic0901a",
+    "title": "Unusual spiral NGC 4921 in the Coma Galaxy Cluster",
+    "page": "https://esahubble.org/images/heic0901a/",
+    "file": "https://cdn.esahubble.org/archives/images/large/heic0901a.jpg",
+    "band": "visible",
+    "cropped": false
+   },
+   "credit": "NASA, ESA and K. Cook (Lawrence Livermore National Laboratory, USA)",
+   "licence": "CC BY 4.0",
+   "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+   "modificationNote": "Image modified for Skyfold: resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map"
+  }
+ ]
+}
