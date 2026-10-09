@@ -179,6 +179,33 @@ from every black hole every shader runs its old program. Bodies near the hole ar
 picking and the hover tag sit on the drawn images. A GPU-time controller steps the lens's quality rungs, and then the
 pixel ratio, when frames take over 8.5 ms.
 
+**Places, saving and links** (`src/state/place.ts`, `src/ui/places.ts`, `src/ui/resume.ts`,
+`src/ui/savedPlaces.ts`). A place is the view as data: the body the camera orbits, the unit vector from it to the
+camera (world axes) and the distance from its centre (over a black hole, the height above the horizon instead), the
+date or "now", the pace of time, whether the clock is paused, and the body selected. It is captured exactly: in orbit
+from the orbit's own offset (world − world is 10⁵ km coarse at 40 Mpc), about a black hole from the hole-relative
+place and the exact height; Roam and the ship are kept as an orbit pose about the nearest body, a slew as its end, and
+a trip as its destination at its framing distance. It is written as a query, the same in the browser and in a link:
+
+```
+?at=betelgeuse&r=4.50923e9&dir=0.333333,0.666667,0.666667&t=2031-03-03T12:00:00Z&w=1000&p=1&sel=betelgeuse
+```
+
+`at` is the body's id; `r` the distance in km to 6 significant figures, or `h` a black hole's height above the
+horizon in km to 12 (so a hover at the floor, r_s·10⁻⁶ up, comes back on the floor); `dir` the direction to 6
+decimals; `t` the date in ISO 8601 UTC (ms since 1970 beyond the years 0 to 9999), absent for "now"; `w` the pace,
+absent for real time; `p=1` when paused; `sel` the selected body. Absent `r` and `dir` frame the body as Go there
+does. Each malformed or out-of-range value is dropped and its default used; an id the app does not know (renamed since)
+leaves the view where it is, with a short note. Opening a link goes straight there (no welcome screen, which is not
+marked as seen, and no offer to resume), then takes the place's keys out of the address; the `#/…` reading-page
+routes are kept. A body still loading is waited for (a minute at most, at once given up if its data failed), one
+registered on demand (a catalogue star, an asteroid, an NGC object, an archive planet) is registered as Where to? does,
+and near a black hole the lens's programs are waited for. What is stored, all in localStorage under `lightspeed.`
+(Reset layout and preferences clears it): `lightspeed.place`, the place last seen, saved at most every 2 s while it
+changes and when the page is hidden (not before the first frame, during a slew, or while the last place is on offer),
+and offered again on the next visit when it is not the opening view; `lightspeed.places`, the saved places, newest
+first, at most 50.
+
 ## Physics notes
 
 - Constants and body data live in `src/physics/constants.ts`, each with its source. All physics is pure,

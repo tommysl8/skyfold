@@ -29,7 +29,11 @@ type Name =
   | 'chevron-down'
   | 'move'
   | 'fullscreen'
-  | 'gauge';
+  | 'gauge'
+  | 'bookmark'
+  | 'pencil'
+  | 'trash'
+  | 'link';
 
 const PATHS: Record<Name, ReactNode> = {
   'dock-left': (
@@ -141,6 +145,14 @@ const PATHS: Record<Name, ReactNode> = {
       <path d="M6 7.2l2.3-2.6" />
     </>
   ),
+  // A ribbon with a notch: saved places
+  bookmark: <path d="M3 1.5h6v9L6 8.2 3 10.5z" />,
+  // A pencil: rename
+  pencil: <path d="M8 1.8l2.2 2.2-6 6H2V7.8zM6.8 3l2.2 2.2" />,
+  // A bin: delete
+  trash: <path d="M1.8 3h8.4M4.5 3V1.8h3V3M3 3l.6 7.2h4.8L9 3" />,
+  // Two links of a chain: a link to this view
+  link: <path d="M5 7l2-2M5.6 3.4l1-1a2 2 0 0 1 2.9 2.9l-1 1M6.4 8.6l-1 1a2 2 0 0 1-2.9-2.9l1-1" />,
 };
 
 export function Icon({ name, size = 12, className = '' }: { name: Name; size?: number; className?: string }) {

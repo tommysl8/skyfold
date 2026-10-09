@@ -10,6 +10,7 @@ import { loadFeaturedExoplanets } from './sim/exoplanets';
 import { loadGalaxy } from './sim/galaxy';
 import { loadCosmos } from './sim/cosmos';
 import { registerPhenomena } from './sim/phenomena';
+import { startPlaces } from './ui/resume';
 
 if (import.meta.env.DEV) {
   // When the first frame begins and each of the first 30 ends, for __ls.perf.compiles() (dev/perf.ts):
@@ -123,6 +124,10 @@ if (import.meta.env.DEV) {
     }),
   );
 }
+
+// A link's place (?at=…) is gone to, or a returning visitor offered the last one, and the view is saved from now on
+// (ui/resume.ts). Before the first render: a link skips the welcome screen.
+startPlaces();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
