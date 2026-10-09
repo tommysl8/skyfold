@@ -248,7 +248,7 @@ and the eclipses of A's pulses by B's closed field, flickering at B's spin, were
 ApJ 634, 1223). B's field ends at the magnetopause where A's wind pressure Ė_A/(4πcD²) equals B's magnetic pressure,
 B's dipole written through its own spin-down: R = (cD/Ω_B)^½ (Ė_B/Ė_A)^¼, 4 × 10⁹ cm at D = 8 × 10¹⁰ cm (their eq. 4,
 with Ė_A = 5.8 × 10³³ and Ė_B = 1.6 × 10³⁰ erg/s), worked out each frame at the stars' separation. B's dipole loops (out
-to 2.5 R_mp) are moved in as r′ = r_lim tanh(r/r_lim), r_lim = R_mp towards A growing to six times that straight
+to 6 R_mp) are moved in as r′ = r_lim tanh(r/r_lim), r_lim = R_mp towards A growing to six times that straight
 downwind (in the vertex shader; `confinedField` is its CPU twin, for the tests): compressed on the day side, drawn out
 into a tail, as Earth's field is by the solar wind. The tail's length is illustrative.
 

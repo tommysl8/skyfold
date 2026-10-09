@@ -136,9 +136,9 @@ function buildField(s: Star): NonNullable<Star['field']> {
     f = denseTwistedField(s.bG);
     dashKm = 0.12 * twistedReach(s.bG) * NS_RADIUS_KM;
   } else if (s.fieldKind === 'confined') {
-    // Dipole loops out to 2.5 magnetopause radii (about 10⁵ km); the vertex shader confines them.
+    // Dipole loops out to 6 magnetopause radii (2.4 × 10⁵ km); the vertex shader confines them.
     const rmp = magnetopauseKm(DOUBLE_PULSAR_A_EDOT, DOUBLE_PULSAR_B_EDOT, s.spin.periodS, 8.8e5);
-    const closed = [0.04, 0.07, 0.11, 0.17, 0.25, 0.36, 0.5, 0.75, 1].map((l) => (l * 2.5 * rmp) / rlc);
+    const closed = [0.04, 0.07, 0.11, 0.17, 0.25, 0.36, 0.5, 0.75, 1].map((l) => (l * 6 * rmp) / rlc);
     f = pulsarMagnetosphere(s.spin.periodS, s.spin.alphaRad, NS_RADIUS_KM, { closed, open: [], azimuths: 14 });
     dashKm = 0.08 * rmp;
   } else {
@@ -147,7 +147,7 @@ function buildField(s: Star): NonNullable<Star['field']> {
   }
   const mat = createMagnetosphereMaterial();
   mat.uniforms.uDashKm.value = dashKm;
-  if (s.fieldKind === 'magnetar') mat.uniforms.uGain.value = 2.2;
+  if (s.fieldKind !== 'pulsar') mat.uniforms.uGain.value = s.fieldKind === 'magnetar' ? 2.2 : 1.8;
   const lines = new LineSegments(lineGeometry(f), mat);
   lines.frustumCulled = false;
   lines.renderOrder = 1;
