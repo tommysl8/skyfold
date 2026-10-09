@@ -756,7 +756,11 @@ the square-root law splat by splat would make a smooth disc several times too br
   smooth glow worked out from the model's own laws (`src/sim/galaxy/glow.ts`): a 32-step integration along each
   pixel's line of sight through the discs and the dust maps, the young arm stars' density read from the G channel of
   the warp map, with the particles further out (`glow.test.ts`: the discs within 10% of the particles' light about
-  the Sun, the young stars within 25%). The sampling lot of the particles (above) no longer applies to the H II
+  the Sun, the young stars within 25%). Each step's column through a layer is taken as h e^(−|z|near/h)
+  (1 − e^(−Δ/h)), not as the difference of two integrals from the midplane: many scale heights away both are h to
+  within float32's precision, and their difference, noise of either sign, divided in the colour's normalisation, drew
+  a saturated white band across the sky from a kiloparsec below the young arm stars' 60-pc layer (`layerColumn`,
+  tested in float32 arithmetic). The sampling lot of the particles (above) no longer applies to the H II
   regions and the globulars, and the H II regions are always drawn on integrated GPUs.
 - The glow near the camera is the costliest thing the layer draws per pixel (32 steps through the discs and the dust
   maps): 0.5 ms a frame in the coarse target. Its shader and the particles' take 270 and 240 ms to compile the first
