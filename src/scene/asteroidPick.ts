@@ -38,6 +38,8 @@ void main() {
 export interface LayerSection {
   id: number;
   conic: boolean;
+  /** A sample of the bodies without a card (sim/asteroids/format.ts): drawn, never picked. */
+  sample: boolean;
   points: Points;
   material: ShaderMaterial;
   /** The bodies the near search added (sim/asteroids/near.ts): the same attributes, drawn through an index. */
@@ -97,6 +99,7 @@ export function warmPick(gl: WebGLRenderer, camera: PerspectiveCamera): void {
 export function pickSmallBody(gl: WebGLRenderer, camera: PerspectiveCamera, x: number, y: number): (SmallRef & { px: number }) | null {
   let any = false;
   for (const s of layerSections.values()) {
+    if (s.sample) continue;
     // Its prefix (key: its id), and its near picks (key: −1 − its id).
     for (const [key, source] of [[s.id, s.points], [-1 - s.id, s.near]] as const) {
       if (!source) continue;

@@ -116,5 +116,12 @@ export const JOURNEYS: Journey[] = [
     sub: 'Above the disc of LMC X-1, in the Large Magellanic Cloud',
     scene: 'lmc-x-1-disk',
   }),
+  journey({
+    id: 'famous-galaxies',
+    title: 'Famous galaxies, as photographed',
+    sub: 'The Whirlpool from our side, drawn with Hubble’s photograph',
+    scene: 'famous-galaxies',
+  }),
+  journey({ id: 'virgo-cluster', title: 'The Virgo Cluster', sub: 'Sixty of its brightest galaxies, 54 million light-years away', scene: 'virgo-cluster-close' }),
   journey({ id: 'sgr-a-star-radio', title: 'Sagittarius A* in radio light', sub: 'The ring the Event Horizon Telescope sees, up close', scene: 'sgr-a-star-radio' }),
 ];

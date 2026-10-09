@@ -2,9 +2,11 @@
  * Loads the galaxies beyond the Milky Way and registers them.
  *
  *  1. Once the browser is idle after start-up: the Local Group and its surroundings
- *     (local-galaxies.json.gz, 31 kB) and the named galaxies, clusters and young galaxies
- *     (named.json, a chunk of its own, 8 kB gzipped) become bodies, with the Local Group itself
- *     and M87's black hole, M87* (sim/blackholes).
+ *     (local-galaxies.json.gz, 31 kB), the named galaxies, clusters and young galaxies
+ *     (named.json, a chunk of its own, 8 kB gzipped) and more galaxies, famous ones and the
+ *     brightest of the Virgo and Coma clusters (more-galaxies.json.gz, 10 kB, with the pictures'
+ *     list, pictures.json) become bodies, with the Local Group itself and M87's black hole, M87*
+ *     (sim/blackholes).
  *  2. Then the galaxies' particle templates and the cosmology's emission table (the redshifts of
  *     their light, sim/cosmos/expansion.ts) are built in the cosmos worker.
  *  3. The cosmic web (cosmic-web.bin.gz, 870 kB) loads only when it is wanted: the camera leaves
@@ -23,6 +25,8 @@ import { buildSkyTable, buildTemplates, buildWeb, type CosmosWorkerReply, type C
 import type { WebBound, WebBuffers } from './cosmicWeb';
 import { cosmicSky, LOCAL_GROUP_SPHERE, setBoundSpheres, setExpansionMembers, setSkyTable, type SkyTable } from './expansion';
 import type { LocalGalaxiesDoc, NamedDoc } from './localGalaxies';
+import type { MoreGalaxiesDoc } from './moreGalaxies';
+import { pictureImages, type PicturesDoc } from './pictures';
 import { bodyIdOf, CLUSTER_RADIUS_MPC, cosmosRecords, type GalaxyShape } from './records';
 import { registerGalaxyHoles, registerM87Star } from '../blackholes/load';
 import type { Template } from './templates';
@@ -37,6 +41,10 @@ export const cosmosState = {
   shapes: [] as GalaxyShape[],
   named: null as NamedDoc | null,
   local: null as LocalGalaxiesDoc | null,
+  /** Famous galaxies and the clusters' brightest (null if their file did not load: the rest are drawn without them). */
+  more: null as MoreGalaxiesDoc | null,
+  /** The galaxies' pictures (scene/GalaxyPictures.tsx). */
+  pictures: null as PicturesDoc | null,
   /** The particle templates. */
   templates: null as Template[] | null,
   /** The cosmic web. */
@@ -63,10 +71,10 @@ export const webStatus = (): CosmosStatus => cosmosState.webStatus;
 // ─── Registration ────────────────────────────────────────────────────────────────────────
 
 /** Register the galaxies (once). The Milky Way must be a body first: its satellites orbit it. */
-export function registerCosmos(local: LocalGalaxiesDoc, named: NamedDoc): void {
+export function registerCosmos(local: LocalGalaxiesDoc, named: NamedDoc, more: MoreGalaxiesDoc | null = null, pictures: PicturesDoc | null = null): void {
   registerGalaxyCore();
   const s = sgrAFrom(SSTARS as Parameters<typeof sgrAFrom>[0]);
-  const { records, shapes, anchors } = cosmosRecords(local, named, { milkyWayEclKm: sgrAPositionEcl(s) });
+  const { records, shapes, anchors } = cosmosRecords(local, named, { milkyWayEclKm: sgrAPositionEcl(s) }, more, pictures ? pictureImages(pictures) : undefined);
   const fresh = records.filter((r) => !isBody(r.id));
   if (fresh.length) registerBodies(fresh);
   setExpansionMembers(anchors);
@@ -78,6 +86,8 @@ export function registerCosmos(local: LocalGalaxiesDoc, named: NamedDoc): void {
   cosmosState.shapes = shapes;
   cosmosState.named = named;
   cosmosState.local = local;
+  cosmosState.more = more;
+  cosmosState.pictures = pictures;
   cosmosState.status = 'ready';
   changed();
 }
@@ -96,9 +106,10 @@ function clusterCores(): { id: string; anchorWorldKm: Vec3; radiusKm: number }[]
   return out;
 }
 
-/** The rows of the cosmic web drawn as bodies of their own (the named galaxies): left out of the web's points. */
-export function webRowsOfBodies(named: NamedDoc | null, local: LocalGalaxiesDoc | null): number[] {
+/** The rows of the cosmic web drawn as bodies of their own (the named galaxies and the more galaxies): left out of the web's points. */
+export function webRowsOfBodies(named: NamedDoc | null, local: LocalGalaxiesDoc | null, more: MoreGalaxiesDoc | null = null): number[] {
   const rows = new Set<number>();
+  for (const g of more?.galaxies ?? []) if (g.cfRow !== null) rows.add(g.cfRow);
   for (const o of named?.objects ?? []) if (o.cosmicWeb?.index !== undefined) rows.add(o.cosmicWeb.index);
   for (const g of local?.galaxies ?? []) if (g.cosmicWeb?.index !== undefined) rows.add(g.cosmicWeb.index);
   return [...rows].sort((a, b) => a - b);
@@ -109,7 +120,7 @@ export function webRowsOfBodies(named: NamedDoc | null, local: LocalGalaxiesDoc 
  * sphere, the places of the galaxies drawn as bodies (each anchors the group its row is in) and the
  * clusters' places (anchoring their members' rows).
  */
-export function webBound(named: NamedDoc | null, local: LocalGalaxiesDoc | null): WebBound {
+export function webBound(named: NamedDoc | null, local: LocalGalaxiesDoc | null, more: MoreGalaxiesDoc | null = null): WebBound {
   const anchorOf = (id: string): Vec3 | null => {
     const m = cosmicSky.byId.get(id);
     return m ? [m.anchorKm.x / MPC_KM, m.anchorKm.y / MPC_KM, m.anchorKm.z / MPC_KM] : null;
@@ -124,6 +135,10 @@ export function webBound(named: NamedDoc | null, local: LocalGalaxiesDoc | null)
   for (const g of local?.galaxies ?? []) {
     const a = anchorOf(bodyIdOf(g.id));
     if (a && g.cosmicWeb?.index !== undefined) rowAnchors.push({ row: g.cosmicWeb.index, anchor: a });
+  }
+  for (const g of more?.galaxies ?? []) {
+    const a = anchorOf(g.id);
+    if (a && g.cfRow !== null) rowAnchors.push({ row: g.cfRow, anchor: a });
   }
   const c = LOCAL_GROUP_SPHERE.centreKm;
   // The Local Volume Database's galaxies the file does not link to a row: their rows are found on the sky.
@@ -224,6 +239,28 @@ function whenIdle(ms: number): Promise<void> {
   });
 }
 
+/** The more galaxies (null if their file fails: the others are registered without them). */
+async function loadMore(): Promise<MoreGalaxiesDoc | null> {
+  try {
+    const doc = JSON.parse(new TextDecoder().decode(await fetchGzip(absolute('data/more-galaxies.json.gz')))) as MoreGalaxiesDoc;
+    if (doc.format !== 'lightspeed-more-galaxies') throw new Error('unexpected format');
+    return doc;
+  } catch (err) {
+    console.warn(`[lightspeed] the famous galaxies and the clusters' members did not load (${err})`);
+    return null;
+  }
+}
+
+/** The pictures' list (a chunk of its own; null if it fails). */
+async function loadPictures(): Promise<PicturesDoc | null> {
+  try {
+    return (await import('./pictures.json')).default as unknown as PicturesDoc;
+  } catch (err) {
+    console.warn(`[lightspeed] the galaxies' pictures did not load (${err})`);
+    return null;
+  }
+}
+
 let pending: Promise<boolean> | null = null;
 
 /** Register the galaxies and build their templates (once; later calls return the same promise). */
@@ -234,10 +271,10 @@ export function loadCosmos(opts: { idle?: boolean } = {}): Promise<boolean> {
   pending = (async () => {
     try {
       if (opts.idle) await whenIdle(1500);
-      const [buf, named] = await Promise.all([fetchGzip(absolute('data/local-galaxies.json.gz')), import('./named.json')]);
+      const [buf, named, more, pictures] = await Promise.all([fetchGzip(absolute('data/local-galaxies.json.gz')), import('./named.json'), loadMore(), loadPictures()]);
       const local = JSON.parse(new TextDecoder().decode(buf)) as LocalGalaxiesDoc;
       if (local.format !== 'lightspeed-local-galaxies') throw new Error('local-galaxies.json: unexpected format');
-      registerCosmos(local, named.default as unknown as NamedDoc);
+      registerCosmos(local, named.default as unknown as NamedDoc, more, pictures);
     } catch (err) {
       console.warn(`[lightspeed] the galaxies beyond the Milky Way did not load (${err})`);
       cosmosState.status = 'failed';
@@ -281,7 +318,11 @@ export function loadCosmicWeb(): Promise<boolean> {
     changed();
     try {
       await loadCosmos();
-      cosmosState.web = await web(absolute('data/cosmic-web.bin.gz'), webRowsOfBodies(cosmosState.named, cosmosState.local), webBound(cosmosState.named, cosmosState.local));
+      cosmosState.web = await web(
+        absolute('data/cosmic-web.bin.gz'),
+        webRowsOfBodies(cosmosState.named, cosmosState.local, cosmosState.more),
+        webBound(cosmosState.named, cosmosState.local, cosmosState.more),
+      );
       cosmosState.webStatus = 'ready';
       changed();
       return true;
