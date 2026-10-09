@@ -209,7 +209,7 @@ describe('journeys', () => {
       tracks: parseTracks(readJson<TracksIndex>('public/data/tracks.json'), readBytes('public/data/tracks.bin')),
     });
     updateEphemeris();
-    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'hale-bopp', 'visitors', 'edge', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'crab-magnetosphere', 'magnetar-field', 'double-pulsar-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'aurora', 'galactic-field', 'galactic-field-sky', 'magnetic-uranus', 'magnetic-jupiter', 'magnetic-sun']);
+    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'hale-bopp', 'visitors', 'edge', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'crab-magnetosphere', 'magnetar-field', 'double-pulsar-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'aurora', 'galactic-field', 'galactic-field-sky', 'magnetic-uranus', 'magnetic-jupiter', 'magnetic-sun', 'sun-future', 'constellations-drift', 'stars-that-change']);
     for (const j of JOURNEYS) {
       expect(parseScene(j.scene), j.id).not.toBeNull();
       expect(j.look.length, j.id).toBeGreaterThan(40);
@@ -224,6 +224,8 @@ describe('journeys', () => {
       else if (['crab-magnetosphere', 'magnetar-field', 'double-pulsar-field'].includes(j.id)) expect(sceneStatus(j.scene).reason).toBe('Loading the pulsar catalogue…');
       // The famous galaxies and the Virgo Cluster need the galaxies (articleScenes.test.ts runs them).
       else if (['famous-galaxies', 'virgo-cluster'].includes(j.id)) expect(sceneStatus(j.scene).ok).toBe(false);
+      // The constellations' drift and the variables' tour need the stars (articleScenes.test.ts runs every named scene).
+      else if (['constellations-drift', 'stars-that-change'].includes(j.id)) expect(sceneStatus(j.scene).ok).toBe(false);
       else expect(sceneStatus(j.scene).ok, j.id).toBe(true);
     }
   });

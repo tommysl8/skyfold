@@ -20,7 +20,7 @@ import { onArrival } from '../ui/tripActions';
 import { pickAt, pickedBody } from './picking';
 import { pickSmallBody } from './asteroidPick';
 import { ensureSmallBody } from '../sim/asteroids/bodies';
-import { updateNearbyStars } from '../sim/stars';
+import { updateNearbyStars, updateStarTime } from '../sim/stars';
 import { updateExoplanets } from '../sim/exoplanets';
 import { updateDeepSky } from '../sim/deepsky';
 import { deepSkyLayersNow } from '../ui/deepSkyLayers';
@@ -113,6 +113,8 @@ export function SimDriver() {
     updateEphemeris();
     // The supernovae's and the kilonova's light at this date, and which of the phenomena's models are near (sim/phenomena)
     updatePhenomena();
+    // The variable stars' light at this date, and the Sun at the age it is shown (sim/stars)
+    updateStarTime();
     if (!initialised.current) {
       initialised.current = true;
       controller.placeAt('earth', 26_000);

@@ -33,6 +33,8 @@ export {
 } from './records';
 export { STAR_FACTS, REF_LINKS, type StarFacts } from './facts';
 export { PROMOTE_PC, RELEASE_PC, updateNearbyStars } from './nearby';
+export { updateStarTime, variableNow } from './variability';
+export { loadTracks, setSunAge, sunAgeLine, sunFuture } from './sunFuture';
 export { extData, extensionStar, ensureExtensionStar, loadStarIndex, subscribeExtension, extensionVersion } from './extensionLoad';
 export { CELL_STARS, type StarCells } from './cells';
 export {

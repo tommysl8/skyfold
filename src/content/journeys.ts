@@ -164,4 +164,7 @@ export const JOURNEYS: Journey[] = [
   journey({ id: 'magnetic-uranus', title: 'Uranus’s tipped magnetic field', sub: 'Tilted 60° and off centre, wobbling round as the planet turns', scene: 'magnetic-uranus', clock: '1 s here = 17 min' }),
   journey({ id: 'magnetic-jupiter', title: 'Jupiter’s magnetosphere', sub: 'The largest thing any planet has, from Juno’s model of its field', scene: 'magnetic-jupiter', clock: '1 s here = 5 min' }),
   journey({ id: 'magnetic-sun', title: 'The Sun’s magnetic field today', sub: 'Loops and open field over the corona, from the date’s HMI map', scene: 'magnetic-sun' }),
+  journey({ id: 'sun-future', title: 'The Sun’s future', sub: 'Its whole life in a minute and a half: red giant, planetary nebula, white dwarf', scene: 'sun-future', clock: 'The Sun’s own age runs; the date stays' }),
+  journey({ id: 'constellations-drift', title: 'The constellations drift', sub: 'The Big Dipper and Orion over 200,000 years of the stars’ own motions', scene: 'constellations-drift', clock: '1 s here = 5,500 years' }),
+  journey({ id: 'stars-that-change', title: 'Stars that change', sub: 'Algol’s eclipse, Delta Cephei and Mira pulsing, Betelgeuse’s Great Dimming', scene: 'stars-that-change', clock: '4,000 to 2 million times faster' }),
 ];

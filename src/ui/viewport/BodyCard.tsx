@@ -57,6 +57,7 @@ import type { ControlMode } from '../../state/ui';
 import { TRANSIENT_SCENES, transientNow } from '../../sim/phenomena';
 import { fieldDrawnNote, fieldLine, fieldSource } from '../../sim/fields';
 import { runScene } from '../../content/scenes';
+import { StarTrack, SunAge, VariableLine } from './StarTime';
 
 /** The camera modes in which it is at a body it is centred on (a black hole's own modes included). */
 const AT_TARGET: readonly ControlMode[] = ['orbit', 'fall', 'circular', 'hold'];
@@ -292,6 +293,9 @@ export function BodyCard() {
               <div className="text-fg-3">{starDistanceWords(d.star)}</div>
             </div>
           )}
+          {d.star?.variable && <VariableLine id={id} line={d.star.variable} />}
+          {id === 'sun' && <SunAge />}
+          {d.star?.massMsun !== undefined && <StarTrack star={d.star} />}
           {d.exoplanet && (
             <div className="mono mt-0.5 text-[10.5px] leading-[15px] text-fg-2">
               <div>{exoplanetPhysicalLine(d.exoplanet)}</div>
