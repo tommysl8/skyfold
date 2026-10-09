@@ -3,7 +3,8 @@
 What the star files contain, their byte layouts, frames and units, how every number was made, how accurate it is,
 where it came from, and (§11) how the app uses them. §12 is the catalogue's extension: 3,421,099 more stars in band
 files fetched as the camera goes, and 3,972 pinned stars appended to the core (3,754,841 stars in all). §13 is how stars
-look up close, the extreme stars and the two nebulae drawn in 3D.
+look up close, the extreme stars and the two nebulae drawn in 3D. §14–17 are stars in time: the Sun's life (and any star's
+track) from stellar-evolution tracks, the variable stars, and the journey that shows the constellations drifting.
 
 | File | Size | What it is |
 | --- | --- | --- |
@@ -13,6 +14,7 @@ look up close, the extreme stars and the two nebulae drawn in 3D.
 | `public/data/constellations.json` | 50,461 B (14.7 kB gzipped by the host) | 88 IAU constellations; stick figures as polylines of `stars3d` indices |
 | `src/sim/stars/systems.json` | 56,284 B | Alpha Centauri (A, B, Proxima), Sirius, Procyon, 61 Cygni and Capella as orbiting systems; the measured radius, temperature, luminosity and mass (whichever the papers give) of 38 stars, the Sun among them, each value with its reference |
 | `src/sim/stars/*.ts` | | Decoders and evaluators (positions at any epoch, retarded positions for any observer, Kepler orbits, magnitudes, name search), the registry records and the loader, with their tests |
+| `public/data/stellar-tracks.json` | 179,613 B (73 kB gzipped) | MIST stellar-evolution tracks of 11 masses at solar metallicity, thinned (§14; fetched when first wanted) |
 | `public/data/stars3d-bright.bin.gz` | 171,542 B (239,088 B raw) | The first 9,959 stars of `stars3d.bin.gz` (V ≤ 6.6), in the same layout: the sky for the first second |
 | `public/data/stars3d-head.bin.gz` | 74,077 B | 3,972 pinned stars appended to the core in the app (indices 329,770–333,741): §12.4 |
 | `public/data/stars3d-index.bin.gz` | 192,844 B | The extension's 1,074 band files and their 22,600 cells: §12.5 |
@@ -1117,3 +1119,139 @@ Homunculus's table, expansion and speeds; the pinwheel's coil spacing, standoff,
 | Claret & Bloemen 2011, A&A 529, A75, via VizieR J/A+A/529/A75 (`data-raw/claret2011_tableu_Z0_xi2_LSM_ATLAS.tsv`, sha256 22cf9b02c4398db9e844c910f1d26c92c80cea117efee4ac2c2535f1cfcc1484) | Limb darkening (`limb-darkening.json`) | Numbers from a published table, cited; VizieR asks for acknowledgement |
 | The papers of §13.3–13.5 | Shapes, temperatures, sizes, distances, the nebulae's geometry | Values from the literature, each cited in `extremeStars.ts`, `stellarNebulae.ts` and the cards |
 | Gaia DR3 (positions and UY Scuti's parallax) | Placing UY Scuti, Stephenson 2-18 and WR 104 | CC BY-NC 3.0 IGO, credit ESA/Gaia/DPAC (as §8) |
+
+---
+
+## 14. Stars in time: the Sun's life and any star's track
+
+**Data.** `public/data/stellar-tracks.json` (179,613 B; 73 kB gzipped; fetched the first time a card with a track opens
+or the journey runs): the MIST v1.2 stellar-evolution tracks (Choi et al. 2016, ApJ 823, 102; Dotter 2016, ApJS 222, 8;
+MESA) for 0.5, 0.8, 1, 1.2, 1.5, 2, 3, 5, 8, 15 and 40 M☉ at [Fe/H] = 0, [α/Fe] = 0, v/v_crit = 0.4, from the zero-age
+main sequence (EEP 202) to each track's end (EEP 1710, the start of the white-dwarf cooling sequence, for 0.8–5 M☉; the
+end of carbon burning or core helium burning for the massive ones; the 0.5 M☉ track ends on the main sequence after 96
+billion years). Columns: EEP, age (yr), mass (M☉), log L, log T_eff, log R, MIST phase code. Built by
+`scripts/build-stellar-tracks.mjs` from the EEP tarball (`MIST_v1.2_feh_p0.00_afe_p0.0_vvcrit0.4_EEPS.txz` from
+mist.science, 112,024,408 B, sha256 64644c1be477ae72121bd822b5f0eb67538e7ad8e5374109f52bec8733f32fcb; its files go in
+`data-raw/mist/`), thinned by Douglas–Peucker in EEP so that linear interpolation reproduces every dropped point to 0.004
+dex in L and R, 0.0015 dex in T, 0.001 M☉ and 0.1% of its stage's duration in age (315 of the 1 M☉ track's 1,509 points
+kept). The MIST site states no licence: the table quotes the grid's numbers with citation, and the grid itself is not
+redistributed.
+
+**Evaluation** (`src/sim/stars/evolution.ts`). Every quantity is linear in EEP between the points kept; a mass between
+two tracks is interpolated at equal EEP, linearly in log M (log L, log T, log R, log age, and mass as a share of the
+initial mass). Stages by EEP: main sequence to 454; subgiant until the luminosity has doubled since 454 (an approximate
+base of the red-giant branch); red giant to 605 (the tip); helium flash (below 1.8 M☉; "helium ignition" above) to 631;
+horizontal branch (the red clump, at solar metallicity) to 707; AGB to 808; thermally pulsing AGB to 1409; then the
+planetary nebula while the star is hotter than 25,000 K and within 50,000 years of leaving the AGB, then a white dwarf.
+
+**The Sun.** The 1 M☉ track, scaled so that at the Sun's age today (4.567 Gyr, Bouvier & Wadhwa 2010) it has exactly
+the nominal radius, luminosity and temperature (MIST gives 1.024 R☉, 1.105 L☉, 5,849 K then). Along it: about 10% brighter
+per billion years; the end of core hydrogen burning at 9.9 Gyr (2.3 L☉, 1.56 R☉); the tip of the red-giant branch at
+11.34 Gyr, 173 R☉ (0.80 au), 2,400 L☉, 3,070 K, having lost 5% of its mass; the red clump at 10.8 R☉ and 47 L☉; the AGB,
+whose last thermal pulses reach 352 R☉ (1.64 au) at 0.74 M☉; the envelope shed in its last 13,000 years there, leaving a
+0.54 M☉ core that crosses to 120,000 K in 20,000 years; the track ends at 47,600 K and 1.6 L☉. Beyond it the white dwarf
+cools by Mestel's law, t ∝ M^(5/7) L^(−5/7), anchored to Sirius B (1.018 M☉, 0.0565 L☉ after 126 Myr: Bond et al. 2017),
+its radius easing to the cold radius of its mass (Nauenberg 1972: 0.0133 R☉) over 30 Myr: a model; the slider follows
+it two billion years (6 × 10⁻⁴ L☉, 7,900 K). Its V comes from Flower's bolometric corrections as corrected by Torres (2010)
+(§11), so its point of light from the planets follows it.
+
+**The planets.** Mass is lost over many orbits, so each orbit widens keeping a·M constant (a ∝ 1/M, speed ∝ M; Jeans's
+adiabatic invariant, as Sackmann et al. 1993 and Schröder & Smith 2008 apply it): `bodies/world.ts` `solarAge.scale`
+multiplies every heliocentric body's place (not its moons' about it) and divides its speed, in the per-frame pass, at
+other times, and in the light-time groups, so the orbit lines (two-body conics from the state, with the Sun's GM scaled
+by its mass) widen with them. A planet is swallowed when the Sun's radius first reaches its widened mean distance: Mercury
+at 11.3325 Gyr and Venus at 11.3360 Gyr, near the tip of the red-giant branch, Earth at 11.4624 Gyr in the last AGB
+pulses (its orbit 1.36 au by then), Mars never. Swallowed planets and their moons are absent from then on. Tides and the
+drag of the Sun's wind are not modelled; they pull planets in: Schröder & Smith (2008), with more mass loss on the
+red-giant branch and a tip at 1.2 au, find Earth is engulfed there, while with weaker tides it may survive (Sackmann et
+al. 1993; Rybicki & Denis 2001). The card says Earth's fate is debated.
+
+**Drawing.** While the Sun is shown at another age, `scene/Bodies.tsx` draws it with the star-surface material every star
+has (§13.1): limb darkening and granules for its temperature and gravity (a red giant's granules number in the hundreds
+and are baked into the cell map while the disc is large), its colour by Planck's law. Its planetary nebula
+(`scene/StellarNebulae.tsx`, `render/stellarNebulaMaterials.ts`) is a shell from 0.6 to 1 of a radius growing at 25
+km/s since the envelope was gone (typical of planetary nebulae: a model), lit once the core passes 25,000 K and fading
+over 30,000–50,000 years after the AGB; its light is the path length through it along each ray, [O III] teal inside and
+Hα/[N II] red outside. That a 1 M☉ star makes a visible nebula at all is Gesicki et al.'s (2018, Nature Astronomy 2, 580)
+finding.
+
+**Interaction.** The simulation clock is not moved: the Sun has an age of its own (`sim/stars/sunFuture.ts`). The Sun's
+card shows its age and stage, the planets swallowed and how much wider the orbits are, a small HR diagram with the track
+and the Sun on it, and a slider over its life (90% of it in EEP, so each stage has room; the last 10% the white dwarf's
+cooling, logarithmically), with Today and Watch its future. The Sun is back to today when Today is pressed, when its card
+is closed or another body chosen, and when any scene starts. The journey "The Sun's future" (`sun-future`) frames the inner
+Solar System from 3.2 au and plays the life through keyframes in EEP (about 85 s), easing out to frame the nebula (to
+260,000 au) and in to the white dwarf (60,000 km); a camera move hands the view back with the age where it is.
+
+**Any star.** A star whose card has a measured mass (the named stars of `systems.json`, Algol's three) shows the track of
+a star of its mass interpolated from the grid, with the star at its measured temperature and luminosity.
+
+**Tests** (`evolution.test.ts`): the grid, rising ages, the primary EEPs kept; interpolation and its inverse; a grid mass
+returns its track, lifetimes fall with mass (the Sun's 9.9 Gyr, 3 M☉'s 0.3–0.45 Gyr); the Sun today is nominal; 7–13%
+brighter a billion years on; 0.75–0.85 au and 5% lighter at the tip; the red clump, more than 1.4 au on the AGB, a white
+dwarf of 0.50–0.58 M☉; Mestel's law through Sirius B and Nauenberg's radii; a·M constant; Mercury and Venus swallowed by
+the tip, Earth only on the AGB, Mars never; the stages in order; the planetary nebula's timing and size.
+
+## 15. Stars in time: variable stars
+
+Variables vary by default, with no switch: their records' light (`luminous.vmag`), colour temperature and, for the
+pulsators with measured sizes, radius are rewritten each frame (`sim/stars/variability.ts`), so the point of light from
+afar (Glints) and the disc up close (StarBody) both follow. What the camera sees is the light that left the star a
+light-time ago: the phase shown is the date's minus the camera's light-time plus the Sun's, so from Earth the curves keep
+their published times. Each card gets a line on how the star varies and its V from Earth at the date.
+
+| Star | Type | Period, epoch | Light | Colour, size | Sources |
+| --- | --- | --- | --- | --- | --- |
+| Algol (β Per), as A, B and C | Eclipsing triple | 2.8673043 d from HJD 2445641.5135 (GCVS; within about 0.2 d over 236 years, Jetsu 2021) | Geometry: each star's limb-darkened disc hidden by the others as seen from the camera; 2.10 out of eclipse, 3.26 at primary minimum, 2.13 at secondary from the Sun (GCVS 2.12–3.39); about 10 hours | A 2.73 R☉, 3.17 M☉, 12,550 K; B 3.48 R☉, 0.70 M☉, 4,900 K; C 1.73 R☉, 1.76 M☉, 7,550 K | Baron et al. 2012 (radii, masses, both orbits: inner a = 2.15 mas, i = 98.70°, Ω = 43.43°; outer 680.168 d, a = 93.43 mas, e = 0.227, i = 83.66°, Ω = 132.66°, ω = 310.02°; parallax 34.7 mas); Kolbas et al. 2015 (temperatures) |
+| β Lyrae (Sheliak) | Eclipsing (β Lyr type) | HJD 2408247.966 + 12.913780 E + 3.87196 × 10⁻⁶ E² (Harmanec & Scholz 1993): 12.944 d now, growing 19 s a year | Two-term cosine curve through the GCVS maximum 3.25 and minima 4.36 and 3.85 | Unchanged; drawn as one star | GCVS; Harmanec & Scholz 1993; Harmanec 2002 |
+| δ Cephei | Classical Cepheid | 5.366208 d from HJD 2455479.905, rising in 25% | V 3.48–4.37, a smooth curve through the GCVS range and rise time (a model) | 6,900 K at maximum light to 5,600 K; 44.8 R☉ ± 2.9%, largest at phase 0.45 | GCVS; Nardetto et al. 2016 (1.450 and 1.535 mas at phases 0.05 and 0.48, the temperatures their model atmospheres adopt) |
+| Polaris | Cepheid of small amplitude | 3.9696 d from HJD 2431495.813 (GCVS) | ±0.02 mag sinusoid (a few hundredths now: Bruntt et al. 2008); its period grows 4.5 s a year (Turner et al. 2005), so the phase is not today's | Unchanged | GCVS; Bruntt et al. 2008; Turner et al. 2005 |
+| Mira (ο Cet) | Mira | 331.96 d from JD 2444839 (GCVS), rising in 38% | A typical cycle, V 3.5–9.5 (GCVS extremes 2.0 and 10.1; a model) | 3,200 K near maximum to 2,900 K; 314 R☉ ± 9.5%, largest at phase 0.4 | GCVS; Woodruff et al. 2004 (VLTI diameters and temperatures at a few phases, scaled to the catalogue distance) |
+| RR Lyrae | RR Lyrae (RRab) | 0.56686776 d from HJD 2442923.4193, rising in 19% | V 7.06–8.12 (GCVS; a smooth model); no Blazhko cycle | Unchanged | GCVS |
+| Betelgeuse | Semi-regular | 416 d (Joyce et al. 2020) and 2,335 d (GCVS) | 0.55 ± 0.2 ± 0.1 (a model), with the Great Dimming through V = 1.12 on 2019 Dec 7 (ATel 13341), 1.614 on 2020 Feb 7–13 and 1.522 on Feb 22 (ATel 13512), 0.93 on Mar 31 (ATel 13601, visual), joined smoothly | Unchanged: the dimming was dust (Montargès et al. 2021), its temperature nearly constant (Levesque & Massey 2020) | as listed |
+
+Algol is registered as the triple (`records.ts` `algolRecords`, through `systemRecords`): its centre of mass in
+straight-line motion from catalogue row 61, the inner pair's orbit timed so that B is straight in front of A at the GCVS
+epoch (e = 0, ω = 270°), each star with its own M_V from its radius and temperature (shifted together by a few
+hundredths so the three add up to the catalogue's V). Up close the eclipse is the meshes themselves; the discs of B and C
+are exposed against A's by their V-band surface brightness (`luminous.discRadiance`, Planck at 550 nm: B is 3.4% of A),
+so B shows as the dim star it is. Algol B fills its Roche lobe (CHARA saw it elongated 1.04–1.22): drawn round. The
+reflection effect and B's ellipsoidal variation are left out (the secondary eclipse comes out 0.03 mag, about half the
+measured). β Lyrae's Roche-distorted pair and its disc are not drawn.
+
+**The journey "Stars that change"** (`stars-that-change`): Algol up close through an eclipse (4,000 times faster), δ
+Cephei pulsing (40,000 times), Mira (2 million times), and Betelgeuse's Great Dimming from beside the Sun, September 2019
+to spring 2020 (a million times), Orion's figure drawn.
+
+**Tests** (`variables.test.ts`): eclipses of limb-darkened discs (none apart, all behind a larger disc, p² for a small
+uniform disc, 1/(1 − u/3) at the centre, growing as the disc moves in); Algol out of eclipse 2.0–2.2, primary minimum at
+the GCVS time to 5 minutes, 1.0–1.6 mag deep, a 0.01–0.15 mag secondary, 8–11 hours long; Baron et al.'s orbit sizes,
+mass ratio, orthonormal bases, B in front at the epoch 2.0 R☉ off centre; the pulsators' GCVS ranges, maxima at their
+epochs and rise times; δ Cep's temperatures and Nardetto's diameter ratio, Mira's range and size; Polaris's amplitude;
+each catalogue row is its HIP number's; Betelgeuse through every measured point of the Great Dimming and inside its usual
+range otherwise; β Lyrae's quadratic ephemeris, its period now and its growth, the GCVS maximum and minima; every fact's
+source is listed.
+
+## 16. Stars in time: the constellations drift
+
+The stars already move with the date (§6, §11): each star of the field, each figure's segment end (constellation.vert.glsl)
+and each registered star goes in a straight line from its catalogue place with its space velocity, light-time included,
+for a million years either side of 2000 (Gaia and Hipparcos proper motions and parallaxes, Gaia DR3 or literature radial
+velocities; `motion.ts` and `motion.test.ts`). Over a human lifetime that is invisible; the journey "The constellations
+drift" (`constellations-drift`, `sim/stars/drift.ts`) shows it: the camera held still in Roam 4,000 au from the
+Sun towards the Big Dipper (beyond the Kuiper belt's bodies, the Sun behind the view, the stars shifted by under 0.1°),
+celestial north up, the figures drawn, the clock jumps to 100,000 years ago and runs at about 5,500 years a second to
+100,000 years ahead; then the same for Orion, then back to today. (Orbiting a galaxy would not do: in the expanding
+universe M101 recedes by 50 pc in 100,000 years, and the camera with it.) Nearby stars cross whole constellations in that
+time (Arcturus moves 2.3″ a year, 64° in 100,000 years), so neighbouring figures fly apart. Five stars of the Dipper (Merak, Phecda, Megrez, Alioth, Mizar) belong
+to the Ursa Major moving group and drift together; Dubhe and Alkaid do not, and the dipper bends. A camera move or another
+rate hands the clock back. `drift.test.ts` checks the premise on the catalogue: the five group stars keep their
+separations within a quarter, Dubhe–Alkaid changes by more than a degree either way, and by under 0.01° in 80 years.
+
+## 17. Sources and licences (§14–16)
+
+| Input | Use | Licence / terms |
+| --- | --- | --- |
+| MIST v1.2 EEP tracks (Choi et al. 2016; Dotter 2016), `data-raw/mist/` | `public/data/stellar-tracks.json` | Numbers from a published model grid, cited; the site states no licence, so the grid is not redistributed |
+| GCVS (Samus et al. 2017, VizieR B/gcvs) | Ephemerides and ranges | Catalogue values, cited; VizieR asks for acknowledgement |
+| The papers of §14–15 (Baron et al. 2012; Kolbas et al. 2015; Harmanec & Scholz 1993; Harmanec 2002; Nardetto et al. 2016; Woodruff et al. 2004; Bruntt et al. 2008; Turner et al. 2005; Jetsu 2021; Joyce et al. 2020; Montargès et al. 2021; Levesque & Massey 2020; ATel 13341, 13512, 13601; Bond et al. 2017; Nauenberg 1972; Schröder & Smith 2008; Sackmann et al. 1993; Gesicki et al. 2018; Bouvier & Wadhwa 2010) | Values and facts | Values from the literature, each cited in `variables.ts`, `evolution.ts` and the cards |

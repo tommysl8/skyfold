@@ -36,7 +36,7 @@
  * content/journeys.ts (the fall's journey), src/content/blackHoleScenes.test.ts.
  */
 import { SearchRelativeLongitude, Body } from 'astronomy-engine';
-import { Vector3 } from 'three';
+import { Matrix4, Vector3 } from 'three';
 import { AU_KM, C_KM_S, KPC_KM, LIGHT_YEAR_KM, MPC_KM, SUN_RADIUS_KM } from '../physics/constants';
 import { einsteinAngle } from '../physics/schwarzschild';
 import { bodyName, bodyPositionAt, bodyStateAt, childrenOf, displayRadiusKm, getBody, isBody, type BodyId } from '../sim/bodies';
@@ -67,7 +67,7 @@ import { emitPulse } from '../sim/pulses';
 import { frameCosmicWeb, frameFromOurSide, frameLocalGroup, frameMilkyWay, goToBody, goToStarSystem, goToSystem, showCmbMap } from '../ui/navigation';
 import { afterArrival, planOneG, startTrip } from '../ui/tripActions';
 import { formatIsoDate } from './learn/catalogue';
-import { eqjToWorld } from '../sim/frames';
+import { eqjToWorld, raDecToWorld } from '../sim/frames';
 import { KILONOVA_ID, supernovaById } from '../sim/phenomena';
 import { nakedEyeEndMs, shockRadiusKm } from '../sim/phenomena/supernovae';
 import { inspiralAt, kilonovaAt, MERGER_MS } from '../sim/phenomena/kilonova';
@@ -1907,22 +1907,31 @@ defineScene('sun-future', {
     }),
 });
 
-/** The constellations' journey: each stop looks from beside the Sun towards a fixed galaxy or nebula in the figure's direction. */
+/**
+ * The constellations' journey: each stop looks from beside the Sun towards a figure, the camera held still (Roam, which
+ * rides along with the Sun) 4,000 au from the Sun on the figure's side: beyond the Kuiper belt's bodies, the Sun behind
+ * the view, the figure's stars shifted by under 0.1°.
+ */
 interface DriftStop {
-  /** A body that does not move, to look at: the camera stands 1,000 au from the Sun towards it. */
-  toward: BodyId;
+  /** Where to look (ICRS, degrees). */
+  raDeg: number;
+  decDeg: number;
   run: DriftRun;
   note: string;
 }
 
+const DRIFT_FROM_SUN_KM = 4000 * AU_KM;
+
 const DRIFT_STOPS: readonly DriftStop[] = [
   {
-    toward: 'm101',
+    raDeg: 185,
+    decDeg: 56,
     run: { fromYr: -100_000, toYr: 100_000, seconds: 36 },
     note: 'The Big Dipper (Ursa Major) from the Sun, from 100,000 years ago to 100,000 years ahead, about 5,500 years a second. Five of its stars move together (the Ursa Major moving group); Dubhe and Alkaid, at the ends, go their own ways, and the dipper bends. Each star moves in a straight line from its measured motion (Gaia, Hipparcos).',
   },
   {
-    toward: 'orion-nebula',
+    raDeg: 83,
+    decDeg: 1,
     run: { fromYr: -100_000, toYr: 100_000, seconds: 36 },
     note: 'Orion over the same 200,000 years. Its stars are far away (250 to 1,300 light-years), so it holds its shape better; Betelgeuse drifts out of the shoulder. Then back to today.',
   },
@@ -1930,23 +1939,25 @@ const DRIFT_STOPS: readonly DriftStop[] = [
 
 function driftStop(i: number): void {
   const s = DRIFT_STOPS[i];
-  const at = s ? sim.bodies[s.toward] : undefined;
-  if (!s || !at) {
-    resetToNow();
-    return;
-  }
   resetToNow();
   updateEphemeris();
+  if (!s) {
+    controller.exitRoam();
+    return;
+  }
   useUI.setState({ journeyNote: s.note, constellations: 'on', showLabels: false, selected: null });
-  const d = at.pos.length();
-  controller.goTo(s.toward, { distance: d - 1000 * AU_KM, direction: at.pos.clone().negate().normalize() });
-  afterSlew(s.toward, () => startDrift(s.run, i + 1 < DRIFT_STOPS.length ? () => driftStop(i + 1) : null));
+  if (!controller.enterRoam()) return;
+  const dir = raDecToWorld(s.raDeg, s.decDeg).normalize();
+  sim.camera.pos.copy(sim.bodies.sun.pos).addScaledVector(dir, DRIFT_FROM_SUN_KM);
+  // Looking along the figure's direction, celestial north up.
+  sim.camera.quat.setFromRotationMatrix(new Matrix4().lookAt(new Vector3(), dir, raDecToWorld(0, 90)));
+  startDrift(s.run, () => driftStop(i + 1));
 }
 
 defineScene('constellations-drift', {
   label: PENDING_LABELS['constellations-drift'],
   note: DRIFT_STOPS[0].note,
-  unavailable: () => needs(...DRIFT_STOPS.map((s) => s.toward))() ?? (starStatus() === 'ready' ? null : LOADING_STARS),
+  unavailable: () => (starStatus() === 'ready' ? null : LOADING_STARS),
   run: (note) =>
     scene(note, () => {
       driftStop(0);

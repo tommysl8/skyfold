@@ -6,6 +6,8 @@ import {
   engulfmentAgeYr,
   mestelCoolingYr,
   mestelLuminosity,
+  planetaryNebula,
+  PN_EXPANSION_KMS,
   PLANET_A_AU,
   stageOf,
   stateAtAge,
@@ -165,5 +167,19 @@ describe('the Sun’s life', () => {
       'White dwarf',
     ]);
     expect(stateAtAge(sun.track, 0).eep).toBe(EEP.zams);
+  });
+});
+
+describe('the Sun’s planetary nebula (a model)', () => {
+  it('is none before the envelope is gone, glows once the core passes 25,000 K, and is gone 50,000 years after the AGB', () => {
+    expect(planetaryNebula(sun, sun.agbEndYr)).toBeNull();
+    expect(sun.ejectedYr - sun.agbEndYr).toBeGreaterThan(5000);
+    expect(sun.ejectedYr - sun.agbEndYr).toBeLessThan(20_000);
+    const pn = planetaryNebula(sun, sun.agbEndYr + 26_000)!;
+    expect(pn.glow).toBeCloseTo(1, 6);
+    const since = sun.agbEndYr + 26_000 - sun.ejectedYr;
+    expect(pn.radiusAu).toBeCloseTo((PN_EXPANSION_KMS * since * 365.25 * 86_400) / 149_597_870.7, 3);
+    expect(planetaryNebula(sun, sun.agbEndYr + 60_000)).toBeNull();
+    expect(stageOf(sun.track, stateAtAge(sun.track, sun.agbEndYr + 26_000).eep)).toBe('Planetary nebula');
   });
 });
