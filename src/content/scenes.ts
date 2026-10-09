@@ -73,7 +73,10 @@ import { nakedEyeEndMs, shockRadiusKm } from '../sim/phenomena/supernovae';
 import { inspiralAt, kilonovaAt, MERGER_MS } from '../sim/phenomena/kilonova';
 import { startPace } from '../sim/phenomena/pace';
 import { bodyFixedDir, geomagneticPole } from '../sim/phenomena/aurora';
+import { sunMapHeld } from '../sim/fields';
 import { registerDestinations, type Destination } from './destinations';
+import { requestDeepSky } from '../sim/deepsky';
+import { fieldAxisWorld } from '../sim/blackholes/fieldAxis';
 
 // ─── Targets ────────────────────────────────────────────────────────────────────────────
 
@@ -299,6 +302,20 @@ export const NAMED_SCENES = [
   'm87-jet',
   'centaurus-a-jets',
   'aurora',
+  'galactic-field',
+  'galactic-field-sky',
+  'crab-magnetosphere',
+  'magnetar-field',
+  'double-pulsar-field',
+  'merger-field',
+  'm87-star-field',
+  'sgr-a-star-field',
+  'magnetic-earth',
+  'magnetic-jupiter',
+  'magnetic-uranus',
+  'magnetic-neptune',
+  'magnetic-sun',
+  'heliospheric-current-sheet',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -433,6 +450,20 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'm87-jet': 'The jet of M87',
   'centaurus-a-jets': 'The jets and lobes of Centaurus A',
   'aurora': 'The northern lights from space',
+  'galactic-field': 'The Milky Way’s magnetic field',
+  'galactic-field-sky': 'The Galaxy’s field across our sky',
+  'crab-magnetosphere': 'The Crab pulsar’s magnetosphere',
+  'magnetar-field': 'A magnetar’s twisted field',
+  'double-pulsar-field': 'The Double Pulsar’s magnetic fields',
+  'merger-field': 'Two neutron stars merge: their magnetic fields',
+  'm87-star-field': 'M87*’s magnetic field',
+  'sgr-a-star-field': 'Sgr A*’s magnetic field',
+  'magnetic-earth': 'Earth’s magnetic field',
+  'magnetic-jupiter': 'Jupiter’s magnetosphere',
+  'magnetic-uranus': 'Uranus’s tipped magnetic field',
+  'magnetic-neptune': 'Neptune’s magnetic field',
+  'magnetic-sun': 'The Sun’s magnetic field on the date',
+  'heliospheric-current-sheet': 'The Sun’s field in the solar wind',
 };
 
 /** Define (or replace) a named scene. */
@@ -995,12 +1026,12 @@ function start(s: Scene, note: string): boolean {
  * Views a scene may turn on for itself: the CMB map over the sky, light-time correction, the
  * relativistic view (split, or with its Doppler colours), the cosmic web, and near a black hole
  * its lens, the accretion flow and the flow's band and blur (the scenes made to show the lens
- * switch the flow off), and the thin accretion discs (whose scenes hide the orbit lines, which run through the
- * disc's plane). What one scene turned on, the next scene turns back (unless the visitor
+ * switch the flow off), the thin accretion discs (whose scenes hide the orbit lines, which run through the
+ * disc's plane), and the magnetic field lines. What one scene turned on, the next scene turns back (unless the visitor
  * has changed it since), so the CMB map does not stay over Jupiter after the CMB scene, nor the
  * flow stay hidden after a lens scene.
  */
-const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur'] as const;
+const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines'] as const;
 type SceneView = (typeof SCENE_VIEWS)[number];
 type SceneViews = Partial<Pick<UIState, SceneView>>;
 
@@ -1021,6 +1052,7 @@ function currentViews(): Pick<UIState, SceneView> {
     accretionDisks: s.accretionDisks,
     accretionBand: s.accretionBand,
     ehtBlur: s.ehtBlur,
+    fieldLines: s.fieldLines,
   };
 }
 
@@ -2074,6 +2106,297 @@ const PHENOMENA_VIEWS: readonly Destination[] = (
   },
 }));
 registerDestinations(() => (isBody('m87') ? PHENOMENA_VIEWS : PHENOMENA_VIEWS.slice(0, 1)));
+
+// ─── The Milky Way's magnetic field (sim/galaxy/magneticField.ts, fieldView.ts) ──────────
+
+/** How far out the field's scene stands from the Galaxy's centre: far enough for the halo's field, 20 kpc either side. */
+const FIELD_VIEW_KM = 50 * KPC_KM;
+/** How far its view is tipped from the north galactic pole towards the Sun, so the halo and the X-field show in depth. */
+const FIELD_VIEW_TILT_DEG = 70;
+
+defineScene('galactic-field', {
+  label: PENDING_LABELS['galactic-field'],
+  note: 'The Milky Way’s magnetic field from 160,000 light-years out, well above the plane of its disc and tipped to see it in depth: field lines of a model fitted to radio measurements (Unger and Farrar 2024). In the disc the field follows the spiral arms and reverses between them, amber where it runs clockwise seen from the north and blue where it runs the other way; above and below the disc a halo field circles the Galaxy, one way in the north and the other way in the south; and an X-shaped field (lilac) rises through the inner disc. Each dash points the way the field points. It is a few millionths of a gauss, and the real field is as strong again in tangles too small to draw. The View menu turns the field lines off.',
+  unavailable: () => needs('milky-way')() ?? (galaxyStatus() === 'loading' || galaxyStatus() === 'failed' ? missingReason('milky-way') : null),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ fieldLines: true, showLabels: false });
+      useUI.getState().select(null);
+      const t = (FIELD_VIEW_TILT_DEG * Math.PI) / 180;
+      // From the centre: towards the north galactic pole, tipped towards the Sun (l = 180° seen from the centre).
+      const dir = galacticToWorld(0, 90).multiplyScalar(Math.cos(t)).addScaledVector(galacticToWorld(180, 0), Math.sin(t)).normalize();
+      controller.goTo('milky-way', { distance: FIELD_VIEW_KM, direction: dir });
+    }),
+});
+
+defineScene('galactic-field-sky', {
+  label: PENDING_LABELS['galactic-field-sky'],
+  note: 'From just beyond Earth, looking towards the centre of the Galaxy: faint streaks run along the magnetic field across the sky, measured by WMAP from the polarisation of the Milky Way’s radio glow (electrons spiralling round the field shine polarised across it). Along the Milky Way the field lies in its plane; the arc climbing from the plane left of the centre is the North Polar Spur, the edge of a bubble blown by old supernovae. Each streak is the field summed along the line of sight. Drag to look round the sky; the View menu turns the field off.',
+  unavailable: needs('milky-way', 'earth'),
+  run: (note) =>
+    scene(note, () => {
+      // The orbits' lines would cross the sky from here: hidden (the next scene puts them back).
+      useUI.setState({ fieldLines: true, showOrbits: false });
+      useUI.getState().select(null);
+      // Orbiting the Galaxy's centre from 40,000 km short of Earth on its side: the sky from Earth, towards Sagittarius.
+      const toEarth = sim.bodies.earth.pos.clone().sub(sim.bodies['milky-way'].pos);
+      controller.goTo('milky-way', { distance: toEarth.length() - 40_000, direction: toEarth.normalize() });
+    }),
+});
+
+/** The field's two scenes as places to go, for "Where to?". */
+const FIELD_VIEWS: readonly Destination[] = (
+  [
+    ['galactic-field-view', 'The Milky Way’s magnetic field', ['magnetic field', 'galactic magnetic field', 'Milky Way magnetic field', 'field lines', 'magnetic field lines', 'UF23', 'X-field', 'halo field', 'GMF'], 'A model of the Galaxy’s field', 'galactic-field', ['milky-way']],
+    ['galactic-field-sky-view', 'The Galaxy’s field across our sky', ['magnetic drapery', 'polarisation', 'polarization', 'polarised sky', 'WMAP polarisation', 'Planck drapery', 'North Polar Spur'], 'The field over the sky, measured', 'galactic-field-sky', ['milky-way', 'earth']],
+  ] as const
+).map(([id, name, aliases, kind, spec, bodies]) => ({
+  id,
+  name,
+  aliases,
+  kind,
+  group: 'milky-way' as const,
+  distanceKm: () => NaN,
+  unavailable: () => (bodies.every((b) => isBody(b)) ? null : 'Loading…'),
+  go: () => {
+    runScene(spec);
+  },
+}));
+registerDestinations(() => (isBody('milky-way') ? FIELD_VIEWS : []));
+
+// ─── Magnetic fields (sim/deepsky/magnetosphere.ts, mergerField.ts; sim/blackholes/holeField.ts) ───────────
+
+const CRAB_PULSAR: BodyId = 'psr-j0534p2200';
+const SGR_1806: BodyId = 'psr-j1808m2024';
+const DOUBLE_PULSAR: BodyId = 'psr-j0737m3039a';
+
+/** Why a pulsar's scene cannot run yet: the pulsar catalogue (asked for here, a few hundred kB) is still on its way. */
+const needsPulsar =
+  (id: BodyId) =>
+  (): string | null => {
+    if (isBody(id)) return null;
+    if (typeof window !== 'undefined') requestDeepSky(['pulsars']);
+    return 'Loading the pulsar catalogue…';
+  };
+
+/** A direction `deg` from a body's spin axis, on the side of `towards` (world, from the body). */
+function offAxis(axis: Vector3, towards: Vector3, deg: number): Vector3 {
+  const side = towards.clone().addScaledVector(axis, -towards.dot(axis));
+  if (side.lengthSq() < 1e-12) side.set(axis.y, axis.z, axis.x).addScaledVector(axis, -axis.y);
+  side.normalize();
+  const a = (deg * Math.PI) / 180;
+  return axis.clone().multiplyScalar(Math.cos(a)).addScaledVector(side, Math.sin(a)).normalize();
+}
+
+/** A pulsar seen with its field lines on, `radii` of its framing size out, `deg` from its spin axis on our side. */
+function pulsarField(id: BodyId, note: string, distanceKm: (size: number) => number, deg: number): boolean {
+  const model = getBody(id)?.pulsar;
+  if (!model) return false;
+  return scene(note, () => {
+    setWarp(1);
+    setPaused(false);
+    useUI.setState({ fieldLines: true, selected: id, showLabels: false });
+    controller.goTo(id, { distance: distanceKm(model.sizeKm), direction: offAxis(model.spin.axis, model.toEarth, deg) });
+  });
+}
+
+defineScene('crab-magnetosphere', {
+  label: PENDING_LABELS['crab-magnetosphere'],
+  get note() {
+    const a = getBody(CRAB_PULSAR)?.pulsar?.spin.alphaRad;
+    const alpha = a === undefined ? 'its magnetic axis’s tilt' : `±${Math.round((a * 180) / Math.PI)}°`;
+    return `The Crab pulsar from 15,000 km, its whole magnetic field drawn as a model: closed loops turning with the star out to its light cylinder, 1,590 km out, where turning with it would take the speed of light; the open lines from its polar caps, wound back into a spiral wind; and, faint, the current sheet between the wind’s two polarities, rippling outwards over ${alpha} of latitude as the tilted star turns. Cyan marks field pointing out of the star, amber into it: along the wind they alternate in stripes. It turns 30 times a second, shown ten times slower, in step with its beams. The shapes follow force-free models (Contopoulos, Kazanas & Fendt 1999; Spitkovsky 2006; Bogovalov 1999).`;
+  },
+  unavailable: needsPulsar(CRAB_PULSAR),
+  run: (note) => pulsarField(CRAB_PULSAR, note, () => 15_000, 75),
+});
+
+defineScene('magnetar-field', {
+  label: PENDING_LABELS['magnetar-field'],
+  note: 'SGR 1806−20, the magnetar of the giant flare of 27 December 2004, from 900 km. Its field, about 2 × 10¹⁵ gauss at the surface from how fast its spin slows, a thousand times a normal pulsar’s, is drawn as a model: dipole loops twisted about the magnetic axis by about a radian, as Thompson, Lyutikov & Kulkarni (2002) describe magnetars, reaching out to where the field has fallen to about 10¹¹ gauss, some 28 star radii, where its currents scatter the star’s X-rays. Cyan marks field leaving the star, amber returning to it.',
+  unavailable: needsPulsar(SGR_1806),
+  run: (note) => pulsarField(SGR_1806, note, () => 900, 70),
+});
+
+defineScene('double-pulsar-field', {
+  label: PENDING_LABELS['double-pulsar-field'],
+  note: 'The Double Pulsar, two neutron stars 880,000 km apart going round each other every 2 hours 27 minutes, with their magnetic fields drawn as a model. Pulsar B’s field is squeezed to about 40,000 km on the side facing A, where the wind of A, which spins 120 times faster, presses on it (Lyutikov & Thompson 2005), and drawn out behind; A’s own magnetosphere, its light cylinder only 1,080 km out, is the small knot round A. Seen from Earth, A passes behind B’s field once an orbit and its pulses are eclipsed for about 30 seconds, flickering in time with B’s spin: the eclipses that let that shape be measured.',
+  unavailable: needsPulsar(DOUBLE_PULSAR),
+  run: (note) => pulsarField(DOUBLE_PULSAR, note, (a) => 0.9 * a, 20),
+});
+
+defineScene('merger-field', {
+  label: PENDING_LABELS['merger-field'],
+  note: 'GW170817’s two neutron stars in their last 12 seconds, with their magnetic fields drawn as a model (theirs were not measured: about 10¹² gauss each is assumed). Each star carries its own field round the orbit; as they close in the two fields meet, some lines joining the stars in a twisting tube, as simulations find (Palenzuela et al. 2013; Most & Philippov 2020). At the merger the joined field tears apart in a burst (really a few milliseconds, shown over a quarter of a second); then the remnant’s field, amplified a thousandfold in milliseconds and wound round its axis (Kiuchi et al. 2015), opens into a funnel along the axis about 60 ms later, where a jet is launched (Ruiz et al. 2016), drawn growing at half the speed of light. The chirp runs at its real pace (the orbit drawn 100 times slower).',
+  unavailable: needs(KILONOVA_ID),
+  run: (note) =>
+    scene(note, () => {
+      setWarp(1);
+      setPaused(false);
+      useUI.setState({ fieldLines: true, selected: KILONOVA_ID, showLabels: false });
+      const at = sim.bodies[KILONOVA_ID];
+      const dir = sim.bodies.earth.pos.clone().sub(at.pos).normalize().addScaledVector(UP, 0.5).normalize();
+      controller.goTo(KILONOVA_ID, { distance: 2500, direction: dir });
+      afterSlew(KILONOVA_ID, () => {
+        if (!setEpoch(MERGER_MS - 12_000)) return;
+        updateEphemeris();
+        setWarp(1);
+        setPaused(false);
+        startPace({
+          target: KILONOVA_ID,
+          zeroMs: MERGER_MS,
+          realUntilMs: MERGER_MS + 3000,
+          efoldS: 2.5,
+          maxWarp: 2e5,
+          endMs: MERGER_MS + 21 * 86_400_000,
+          // Further back than the kilonova's scene, so the burst's field shows beside the remnant's glare.
+          distanceKm: (ms) => (ms < MERGER_MS ? Math.max(4 * inspiralAt(ms).separationKm, 700) : Math.max(3.4 * kilonovaAt(ms).blueKm, 3000)),
+        });
+      });
+    }),
+});
+
+/** A hole's field seen from `rM` (units of M), `deg` from its spin axis on the Sun's side, the flow off. */
+function holeField(hole: BodyId, note: string, rM: number, deg: number): boolean {
+  return scene(note, () => {
+    holeViews(hole, { flow: false });
+    useUI.setState({ fieldLines: true, selected: hole });
+    const axis = fieldAxisWorld(hole) ?? IN_THE_PLANE.clone();
+    const dir = offAxis(axis, sunward(hole), deg);
+    toHole(hole, rM, dir, hoverStep(hole, rM, dir));
+  });
+}
+
+defineScene('m87-star-field', {
+  label: PENDING_LABELS['m87-star-field'],
+  note: 'Hovering 60 M (3,850 au) from M87*, the field threading the hole drawn as a model consistent with the Event Horizon Telescope’s polarisation: lines through the horizon, wound into helices as the spinning hole turns them (at half its rate, for a spin of 0.5) and opening into the funnel the jet comes out of; fainter lines from the disc. Cyan marks field leaving the hole, amber entering it. The EHT measured the spiral of its ring’s polarisation, not this field: the simulations that match it best have such a strong, ordered field (a magnetically arrested disc). Light bends round the hole, so the lines behind it show again round the shadow’s edge.',
+  unavailable: needs(M87_STAR),
+  run: (note) => holeField(M87_STAR, note, 60, 65),
+});
+
+defineScene('sgr-a-star-field', {
+  label: PENDING_LABELS['sgr-a-star-field'],
+  note: 'Hovering 60 M (2.5 au) from Sagittarius A*, the field threading the hole drawn as a model consistent with the Event Horizon Telescope’s polarisation of its ring (strongly ordered, spiralling; EHT 2024): lines through the horizon wound into helices by a spin of 0.94, the one model that passes all the EHT’s tests, opening into a funnel along its axis, with fainter lines from the disc. Cyan marks field leaving the hole, amber entering it. Light bends round the hole: the lines behind it show again round the shadow’s edge. The gas is switched off here; its card switches it back.',
+  unavailable: needs(SGR_A),
+  run: (note) => holeField(SGR_A, note, 60, 70),
+});
+
+// ─── Magnetic fields ────────────────────────────────────────────────────────────────────
+
+/**
+ * A view of a body's field (sim/fields): from a direction square to its spin axis, the Sun to one side where it can be,
+ * a little above its equator.
+ */
+function fieldViewDirection(id: BodyId, elevationDeg: number): Vector3 {
+  const b = sim.bodies[id];
+  const north = new Vector3(0, 1, 0).applyQuaternion(b.quat);
+  const sun = sim.bodies.sun.pos.clone().sub(b.pos).normalize();
+  const side = new Vector3().crossVectors(north, sun);
+  // The spin axis towards the Sun (Uranus near its solstices): any direction square to it.
+  if (side.lengthSq() < 0.04) side.crossVectors(north, Math.abs(north.y) < 0.9 ? UP : new Vector3(1, 0, 0));
+  const e = (elevationDeg * Math.PI) / 180;
+  return side.normalize().multiplyScalar(Math.cos(e)).addScaledVector(north, Math.sin(e)).normalize();
+}
+
+/**
+ * Set up a body's field: the view on, the camera, then the body's card (with its field's line) and the pace. The orbit
+ * lines are hidden about the Sun, where the planets' orbits, seen edge on, would cross its field.
+ */
+function fieldScene(note: string, id: BodyId, distanceKm: number, warp: number, elevationDeg = 15): boolean {
+  return scene(note, () => {
+    setWarp(1);
+    setPaused(false);
+    useUI.setState(id === 'sun' ? { fieldLines: true, showOrbits: false } : { fieldLines: true });
+    controller.goTo(id, { distance: distanceKm, direction: fieldViewDirection(id, elevationDeg) });
+    afterSlew(id, () => {
+      useUI.setState({ selected: id, bodyCard: true });
+      if (warp !== 1) setWarp(warp);
+    });
+  });
+}
+
+const radiusOf = (id: BodyId) => getBody(id)?.physical.radiusKm ?? 1;
+
+defineScene('magnetic-earth', {
+  label: PENDING_LABELS['magnetic-earth'],
+  note: 'Earth’s magnetic field from 40 Earth radii: the core’s field for the date (IGRF-14), turning with Earth 1,000 times faster than real. Lines leave the southern hemisphere (warm) and come back into the northern (cool): the pole in the Arctic is a magnetic south pole. They are cut where the solar wind holds the field back, about 10 Earth radii towards the Sun (the magnetopause of Shue et al. 1998); on the night side the real field is stretched into a long tail, which is not modelled, nor are the currents in space.',
+  unavailable: needs('earth', 'sun'),
+  run: (note) => fieldScene(note, 'earth', 40 * radiusOf('earth'), 1000),
+});
+
+defineScene('magnetic-jupiter', {
+  label: PENDING_LABELS['magnetic-jupiter'],
+  note: 'Jupiter’s magnetosphere, the largest thing any planet has: Juno’s model of the field (JRM33), cut where the solar wind holds it back, about 80 Jupiter radii towards the Sun (Joy et al. 2002). It points the other way from Earth’s: lines leave the north (warm) and come back in the south (cool), and the strong patches of its northern field twist them. The Galilean moons orbit deep inside. The disc of Io’s plasma that stretches the real field outwards, and the tail, are not modelled. Time runs 300 times faster: a turn in two minutes.',
+  unavailable: needs('jupiter', 'sun'),
+  run: (note) => fieldScene(note, 'jupiter', 260 * radiusOf('jupiter'), 300, 10),
+});
+
+defineScene('magnetic-uranus', {
+  label: PENDING_LABELS['magnetic-uranus'],
+  note: 'Uranus’s field is tipped 60° from its spin axis and its centre sits a third of a radius off the planet’s (AH5, Herbert 2009, from Voyager 2’s flyby in 1986 and the aurora since). Time runs 1,000 times faster: as the planet turns, once every 62 seconds here, the field wobbles round it. How it is turned today is not known: Voyager’s rotation period is too uncertain to carry its longitude across forty years.',
+  unavailable: needs('uranus', 'sun'),
+  run: (note) => fieldScene(note, 'uranus', 70 * radiusOf('uranus'), 1000, 5),
+});
+
+defineScene('magnetic-neptune', {
+  label: PENDING_LABELS['magnetic-neptune'],
+  note: 'Neptune’s field, tipped 47° from its spin axis and its centre half a radius off the planet’s (O8, Connerney, Acuña & Ness 1991, from Voyager 2’s flyby in 1989). Time runs 1,000 times faster: a turn every 58 seconds here. As with Uranus, how it is turned today is not known.',
+  unavailable: needs('neptune', 'sun'),
+  run: (note) => fieldScene(note, 'neptune', 70 * radiusOf('neptune'), 1000, 5),
+});
+
+defineScene('magnetic-sun', {
+  label: PENDING_LABELS['magnetic-sun'],
+  get note() {
+    const held = sunMapHeld(sim.timeMs);
+    const map =
+      held === 'after'
+        ? 'from the latest map in the app (Carrington rotation 2315, from 29 August 2026; the field changes from one rotation to the next)'
+        : held === 'before'
+          ? 'from the first map in the app (May 2010; there is none for this date)'
+          : 'from SDO/HMI’s map of the photosphere for this rotation';
+    return `The Sun’s magnetic field on the date, ${map}: loops close over the active regions, and open lines leave the coronal holes. Up to 2.5 solar radii it is a potential field, as if the corona carried no currents (it does); beyond, the solar wind carries the open lines away. Warm: field leaving the Sun; cool: coming back in.`;
+  },
+  unavailable: needs('sun'),
+  run: (note) => fieldScene(note, 'sun', 7 * radiusOf('sun'), 1, 20),
+});
+
+defineScene('heliospheric-current-sheet', {
+  label: PENDING_LABELS['heliospheric-current-sheet'],
+  note: 'The Sun’s field carried out by the solar wind, from 9 au above the planets: each open line winds into a Parker spiral as the Sun turns under the outflowing wind (400 km/s here), 47° from the radial at Earth’s distance. Warm lines point away from the Sun, cool ones towards it; the white lines lie in the heliospheric current sheet between them, warped by the Sun’s tilted, uneven field. Drawn out to 3 au.',
+  unavailable: needs('sun'),
+  run: (note) =>
+    scene(note, () => {
+      setWarp(1);
+      setPaused(false);
+      useUI.setState({ fieldLines: true, showOrbits: true });
+      controller.goTo('sun', { distance: 9 * AU_KM, direction: new Vector3(0.18, 1, 0.32) });
+    }),
+});
+
+/** The fields as views, for "Where to?". */
+const SOLAR_FIELD_VIEWS: readonly Destination[] = (
+  [
+    ['magnetic-field-view', 'Magnetic fields', ['magnetic field', 'magnetic field lines', 'field lines', 'magnetosphere', 'magnetic poles', 'geomagnetic field', 'IGRF'], 'Earth’s magnetic field', 'magnetic-earth', ['earth']],
+    ['jupiter-magnetosphere-view', 'Jupiter’s magnetosphere', ['Jupiter magnetic field', 'jovian magnetosphere', 'JRM33'], 'Jupiter’s magnetic field', 'magnetic-jupiter', ['jupiter']],
+    ['uranus-field-view', 'Uranus’s tipped magnetic field', ['Uranus magnetic field', 'Uranus magnetosphere'], 'Uranus’s magnetic field', 'magnetic-uranus', ['uranus']],
+    ['neptune-field-view', 'Neptune’s magnetic field', ['Neptune magnetosphere'], 'Neptune’s magnetic field', 'magnetic-neptune', ['neptune']],
+    ['sun-field-view', 'The Sun’s magnetic field', ['solar magnetic field', 'coronal magnetic field', 'coronal loops', 'PFSS', 'potential field source surface'], 'The corona’s field on the date', 'magnetic-sun', ['sun']],
+    ['heliospheric-current-sheet-view', 'Heliospheric current sheet', ['heliospheric current sheet', 'Parker spiral', 'interplanetary magnetic field', 'IMF', 'solar wind'], 'The Sun’s field in the solar wind', 'heliospheric-current-sheet', ['sun']],
+  ] as const
+).map(([id, name, aliases, kind, spec, bodies]) => ({
+  id,
+  name,
+  aliases,
+  kind,
+  group: 'sun-planets',
+  distanceKm: () => NaN,
+  unavailable: () => (bodies.every((b) => isBody(b)) ? null : 'Loading…'),
+  go: () => {
+    runScene(spec);
+  },
+}));
+registerDestinations(() => SOLAR_FIELD_VIEWS);
 
 // ─── Cygnus X-1's disc ──────────────────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@
  *  - Supernovae: each one's fireball and debris up close, from the moment its light reached Earth to today's remnant;
  *    SN 1987A's ring of gas lit by its flash and then its blast.
  *  - The kilonova of GW170817: the two neutron stars spiralling in (the chirp's real pace, the orbit drawn slowed), then
- *    the glowing debris, blue then red.
+ *    the glowing debris, blue then red; with View › Magnetic field lines, their fields (scene/MergerField.tsx).
  *  - The jets of M87 (visible light) and Centaurus A (radio and X-rays, false colour), beamed as seen from the camera.
  * Each draws nothing (its mesh not even visible) until it is near and wanted; the meshes are bounding spheres, so the
  * cost is the pixels each covers: measured in docs/data/phenomena.md §5.
@@ -31,6 +31,7 @@ import { inspiralAt, NS_RADIUS_KM, THETA_JN_DEG, vLuminosityUnits, type Inspiral
 import { KILONOVA_ID } from '../sim/phenomena/records';
 import { beamingFrom, blobReachKpc, cenABlobs, m87JetBlobs, type Blob } from '../sim/phenomena/jets';
 import { NONE } from '../sim/phenomena/lightCurve';
+import { MergerField, mergerView } from './MergerField';
 
 const ARCSEC2_PER_SR = 4.2545e10;
 const SPHERE = new SphereGeometry(1, 48, 24);
@@ -358,6 +359,7 @@ function Kilonova() {
     const kn = phenomena.kilonova;
     if (!phenomena.want.kilonova || !b || !kn) {
       m.visible = false;
+      mergerView.on = false;
       return;
     }
     updateLaw(camera);
@@ -391,6 +393,7 @@ function Kilonova() {
       const lum = sNs * 2 * Math.PI * sig * sig;
       add(dir.clone().multiplyScalar(ins.r1Km / unit), frame.n, sig, sig, lum, white);
       add(dir.clone().multiplyScalar(-ins.r2Km / unit), frame.n, sig, sig, lum, white);
+      mergerView.dir.copy(dir);
     } else {
       const R = Math.max(kn.blueKm, 30);
       unit = R;
@@ -416,6 +419,11 @@ function Kilonova() {
         add(p, tang, 0.36 * rr, 0.24 * rr, (L * (1 - blueShare)) / 10, tr);
       }
     }
+    // The fields' model draws in the same place and frame (scene/MergerField.tsx).
+    mergerView.on = true;
+    mergerView.centre.copy(centre);
+    mergerView.n.copy(frame.n);
+    mergerView.sepKm = ins.separationKm;
     set.count = count;
     set.unitKm = unit;
     set.centre.copy(centre).divideScalar(unit);
@@ -531,6 +539,7 @@ export default function Phenomena() {
       <Aurora />
       <Supernovae />
       <Kilonova />
+      <MergerField />
       <Jets />
     </>
   );
