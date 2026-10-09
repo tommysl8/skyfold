@@ -377,3 +377,8 @@ A further check of the app and the article (the physics, the words, and every se
 - Our galaxy, galactic-centre-orbits: the bright point at the orbits' shared focus is the model of the gas falling in, and the S-stars are found by their labels against the cluster's bright glow; the caption says both | measured in the app | corrected
 - sky-from:gaia-bh1: the Sun's ring, 0.519° across, is about 7 CSS pixels at the scene's fixed 50° field of view and reads as a bright point; the caption says so | measured in the app | corrected
 - Maths: the renderer now keeps the punctuation after a short inline formula on its line (src/content/learn/mathPlugin.ts, a span that does not wrap), so the 16 commas and full stops set inside formulas as a workaround are back outside them, in house style; the colons reworded then stay reworded | the Learn view | changed
+
+## Magnetic fields (added 9 October 2026)
+- M87*'s ring is polarised in a spiral; the β2 phase between −163° and −129°; the polarimetric constraints favour magnetically arrested (MAD) models; field in the emitting gas about 1–30 G | 2021 | EHT Collaboration 2021, ApJL 910, L13, Table 2 and abstract (arXiv 2105.01173, re-read 9 Oct 2026) | verified
+- Sgr A*'s ring polarised 24–28 % on average (up to about 40 %), in a spiral; MAD models favoured; the one model passing all constraints is MAD a* = 0.94, i = 150° | 2024 | EHT Collaboration 2024, ApJL 964, L26, Table 1 and Section 5.3 (re-read 9 Oct 2026) | verified
+- The field lines drawn are a model (Blandford & Znajek 1977 paraboloidal field), not a measurement | - | MNRAS 179, 433 | model, labelled

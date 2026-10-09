@@ -31,6 +31,7 @@
     "data:cosmic-web": "node scripts/build-cosmic-web.mjs",
     "data:local-galaxies": "node scripts/build-local-galaxies.mjs",
     "data:cmb": "node scripts/build-cmb.mjs",
+    "data:field-sky": "node scripts/build-field-sky.mjs --source wmap",
     "data:surveys": "node --max-old-space-size=8000 scripts/build-surveys.mjs",
     "data:deepsky": "node scripts/build-ngc.mjs && node scripts/build-pulsars.mjs && node scripts/build-snrs.mjs && node --max-old-space-size=4000 scripts/build-gw-events.mjs",
     "data:quaia": "node --max-old-space-size=6000 scripts/build-quaia.mjs",

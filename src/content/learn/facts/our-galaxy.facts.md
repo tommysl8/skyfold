@@ -231,3 +231,10 @@ Numbers shared with other Learn articles were compared across all 16 articles; c
 ## See-it captions checked in the app (29 September 2026)
 
 - galactic-centre-orbits: the bright point at the orbits' shared focus is the model of the gas falling into the black hole, and near the centre the model star cluster's glow makes the orbit lines faint, so the caption now says the S-stars are picked out by their labels and names the point | measured in the app | corrected
+
+## The magnetic field
+- Unger & Farrar 2024 fit parametric models of the coherent field to extragalactic rotation measures and WMAP/Planck polarised synchrotron; local pitch angle of the disc field (11.0 ± 0.3 stat ± 1.0) deg, close to the local arm's 11.4 ± 1.9 deg (Reid et al. 2019) | 2024 | M. Unger & G. R. Farrar, ApJ 970, 95 (2024), arXiv:2311.12120 (LaTeX source read), section 7 (Results) | verified (primary)
+- In the grand-design fit the field reverses between magnetic arms, the reversals at the matter arms' tracers; a toroidal halo of opposite sense north and south (B_N = 3.26, B_S = -3.09 microgauss in the base model); a poloidal "X-field" (B_p = 0.98 microgauss in the plane) | 2024 | Unger & Farrar 2024, Table 3 and sections 5 and 7 | verified (primary)
+- Compatibility of rotation measures and polarised intensity needs a striated random field of about the same energy as the coherent field (or an n_e-B anticorrelation) | 2024 | Unger & Farrar 2024, summary | verified (primary); article: "a tangled field about as strong again"
+- Earth's surface field 25-65 microtesla = 0.25-0.65 gauss; a few microgauss (3-6) is 0.5-2.4 x 10^-5 of it: "about a hundred-thousandth" | computed | verified
+- X-shaped radio polarisation haloes in edge-on spiral galaxies | 2020 | Krause et al. 2020, A&A 639, A112, as cited by Unger & Farrar 2024 section 5.3 | verified (secondary, via the paper)

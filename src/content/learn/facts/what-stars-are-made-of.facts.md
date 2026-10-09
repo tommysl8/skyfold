@@ -202,3 +202,7 @@ Numbers shared with other Learn articles were compared across all 16 articles; c
 
 - Leavitt cross-link pointed to How far are the stars?, which does not tell the Cepheid story | n/a | n/a | corrected: link now points to Island universes; How far are the stars? is linked instead where stellar distances are mentioned
 - LSST start | 'on 30 June 2026 began' -> 'at the end of June 2026 began' (announced on 30 June) | NOIRLab noirlab2616 | reworded to match Clockwork and chaos, Edges of the Solar System and The edge of reach
+
+## The Crab pulsar's field (added 9 October 2026)
+- Crab pulsar P = 33.39 ms; light cylinder cP/2π = 1,592 km | 1,590 km | ATNF Pulsar Catalogue 2.8.1; computed | verified
+- Its drawn magnetosphere is a model after force-free solutions (Contopoulos, Kazanas & Fendt 1999; Spitkovsky 2006; Bogovalov 1999) | - | ApJ 511, 351; ApJ 648, L51; A&A 349, 1017 | model, labelled

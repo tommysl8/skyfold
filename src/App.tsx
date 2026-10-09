@@ -64,12 +64,47 @@ const DocView = lazy(() => import('./ui/docs/DocView'));
 const DeepSky = lazy(() => import('./scene/DeepSky'));
 // And the phenomena's models (supernovae, the kilonova, the jets, the aurora), once one is first near (sim/phenomena).
 const Phenomena = lazy(() => import('./scene/Phenomena'));
+// And the field lines threading the black holes, while View › Magnetic field lines is on (sim/blackholes/holeField.ts).
+const HoleFieldLines = lazy(() => import('./scene/HoleFieldLines'));
+
+function HoleFieldLayer() {
+  const on = useUI((s) => s.fieldLines);
+  return on ? (
+    <Suspense fallback={null}>
+      <HoleFieldLines />
+    </Suspense>
+  ) : null;
+}
+
+// And the Milky Way's magnetic field, while View › Magnetic field lines is on (nothing of it loads or runs before).
+const GalacticField = lazy(() => import('./scene/GalacticField'));
+
+function GalacticFieldLayer() {
+  const on = useUI((s) => s.fieldLines);
+  return on ? (
+    <Suspense fallback={null}>
+      <GalacticField />
+    </Suspense>
+  ) : null;
+}
+// And the magnetic field lines, the first time View › Magnetic field lines is turned on (sim/fields).
+const FieldLines = lazy(() => import('./scene/FieldLines'));
 
 function PhenomenaLayer() {
   const started = useSyncExternalStore(subscribePhenomena, () => phenomena.started);
   return started ? (
     <Suspense fallback={null}>
       <Phenomena />
+    </Suspense>
+  ) : null;
+}
+
+/** Mounted only while the view is on: off, nothing of it draws (what it traced is kept for next time). */
+function FieldLinesLayer() {
+  const on = useUI((s) => s.fieldLines);
+  return on ? (
+    <Suspense fallback={null}>
+      <FieldLines />
     </Suspense>
   ) : null;
 }
@@ -156,6 +191,8 @@ export default function App() {
           <Surveys />
           <DeepSkyLayer />
           <PhenomenaLayer />
+          <GalacticFieldLayer />
+          <FieldLinesLayer />
           <Constellations />
           <PlanetHosts />
           <EclipticGrid />
@@ -170,6 +207,7 @@ export default function App() {
           <LensRings />
           <AccretionFlow />
           <AccretionDisk />
+          <HoleFieldLayer />
           <BlackHoleLens />
           <LightPulses />
           <LabelSync />
