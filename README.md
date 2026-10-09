@@ -61,7 +61,7 @@ On a touch screen, drag to look around and hold the arrows at the right edge to 
 
 Almost everything you see comes from real measurements:
 
-- **Solar System:** positions from Astronomy Engine and JPL Horizons; 1.47 million asteroids and comets from the JPL Small-Body Database, on their Kepler orbits.
+- **Solar System:** positions from Astronomy Engine and JPL Horizons; the named and large asteroids and every comet from the JPL Small-Body Database (about 33,000, with a sample of the rest), on their Kepler orbits.
 - **Stars:** 3.75 million from AT-HYG, the Gaia Catalogue of Nearby Stars and Gaia DR3, with Gaia distances and motions.
 - **Planets of other stars:** the NASA Exoplanet Archive.
 - **Galaxies:** the Local Volume Database and Cosmicflows-4.

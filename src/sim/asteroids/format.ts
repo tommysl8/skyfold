@@ -7,7 +7,7 @@
  * Orbit file `NN.bin.gz` (gzip; little-endian inside):
  *   header, 32 bytes: u32 magic 'SBF1', u32 section count, u32 reserved ×2, f64 reference epoch (JD, TDB), f64 reserved
  *   section table, 48 bytes each: u8 group, u8 shape (0 ellipse, 1 any conic), u8 frame (0 about the Sun, 1 about
- *     the barycentre), u8 reserved; u32 count; u32 numbered (the first `numbered` bodies are the numbered ones, by
+ *     the barycentre), u8 sample (1: a sample of the bodies without a card, drawn only: scripts/asteroids/notable.mjs); u32 count; u32 numbered (the first `numbered` bodies are the numbered ones, by
  *     number); u32 byte offset of the columns; f32 hMin, hMax (the section's range of H, or of M1 for comets);
  *     f32 rMin, rMax (au: the least perihelion and the greatest aphelion, Infinity for open orbits); u32 id (the
  *     section's number across all files); u32 reserved ×3
@@ -69,6 +69,8 @@ export interface SectionHead {
   group: number;
   shape: number;
   frame: number;
+  /** A sample standing for the bodies without a card: drawn, but never picked, labelled or found. */
+  sample?: boolean;
   count: number;
   numbered: number;
   hMin: number;
@@ -165,6 +167,7 @@ export function encodeOrbitFile(file: OrbitFile): Uint8Array {
     dv.setUint8(h, s.group);
     dv.setUint8(h + 1, s.shape);
     dv.setUint8(h + 2, s.frame);
+    dv.setUint8(h + 3, s.sample ? 1 : 0);
     dv.setUint32(h + 4, s.count, true);
     dv.setUint32(h + 8, s.numbered, true);
     dv.setUint32(h + 12, offsets[k], true);
@@ -201,6 +204,7 @@ export function decodeOrbitFile(buf: ArrayBuffer): OrbitFile {
       group: dv.getUint8(h),
       shape: dv.getUint8(h + 1),
       frame: dv.getUint8(h + 2),
+      sample: dv.getUint8(h + 3) === 1,
       count: dv.getUint32(h + 4, true),
       numbered: dv.getUint32(h + 8, true),
       hMin: dv.getFloat32(h + 16, true),
