@@ -220,7 +220,8 @@ export function smallBodyRecord(s: LoadedSection, index: number, l: Label, refEp
       geometricAlbedo: albedo,
       colour: GROUP_COLOURS[group],
     },
-    visual: { flat: true },
+    // A comet's coma and tails, as strong and long as its magnitude law says (scene/CometTails.tsx).
+    visual: comet ? { flat: true, tails: true, tailMagnitudes: { m1: el.M1, k1: el.K1 } } : { flat: true },
     facts,
     factSources: [`https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=${encodeURIComponent(lookup)}`],
     factSourceLabels: ['JPL Small-Body Database'],

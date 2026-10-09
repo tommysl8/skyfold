@@ -545,6 +545,11 @@ function Sources() {
             274: ion tails along the solar wind. Both in simplified form for the comet tails.
           </>,
           <>
+            E. N. Parker (1961), ApJ 134, 20: the heliopause's shape, fitted to the Voyager crossings; D. J. McComas et al.
+            (2019), ApJ 884, 145: the termination shock's sphere; D. J. McComas et al. (2015), ApJS 220, 22: the interstellar
+            flow; M. J. Duncan, T. Quinn, S. Tremaine (1987), AJ 94, 1330: the Oort cloud's density, for its model.
+          </>,
+          <>
             E. F. Taylor, J. A. Wheeler, Spacetime Physics, 2nd ed. (1992); W. Rindler, Relativity: Special, General, and
             Cosmological, 2nd ed. (2006).
           </>,
@@ -670,7 +675,8 @@ function Limitations() {
           Moons, dwarf planets, comets and spacecraft are as good as their data: outside 1981–2199 the moons follow their mean
           orbits and the small bodies two-body orbits, both labelled; spacecraft do not exist before launch. Rotations nobody
           can predict (Hyperion, Halley, Nix), surfaces never mapped, Quaoar’s ring plane and the Adams arcs’ positions are
-          illustrative, faint rings are drawn more visible than they are, and comet tails come from a simple physical model.
+          illustrative, faint rings are drawn more visible than they are, comet tails come from a simple physical model, and
+          the heliosphere and the Oort cloud are models (the Oort cloud has never been seen).
           Each body’s card says which.
         </li>
       </ol>

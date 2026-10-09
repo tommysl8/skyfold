@@ -73,7 +73,18 @@ Other sources used by the code, but not redistributed as files:
   the JPL Small-Body Database, the PDS Small Bodies Node colour compilations (Neese 2014, 2020), the PDS Rings Node
   ring tables, and the papers listed in `public/data/bodies.json` and `public/data/rings.json`.
 - Comet tails: the syndyne dust-tail model of Finson and Probstein (1968) and the solar-wind aberration of ion tails
-  (Biermann 1951), in simplified form (`src/render/cometTail.ts`).
+  (Biermann 1951), in simplified form (`src/render/cometTail.ts`); each comet's magnitude law (M1, K1) from the
+  [JPL Small-Body Database](https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html) (NASA/JPL-Caltech, public domain;
+  Halley's from the ICQ Comet Handbook 2005, as SBDB lists it). Written up in `docs/data/asteroids.md` §10.
+- The visitors from other stars: hyperbolic orbit solutions of 1I/ʻOumuamua (JPL 16), 2I/Borisov (JPL 54) and
+  3I/ATLAS (JPL 54) from the JPL Small-Body Database, retrieved 9 October 2026 (`src/sim/solarSystem/interstellar.ts`);
+  ʻOumuamua's model shape from Meech et al. 2017 (Nature 552, 378) and its tumble's periods from Belton et al. 2018
+  (ApJL 856, L21).
+- The heliosphere and the Oort cloud (models, `src/sim/heliosphere.ts`, written up in `docs/data/heliosphere.md`):
+  the interstellar flow from IBEX (McComas et al. 2015, ApJS 220, 22); the termination shock's sphere from McComas,
+  Rankin, Schwadron & Swaczyna 2019 (ApJ 884, 145); the heliopause's shape from Parker 1961 (ApJ 134, 20), fitted to
+  the Voyager crossings (NASA; Stone et al. 2005, 2008, 2013, 2019); the Oort cloud's density law from Duncan, Quinn &
+  Tremaine 1987 (AJ 94, 1330), its extent from NASA's Oort cloud page and Oort 1950. Numbers quoted with citation.
 - Physical data: [NASA Planetary Fact Sheets](https://nssdc.gsfc.nasa.gov/planetary/factsheet/), US Government work.
 - Proxima Centauri before the star catalogue has loaded: Gaia DR3 (distance), Boyajian et al. 2012 (radius),
   Ségransan et al. 2003 (temperature).
