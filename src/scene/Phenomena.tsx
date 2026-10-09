@@ -449,6 +449,7 @@ interface JetSystem {
 function JetMesh({ sys }: { sys: JetSystem }) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const set = useMemo(() => new BlobSet(SPHERE), []);
+  phenomena.materials[`jets-${sys.galaxy}`] = set;
   useEffect(() => () => set.dispose(), [set]);
   const f = useMemo(() => ({ east: new Vector3(), north: new Vector3(), toEarth: new Vector3(), cam: new Vector3() }), []);
   useFrame(() => {

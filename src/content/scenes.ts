@@ -1827,7 +1827,7 @@ defineScene('centaurus-a-jets', {
   label: PENDING_LABELS['centaurus-a-jets'],
   note: 'Centaurus A, the nearest radio galaxy: its jet runs out north-east at about half the speed of light into the inner lobe, a fainter counter-jet the other way, and the giant lobes reach about 600 kiloparsecs from end to end, 16 full Moons across our sky. All of it is radio and X-ray light, shown in false colour at a brightness chosen to be seen; how the lobes lie along our line of sight is not known.',
   unavailable: needs('centaurus-a'),
-  run: (note) => jetView('centaurus-a', note, 1.1e3 * KPC_KM, 25, 55),
+  run: (note) => jetView('centaurus-a', note, 650 * KPC_KM, 25, 55),
 });
 
 defineScene('aurora', {

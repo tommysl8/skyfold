@@ -8,7 +8,7 @@
  *  - Blobs (the jets and their lobes, SN 1987A's ring, the kilonova's debris, the neutron stars): up to MAX_BLOBS
  *    elongated Gaussian clouds of light, each normalised to its luminosity, integrated exactly along each pixel's ray
  *    from the camera (a Gaussian's line integral is closed form; erfc for the half behind the camera). No noise, no
- *    marching: one instanced draw, each blob on the pixels of its own 3.5σ ellipsoid, about 30 operations a pixel.
+ *    marching: one instanced draw, each blob on the pixels of its own 5σ ellipsoid, about 30 operations a pixel.
  *  - A supernova (sim/phenomena/supernovae.ts): its fireball, an opaque sphere of the photosphere's radius as bright as
  *    its light curve; and its debris, a shell behind the forward shock and the ejecta inside it, their light integrated
  *    exactly along the ray (chords through spheres), mottled by noise at the shell.
@@ -75,11 +75,11 @@ varying vec3 vAxis;
 varying vec2 vSig;
 varying vec3 vLum;
 void main() {
-  // The unit sphere stretched to the blob's 3.5σ ellipsoid along its axis.
+  // The unit sphere stretched to the blob's 5σ ellipsoid along its axis (its light there is under 0.2 % of its peak once shown: the display's square root lifts faint edges).
   vec3 k = aAxis;
   vec3 a = normalize(cross(k, abs(k.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
   vec3 b = cross(k, a);
-  vec3 p = aCentre + 3.5 * (k * position.y * aSig.x + a * position.x * aSig.y + b * position.z * aSig.y);
+  vec3 p = aCentre + 5.0 * (k * position.y * aSig.x + a * position.x * aSig.y + b * position.z * aSig.y);
   vWorld = p * uUnitKm;
   vCentre = aCentre;
   vAxis = aAxis;
@@ -122,7 +122,7 @@ void main() {
   float qb = ip * dot(o, rd) + (ia - ip) * ok * dk;
   float qc = ip * dot(o, o) + (ia - ip) * ok * ok;
   float e = qc - qb * qb / qa;
-  if (e > 30.0) discard;
+  if (e > 50.0) discard;
   // ∫₀^∞ exp(−½(a t² + 2 b t + c)) dt over the normalisation (2π)^(3/2) σa σp².
   float line = sqrt(1.5707963 / qa) * exp(-0.5 * e) * erfcA(qb / sqrt(2.0 * qa));
   float norm = 0.0634936359 * sqrt(ia) * ip; // (2π)^(−3/2) / (σa σp²)
@@ -254,7 +254,7 @@ function additive(uniforms: Record<string, { value: unknown }>, fragmentShader: 
 }
 
 /**
- * A set of blobs: one instanced draw of ellipsoids, each its blob's 3.5σ, so each pixel works out only the blobs whose
+ * A set of blobs: one instanced draw of ellipsoids, each its blob's 5σ, so each pixel works out only the blobs whose
  * light reaches it. The display law is applied per blob (where two overlap, their luminances add after the square root,
  * up to √2 brighter than one cloud of their summed light would be: only where knots overlap). Fill `pos` (from the
  * origin, units), `axis`, `sig`, `lum` and `count`, set `unitKm` and `centre` (the origin from the camera, units), then

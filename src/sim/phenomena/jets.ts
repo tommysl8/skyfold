@@ -160,7 +160,7 @@ export function cenABlobs(jetColour: [number, number, number], lobeColour: [numb
     const s = (0.4 + i * 0.85) / sinT;
     const sa = 0.45 / sinT;
     const sc = 0.12 + 0.05 * i;
-    const lum = brightAt(19.0, sa * sinT, sc);
+    const lum = brightAt(17.0, sa * sinT, sc);
     const b: Blob = { pos: [jet[0] * s, jet[1] * s, jet[2] * s], axis: jet, sigAlong: sa, sigAcross: sc, lumEarth: lum, beta: CEN_A_BETA, alpha: 0.6, colour: jetColour };
     out.push(b);
     const g = 1 / Math.sqrt(1 - CEN_A_BETA * CEN_A_BETA);
@@ -174,13 +174,13 @@ export function cenABlobs(jetColour: [number, number, number], lobeColour: [numb
     out.push({ pos: [d[0] * s, d[1] * s, d[2] * s], axis: d, sigAlong, sigAcross, lumEarth: brightAt(mu, sigAlong * Math.sin(thetaDeg * D2R) || sigAlong, sigAcross), beta: 0, alpha: 0.6, colour: lobeColour });
   };
   // The inner lobes, at the jets' ends (7 kpc north-east, 5.5 kpc south-west on the sky).
-  lobe(CEN_A_JET_PA_DEG, 6.5, CEN_A_JET_THETA_DEG, 1.6, 1.4, 19.5);
-  lobe(CEN_A_JET_PA_DEG + 180, 5.5, 180 - CEN_A_JET_THETA_DEG, 1.6, 1.4, 19.7);
+  lobe(CEN_A_JET_PA_DEG, 6.5, CEN_A_JET_THETA_DEG, 1.6, 1.4, 17.5);
+  lobe(CEN_A_JET_PA_DEG + 180, 5.5, 180 - CEN_A_JET_THETA_DEG, 1.6, 1.4, 17.7);
   // The north middle lobe, 30 kpc out at position angle 36° (no southern twin).
-  lobe(36, 28, 90, 8, 4.5, 20.3);
+  lobe(36, 28, 90, 8, 4.5, 18.3);
   // The giant outer lobes, across the sky: 4.5° (300 kpc) north and 3.5° (230 kpc) south.
-  lobe(5, 160, 90, 75, 55, 20.8);
-  lobe(195, 125, 90, 65, 50, 20.8);
+  lobe(5, 160, 90, 75, 55, 18.6);
+  lobe(195, 125, 90, 65, 50, 18.6);
   return out;
 }
 
