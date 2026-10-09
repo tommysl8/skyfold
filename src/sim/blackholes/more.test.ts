@@ -104,10 +104,13 @@ describe('the second table', () => {
   it('scales each galaxy’s hole’s mass from its paper’s distance to where the app places the galaxy (M ∝ D)', () => {
     const named = readJson<{ objects: { id: string; positionEclMpc?: number[] }[] }>('src/sim/cosmos/named.json');
     const local = JSON.parse(new TextDecoder().decode(gunzipFile('public/data/local-galaxies.json.gz'))) as { galaxies: { id: string; positionEclKpc: number[] }[] };
+    const more = JSON.parse(new TextDecoder().decode(gunzipFile('public/data/more-galaxies.json.gz'))) as { galaxies: { id: string; positionEclMpc: number[] }[] };
     const placed = (h: HoleJson): number => {
       if (h.placement === 'catalogue-galaxy') return Math.hypot(...h.galaxy!.posMpc);
       const n = named.objects.find((o) => o.id === h.host);
       if (n?.positionEclMpc) return Math.hypot(...n.positionEclMpc);
+      const m = more.galaxies.find((x) => x.id === h.host);
+      if (m) return Math.hypot(...m.positionEclMpc);
       const g = local.galaxies.find((x) => x.id.replace(/_/g, '-').toLowerCase() === h.host)!;
       return Math.hypot(...g.positionEclKpc) / 1000;
     };
@@ -122,7 +125,30 @@ describe('the second table', () => {
     expect(holeJson('m31-star')!.mass.value).toBeCloseTo((1.43e8 * 0.761) / 0.774, -6);
   });
 
-  it('places the NGC catalogue’s galaxies’ holes as the deep-sky layer places their galaxies', () => {
+  it('makes the holes of galaxies that are bodies (more-galaxies.json.gz among them) their galaxies’ children, with the galaxy as host', () => {
+    const more = JSON.parse(new TextDecoder().decode(gunzipFile('public/data/more-galaxies.json.gz'))) as { galaxies: { id: string; name: string }[] };
+    // M84, M60, M49 and NGC 4889 are galaxies of more-galaxies.json.gz: their holes are placed at their centres, not by the NGC file.
+    for (const [id, host] of [
+      ['m84-bh', 'm84'],
+      ['m60-bh', 'm60'],
+      ['m49-bh', 'm49'],
+      ['ngc-4889-bh', 'ngc-4889'],
+    ]) {
+      const h = holeJson(id)!;
+      expect(h.placement, id).toBe('galaxy-centre');
+      expect(h.host, id).toBe(host);
+      expect(h.galaxy, id).toBeUndefined();
+      const g = more.galaxies.find((x) => x.id === host)!;
+      expect(h.hostName, id).toBe(g.name);
+      expect(blackHoleInfoFrom(h).hostGalaxy, id).toEqual({ id: host, name: g.name });
+    }
+    // Only the galaxies that are in the NGC catalogue alone keep the NGC file's place.
+    expect(MORE.filter((h) => h.placement === 'catalogue-galaxy').map((h) => h.id).sort()).toEqual(['m105-bh', 'ngc-3115-bh', 'ngc-4258-bh']);
+    // M87* keeps its record as it was: no host galaxy beyond its parent.
+    expect(blackHoleInfoFrom(holeJson('m87-star')!).hostGalaxy).toBeUndefined();
+  });
+
+  it('places the NGC catalogue’s other galaxies’ holes as the deep-sky layer places their galaxies', () => {
     const f = JSON.parse(new TextDecoder().decode(gunzipFile('public/data/deepsky/ngc-galaxies.json.gz'))) as { columns: string[]; rows: unknown[][] };
     const col = Object.fromEntries(f.columns.map((c, i) => [c, i]));
     for (const h of MORE.filter((x) => x.placement === 'catalogue-galaxy')) {

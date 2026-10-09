@@ -201,6 +201,8 @@ export function blackHoleInfoFrom(json: HoleJson, file: BlackHolesFile = BLACK_H
  */
 function hostGalaxyOf(json: HoleJson): { id: BodyId; name: string } | undefined {
   if (json.placement === 'binary' && json.host) return { id: json.host, name: json.hostName ?? json.host };
+  // A galaxy's hole is its galaxy's child too (M87*, which names no hostName, keeps its record as it was).
+  if (json.placement === 'galaxy-centre' && json.host && json.hostName) return { id: json.host, name: json.hostName };
   if (json.placement === 'catalogue-galaxy' && json.galaxy) return { id: catalogueGalaxyId(json.galaxy.designation), name: json.galaxy.name };
   return undefined;
 }
@@ -560,7 +562,8 @@ export function m87StarRecord(json: HoleJson, m87: BodyRecord, file: BlackHolesF
 
 /**
  * A supermassive black hole at the centre of a galaxy the app registers with the others (M31* in the Andromeda Galaxy,
- * M81*, the holes of M32, Centaurus A and the Sombrero Galaxy): a child of its galaxy's record at its place, as M87*
+ * M81*, the holes of M32, Centaurus A, the Sombrero Galaxy, NGC 404, M84, M60, M49 and NGC 4889): a child of its
+ * galaxy's record at its place, as M87*
  * is (sim/blackholes/load.ts gives it its galaxy's anchor in the expanding universe). No starlight of its galaxy is
  * drawn round it (M87's alone has a model), so no fall is offered.
  */
@@ -648,8 +651,8 @@ function catalogueDistanceSource(g: CatalogueGalaxyJson): string {
 }
 
 /**
- * A supermassive black hole at the centre of a galaxy of the NGC catalogue (NGC 4258, M84, M60, M49, M105, the Spindle
- * Galaxy, NGC 4889), which the app registers only on demand: a body of its own at its galaxy's place in the expanding
+ * A supermassive black hole at the centre of a galaxy that is only in the NGC catalogue (M106, M105, the Spindle
+ * Galaxy), which the app registers only on demand: a body of its own at its galaxy's place in the expanding
  * universe (the deep-sky layer's, copied into the data file), with its galaxy's anchor (sim/blackholes/load.ts), so
  * its light-time and redshift are its galaxy's. No parent: its galaxy comes and goes.
  */

@@ -1473,10 +1473,11 @@ unchanged to the byte, and a rebuild reproduces them):
   values are the original papers' and newer ones'), less the four the first table has and GS 1354−64 (left out, below).
 - **Three persistent X-ray binaries in other galaxies**: LMC X-1 and LMC X-3 in the Large Magellanic Cloud, M33 X-7 in
   the Triangulum Galaxy.
-- **Thirteen supermassive black holes** at the centres of nearby galaxies the app has: six whose galaxies it
-  registers with the others (M31*, M32's, M81*, Centaurus A's, the Sombrero's, NGC 404's) and seven at the centres of
-  galaxies of the NGC catalogue, which the app registers only on demand (M106, M84, M60, M49, M105, the Spindle Galaxy,
-  NGC 4889). M87* and Sgr A* are the first table's and are not repeated.
+- **Thirteen supermassive black holes** at the centres of nearby galaxies the app has: ten whose galaxies it
+  registers with the others (M31*, M32's, M81*, Centaurus A's, the Sombrero's, NGC 404's, and those of M84, M60, M49
+  and NGC 4889, galaxies of `public/data/more-galaxies.json.gz`) and three at the centres of galaxies only in the NGC
+  catalogue, which the app registers on demand (M106, M105, the Spindle Galaxy). M87* and Sgr A* are the first
+  table's and are not repeated.
 
 Every number was read from its paper (the arXiv full text, the journal's table, or VizieR) and carries the key of that
 paper; the research notes recorded where each was read (abstract, Table N, Sect. N). Where a paper gives a 95 %
@@ -1560,23 +1561,26 @@ build to the distance the app places the galaxy at (`mass`, whose note gives bot
 | `m104-bh` | Sombrero Galaxy | 6.65 (6.24–7.05) × 10⁸ at 9.87 Mpc (K&H, Jardel et al. 2011) | 6.40 × 10⁸ | its stars' motions |
 | `ngc-404-bh` | NGC 404 | 5.5 +1.6 −0.8 × 10⁵ at 3.06 Mpc (Davis et al. 2020) | 5.35 × 10⁵ | molecular gas (ALMA); contested |
 | `ngc-4258-bh` | M106 (NGC 4258) | 3.98 ± 0.04 × 10⁷ at 7.576 Mpc (Reid et al. 2019) | 4.01 × 10⁷ | water masers |
-| `m84-bh` | M84 | 9.25 (8.38–10.23) × 10⁸ at 18.51 Mpc (K&H, Walsh et al. 2010) | 8.06 × 10⁸ | a disc of ionised gas |
-| `m60-bh` | M60 | 4.72 (3.67–5.76) × 10⁹ at 16.46 Mpc (K&H, Shen & Gebhardt 2010) | 4.62 × 10⁹ | its stars' motions |
-| `m49-bh` | M49 | 2.5 (2.4–2.8) × 10⁹ at 17.14 Mpc (Rusli et al. 2013, as published) | 2.35 × 10⁹ | its stars' motions |
+| `m84-bh` | M84 | 9.25 (8.38–10.23) × 10⁸ at 18.51 Mpc (K&H, Walsh et al. 2010) | 9.17 × 10⁸ (18.35 Mpc) | a disc of ionised gas |
+| `m60-bh` | M60 | 4.72 (3.67–5.76) × 10⁹ at 16.46 Mpc (K&H, Shen & Gebhardt 2010) | 4.93 × 10⁹ (17.21 Mpc) | its stars' motions |
+| `m49-bh` | M49 | 2.5 (2.4–2.8) × 10⁹ at 17.14 Mpc (Rusli et al. 2013, as published) | 2.49 × 10⁹ (17.05 Mpc) | its stars' motions |
 | `m105-bh` | M105 | 4.16 (3.12–5.20) × 10⁸ at 10.70 Mpc (K&H, van den Bosch & de Zeeuw 2010) | 4.19 × 10⁸ | its stars' motions |
 | `ngc-3115-bh` | Spindle Galaxy | 8.97 (6.20–9.54) × 10⁸ at 9.54 Mpc (K&H, Emsellem et al. 1999) | 8.99 × 10⁸ | its stars' motions |
-| `ngc-4889-bh` | NGC 4889 | 2.08 (0.49–3.66) × 10¹⁰ at 102.0 Mpc (K&H, McConnell et al. 2012) | 2.16 × 10¹⁰ | its stars' motions |
+| `ngc-4889-bh` | NGC 4889 | 2.08 (0.49–3.66) × 10¹⁰ at 102.0 Mpc (K&H, McConnell et al. 2012) | 1.96 × 10¹⁰ (96.16 Mpc, the Coma cluster's) | its stars' motions |
 
 M49's is Rusli et al.'s published value, not Kormendy & Ho's (theirs, from the preprint, does not rescale to the
 published table). NGC 1277, asked for, is left out: the app has no galaxy for it (the NGC file holds NGC 1275 and its
-Perseus neighbours, not NGC 1277). A galaxy registered with the others gives its hole its record as parent, its place
-and its anchor in the expanding universe (as M87*, `galaxyHoleRecord`); a galaxy of the NGC catalogue is copied by the
+Perseus neighbours, not NGC 1277). A galaxy registered with the others (named.json's, the Local Volume Database's, or
+more-galaxies.json.gz's, whose Virgo and Coma members are placed within their clusters by their own distances: M84 at
+18.35 Mpc, M60 17.21, M49 17.05, NGC 4889 at the Coma cluster's 96.16) gives its hole its record as parent, its place,
+its anchor in the expanding universe and its id as `hostGalaxy` (as M87*, `galaxyHoleRecord`); the build reads each
+such galaxy's placed distance from those files to scale the mass. A galaxy only in the NGC catalogue is copied by the
 build from `public/data/deepsky/ngc-galaxies.json.gz` (its comoving place and its group's anchor, Cosmicflows-4's
 distance; the hole's `galaxy`), and its hole is a body of its own at that place (`catalogueGalaxyHoleRecord`; no parent,
 since the galaxy comes and goes), with that anchor and its galaxy's deep-sky id as `hostGalaxy` for "Where to?". All
 are framed from 50 r_s, labelled just ahead of their galaxy, offer no fall (no starlight of their galaxy is drawn round
 them: M87's alone has a model, §6), and their cards say so. From inside a galaxy the app's sky is dark (its particles
-fade near the camera) and the NGC catalogue's galaxies are markers, so the lens there has little to bend: the tour
+fade near the camera) and the NGC catalogue's other galaxies are markers, so the lens there has little to bend: the tour
 looks back at the Milky Way from beyond M31* instead (below).
 
 **Registration.** The binaries register with the stars (`registerBinaryHoles`), the galaxies' holes at the end of
@@ -1598,7 +1602,8 @@ where it is), the gas not drawn, or the disc's model line (DiskControls, as Cygn
 **Checked** (`src/sim/blackholes/more.test.ts`, `src/content/moreBlackHoles.test.ts`, and the first table's tests run
 over the whole file): spot checks of the transcribed numbers against their papers (LMC X-1, LMC X-3, M33 X-7, GRS
 1915+105, XTE J1550−564, NGC 4258, Kormendy & Ho's M31, NGC 4889 and Centaurus A with their ranges); each galaxy's hole's
-mass equal to its published mass scaled by the placed distance over the paper's; the catalogue galaxies' places equal
+mass equal to its published mass scaled by the placed distance over the paper's; the holes of M84, M60, M49 and NGC 4889
+children of those galaxies' bodies, at their places, with them as host; the three other catalogue galaxies' places equal
 to the NGC file's rows, and their records there; every binary's donor in front of its hole at T0 (at J2000.0 where the
 phase is assumed) with its radial velocity crossing from approach to recession; the radial-velocity amplitudes from the
 drawn orbits against the published K (within 6 %; 0.03 % for LMC X-1; GX 339−4, drawn at the middles of its ranges,

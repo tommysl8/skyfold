@@ -1014,8 +1014,9 @@ const MC_SYSTEMS = [
 // Each mass as published (massPublished, at the distance its paper or Kormendy & Ho 2013 assumed); the build scales it
 // to the distance the app places the galaxy at (a mass from motions grows with the distance assumed). The 1σ ranges
 // are Kormendy & Ho's (their Tables 2–3) where the mass is theirs. 'galaxy-centre': a galaxy the app registers with
-// the others (its id); 'catalogue-galaxy': a galaxy of the NGC catalogue (its designation; the app names it as the
-// deep-sky layer does, hostName).
+// the others (its id: named.json's, the Local Volume Database's or more-galaxies.json.gz's); 'catalogue-galaxy': a
+// galaxy that is only in the NGC catalogue of the deep-sky layer (its designation; the app names it as that layer
+// does, hostName).
 
 Object.assign(REFS, {
   KormendyHo2013: 'Kormendy & Ho 2013, ARA&A 51, 511 — black-hole masses with their 1σ ranges and distances, Tables 2 (ellipticals) and 3 (bulges)',
@@ -1236,8 +1237,8 @@ const GALAXY_HOLES = [
     name: 'M84’s black hole',
     aliases: ['M84 black hole', 'M84*', 'NGC 4374 black hole'],
     class: 'supermassive',
-    placement: 'catalogue-galaxy',
-    ngc: 'NGC 4374',
+    placement: 'galaxy-centre',
+    host: 'm84',
     hostName: 'M84',
     constellation: 'Virgo',
     massPublished: { value: 9.25e8, unc: [0.87e8, 0.98e8], distMpc: 18.51, ref: 'KormendyHo2013', note: `Walsh et al. 2010’s mass, ${KH_RANGE_NOTE}` },
@@ -1255,7 +1256,7 @@ const GALAXY_HOLES = [
         label: 'Walsh et al. 2010',
       },
     ],
-    modelNotes: [SMBH_SPIN_LINE, MARKER_LINE],
+    modelNotes: [SMBH_SPIN_LINE, NO_STARLIGHT_LINE],
     refs: ['KormendyHo2013', 'Walsh2010'],
     fallAllowed: false,
     orbitLine: false,
@@ -1265,8 +1266,8 @@ const GALAXY_HOLES = [
     name: 'M60’s black hole',
     aliases: ['M60 black hole', 'M60*', 'NGC 4649 black hole'],
     class: 'supermassive',
-    placement: 'catalogue-galaxy',
-    ngc: 'NGC 4649',
+    placement: 'galaxy-centre',
+    host: 'm60',
     hostName: 'M60',
     constellation: 'Virgo',
     massPublished: { value: 4.72e9, unc: [1.05e9, 1.04e9], distMpc: 16.46, ref: 'KormendyHo2013', note: `Shen & Gebhardt 2010’s mass, ${KH_RANGE_NOTE}` },
@@ -1279,7 +1280,7 @@ const GALAXY_HOLES = [
         label: 'Shen & Gebhardt 2010',
       },
     ],
-    modelNotes: [SMBH_SPIN_LINE, MARKER_LINE],
+    modelNotes: [SMBH_SPIN_LINE, NO_STARLIGHT_LINE],
     refs: ['KormendyHo2013', 'ShenGebhardt2010'],
     fallAllowed: false,
     orbitLine: false,
@@ -1289,8 +1290,8 @@ const GALAXY_HOLES = [
     name: 'M49’s black hole',
     aliases: ['M49 black hole', 'M49*', 'NGC 4472 black hole'],
     class: 'supermassive',
-    placement: 'catalogue-galaxy',
-    ngc: 'NGC 4472',
+    placement: 'galaxy-centre',
+    host: 'm49',
     hostName: 'M49',
     constellation: 'Virgo',
     massPublished: { value: 2.5e9, unc: [0.1e9, 0.3e9], distMpc: 17.14, ref: 'Rusli2013', note: 'with a dark-matter halo, Table 3' },
@@ -1304,7 +1305,7 @@ const GALAXY_HOLES = [
         label: 'Rusli et al. 2013',
       },
     ],
-    modelNotes: [SMBH_SPIN_LINE, MARKER_LINE],
+    modelNotes: [SMBH_SPIN_LINE, NO_STARLIGHT_LINE],
     refs: ['Rusli2013', 'KormendyHo2013'],
     fallAllowed: false,
     orbitLine: false,
@@ -1363,8 +1364,8 @@ const GALAXY_HOLES = [
     name: 'NGC 4889’s black hole',
     aliases: ['NGC 4889 black hole', 'NGC 4889*', 'Coma cluster black hole'],
     class: 'supermassive',
-    placement: 'catalogue-galaxy',
-    ngc: 'NGC 4889',
+    placement: 'galaxy-centre',
+    host: 'ngc-4889',
     hostName: 'NGC 4889',
     constellation: 'Coma Berenices',
     massPublished: { value: 2.08e10, unc: [1.59e10, 1.58e10], distMpc: 102.0, ref: 'KormendyHo2013', note: `McConnell et al. 2012’s mass, ${KH_RANGE_NOTE}` },
@@ -1382,7 +1383,7 @@ const GALAXY_HOLES = [
         label: 'Kormendy & Ho 2013',
       },
     ],
-    modelNotes: [SMBH_SPIN_LINE, MARKER_LINE],
+    modelNotes: [SMBH_SPIN_LINE, NO_STARLIGHT_LINE],
     refs: ['KormendyHo2013', 'McConnell2012', 'McConnell2011'],
     fallAllowed: false,
     orbitLine: false,

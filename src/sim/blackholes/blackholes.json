@@ -2209,7 +2209,8 @@
         "NGC 4374 black hole"
       ],
       "class": "supermassive",
-      "placement": "catalogue-galaxy",
+      "placement": "galaxy-centre",
+      "host": "m84",
       "hostName": "M84",
       "constellation": "Virgo",
       "massPublished": {
@@ -2242,7 +2243,7 @@
       ],
       "modelNotes": [
         "Drawn without spin (Schwarzschild): its spin is not measured; a fast spin would make the shadow a few per cent smaller and shift it by about half its horizon’s radius.",
-        "Its galaxy is drawn only as a marker: no gas round the hole and none of its galaxy’s stars close by, so the sky round it is darker than it would be."
+        "No gas round it is drawn, nor its galaxy’s own starlight close by: the sky round it is darker than it would be."
       ],
       "refs": [
         "KormendyHo2013",
@@ -2250,40 +2251,14 @@
       ],
       "fallAllowed": false,
       "orbitLine": false,
-      "galaxy": {
-        "designation": "NGC 4374",
-        "name": "M84",
-        "aliases": [
-          "M84",
-          "M 84",
-          "Messier 84"
-        ],
-        "raDeg": 186.2656,
-        "decDeg": 12.887,
-        "distMpc": 16.124,
-        "distLoMpc": 15.684,
-        "distHiMpc": 16.575,
-        "methods": 13,
-        "edm": 0.06,
-        "posMpc": [
-          -15.624,
-          3.982,
-          0.143
-        ],
-        "anchorMpc": [
-          -15.602,
-          3.876,
-          0.637
-        ]
-      },
       "mass": {
-        "value": 806000000,
+        "value": 917000000,
         "unc": [
-          76000000,
-          85000000
+          86000000,
+          97000000
         ],
         "ref": "KormendyHo2013",
-        "note": "9.25 × 10⁸ M☉ at the 18.51 Mpc the paper assumed, scaled to the 16.12 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
+        "note": "9.25 × 10⁸ M☉ at the 18.51 Mpc the paper assumed, scaled to the 18.35 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
       }
     },
     {
@@ -2295,7 +2270,8 @@
         "NGC 4649 black hole"
       ],
       "class": "supermassive",
-      "placement": "catalogue-galaxy",
+      "placement": "galaxy-centre",
+      "host": "m60",
       "hostName": "M60",
       "constellation": "Virgo",
       "massPublished": {
@@ -2323,7 +2299,7 @@
       ],
       "modelNotes": [
         "Drawn without spin (Schwarzschild): its spin is not measured; a fast spin would make the shadow a few per cent smaller and shift it by about half its horizon’s radius.",
-        "Its galaxy is drawn only as a marker: no gas round the hole and none of its galaxy’s stars close by, so the sky round it is darker than it would be."
+        "No gas round it is drawn, nor its galaxy’s own starlight close by: the sky round it is darker than it would be."
       ],
       "refs": [
         "KormendyHo2013",
@@ -2331,40 +2307,14 @@
       ],
       "fallAllowed": false,
       "orbitLine": false,
-      "galaxy": {
-        "designation": "NGC 4649",
-        "name": "M60",
-        "aliases": [
-          "M60",
-          "M 60",
-          "Messier 60"
-        ],
-        "raDeg": 190.9166,
-        "decDeg": 11.5527,
-        "distMpc": 16.124,
-        "distLoMpc": 15.54,
-        "distHiMpc": 16.729,
-        "methods": 12,
-        "edm": 0.08,
-        "posMpc": [
-          -15.511,
-          4.153,
-          1.46
-        ],
-        "anchorMpc": [
-          -15.602,
-          3.876,
-          0.637
-        ]
-      },
       "mass": {
-        "value": 4620000000,
+        "value": 4930000000,
         "unc": [
-          1000000000,
-          1000000000
+          1100000000,
+          1100000000
         ],
         "ref": "KormendyHo2013",
-        "note": "4.72 × 10⁹ M☉ at the 16.46 Mpc the paper assumed, scaled to the 16.12 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
+        "note": "4.72 × 10⁹ M☉ at the 16.46 Mpc the paper assumed, scaled to the 17.21 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
       }
     },
     {
@@ -2376,7 +2326,8 @@
         "NGC 4472 black hole"
       ],
       "class": "supermassive",
-      "placement": "catalogue-galaxy",
+      "placement": "galaxy-centre",
+      "host": "m49",
       "hostName": "M49",
       "constellation": "Virgo",
       "massPublished": {
@@ -2405,7 +2356,7 @@
       ],
       "modelNotes": [
         "Drawn without spin (Schwarzschild): its spin is not measured; a fast spin would make the shadow a few per cent smaller and shift it by about half its horizon’s radius.",
-        "Its galaxy is drawn only as a marker: no gas round the hole and none of its galaxy’s stars close by, so the sky round it is darker than it would be."
+        "No gas round it is drawn, nor its galaxy’s own starlight close by: the sky round it is darker than it would be."
       ],
       "refs": [
         "Rusli2013",
@@ -2413,40 +2364,14 @@
       ],
       "fallAllowed": false,
       "orbitLine": false,
-      "galaxy": {
-        "designation": "NGC 4472",
-        "name": "M49",
-        "aliases": [
-          "M49",
-          "M 49",
-          "Messier 49"
-        ],
-        "raDeg": 187.4448,
-        "decDeg": 8.0005,
-        "distMpc": 16.124,
-        "distLoMpc": 15.54,
-        "distHiMpc": 16.729,
-        "methods": 12,
-        "edm": 0.08,
-        "posMpc": [
-          -15.832,
-          2.882,
-          1.006
-        ],
-        "anchorMpc": [
-          -15.602,
-          3.876,
-          0.637
-        ]
-      },
       "mass": {
-        "value": 2350000000,
+        "value": 2490000000,
         "unc": [
-          94000000,
-          280000000
+          99000000,
+          300000000
         ],
         "ref": "Rusli2013",
-        "note": "2.5 × 10⁹ M☉ at the 17.14 Mpc the paper assumed, scaled to the 16.12 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
+        "note": "2.5 × 10⁹ M☉ at the 17.14 Mpc the paper assumed, scaled to the 17.05 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
       }
     },
     {
@@ -2619,7 +2544,8 @@
         "Coma cluster black hole"
       ],
       "class": "supermassive",
-      "placement": "catalogue-galaxy",
+      "placement": "galaxy-centre",
+      "host": "ngc-4889",
       "hostName": "NGC 4889",
       "constellation": "Coma Berenices",
       "massPublished": {
@@ -2652,7 +2578,7 @@
       ],
       "modelNotes": [
         "Drawn without spin (Schwarzschild): its spin is not measured; a fast spin would make the shadow a few per cent smaller and shift it by about half its horizon’s radius.",
-        "Its galaxy is drawn only as a marker: no gas round the hole and none of its galaxy’s stars close by, so the sky round it is darker than it would be."
+        "No gas round it is drawn, nor its galaxy’s own starlight close by: the sky round it is darker than it would be."
       ],
       "refs": [
         "KormendyHo2013",
@@ -2661,38 +2587,14 @@
       ],
       "fallAllowed": false,
       "orbitLine": false,
-      "galaxy": {
-        "designation": "NGC 4889",
-        "name": "NGC 4889",
-        "aliases": [
-          "NGC 4884"
-        ],
-        "raDeg": 195.0339,
-        "decDeg": 27.977,
-        "distMpc": 105.713,
-        "distLoMpc": 85.532,
-        "distHiMpc": 130.656,
-        "methods": 4,
-        "edm": 0.46,
-        "posMpc": [
-          -90.164,
-          55.132,
-          2.491
-        ],
-        "anchorMpc": [
-          -90.191,
-          55.014,
-          2.232
-        ]
-      },
       "mass": {
-        "value": 21600000000,
+        "value": 19600000000,
         "unc": [
-          16000000000,
-          16000000000
+          15000000000,
+          15000000000
         ],
         "ref": "KormendyHo2013",
-        "note": "2.08 × 10¹⁰ M☉ at the 102 Mpc the paper assumed, scaled to the 105.7 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
+        "note": "2.08 × 10¹⁰ M☉ at the 102 Mpc the paper assumed, scaled to the 96.16 Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)"
       }
     }
   ],

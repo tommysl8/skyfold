@@ -1131,14 +1131,17 @@ function catalogueGalaxy(h) {
     anchorMpc: anchor,
   };
 }
-// The galaxies the app registers with the others, where it places them (Mpc from the Sun): named.json's and the Local
-// Volume Database's positions.
+// The galaxies the app registers with the others, where it places them (Mpc from the Sun): named.json's, the Local
+// Volume Database's and more-galaxies.json.gz's positions (the last are where the app places them now, the Virgo and
+// Coma members within their clusters).
 const placedMpc = (() => {
   const out = new Map();
   const named = JSON.parse(readFileSync(join(ROOT, 'src', 'sim', 'cosmos', 'named.json'), 'utf8'));
   for (const o of named.objects) if (o.positionEclMpc) out.set(o.id, Math.hypot(...o.positionEclMpc));
   const local = JSON.parse(gunzipSync(readFileSync(join(ROOT, 'public', 'data', 'local-galaxies.json.gz'))).toString('utf8'));
   for (const g of local.galaxies) if (!out.has(g.id.replace(/_/g, '-').toLowerCase())) out.set(g.id.replace(/_/g, '-').toLowerCase(), Math.hypot(...g.positionEclKpc) / 1000);
+  const more = JSON.parse(gunzipSync(readFileSync(join(ROOT, 'public', 'data', 'more-galaxies.json.gz'))).toString('utf8'));
+  for (const g of more.galaxies) if (!out.has(g.id)) out.set(g.id, Math.hypot(...g.positionEclMpc));
   return out;
 })();
 

@@ -104,7 +104,17 @@ describe('the second table’s black holes in the app', () => {
     // Under their galaxies: M31* a child of the Andromeda Galaxy, M32's of M32.
     expect(getBody('m31-star')!.parent).toBe('andromeda');
     expect(getBody('m32-bh')!.parent).toBe('lg-m-032');
-    expect(getBody('ngc-4889-bh')!.parent).toBeNull();
+    // Those of the more galaxies too (M84, M60, M49, NGC 4889), at their galaxy's place; M106's alone, at the NGC file's.
+    for (const [id, host] of [
+      ['m84-bh', 'm84'],
+      ['m60-bh', 'm60'],
+      ['m49-bh', 'm49'],
+      ['ngc-4889-bh', 'ngc-4889'],
+    ]) {
+      expect(getBody(id)!.parent, id).toBe(host);
+      expect(sim.bodies[id].pos.distanceTo(sim.bodies[host].pos), id).toBeLessThan(1);
+    }
+    expect(getBody('ngc-4258-bh')!.parent).toBeNull();
   });
 
   it('are found by “Where to?” under their names and listed where they live', () => {

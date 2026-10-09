@@ -749,7 +749,7 @@ function Universe() {
           Twenty-nine more come from a second table: thirteen more X-ray binaries of the Milky Way, among them{' '}
           <b>GRS 1915+105</b> and <b>GRO J0422+32</b>, one of the lightest black holes known; <b>LMC X-1</b> and{' '}
           <b>LMC X-3</b> in the Large Magellanic Cloud and <b>M33 X-7</b> in the Triangulum Galaxy; and the black holes at
-          the centres of thirteen nearby galaxies, from <b>M31*</b> in Andromeda to <b>NGC 4889</b>’s, about 21 billion
+          the centres of thirteen nearby galaxies, from <b>M31*</b> in Andromeda to <b>NGC 4889</b>’s, about 20 billion
           times the Sun’s mass. Each card says how its hole was weighed. LMC X-1, LMC X-3, M33 X-7 and GRS 1915+105 are drawn
           with thin discs of hot gas, as Cygnus X-1 is: models of a typical state, not of today. <b>A tour of black
           holes</b>, under Journeys, visits five of them.
