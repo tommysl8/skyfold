@@ -93,6 +93,14 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   beyond the edge of reach can never be reached at all. These flights assume a perfect engine and a destination that
   moves with the expansion. A flight to a galaxy or a cluster goes in almost to its centre, and the view then pulls
   back to show the whole of it.
+- **Things that happen.** The six supernovae seen from Earth with known dates and places (SN 1006, 1054, 1181, 1572,
+  1604 and 1987A) shine where and as they were seen when the clock is near their dates, following their recorded light
+  curves; up close a model shows the fireball and the debris growing to today's remnant at the measured speeds (the
+  Crab's picture grows with it). GW170817's two neutron stars spiral together in NGC 4993 at the chirp's real pace and
+  its kilonova glows blue, then red, as AT 2017gfo was measured. M87's jet (in its own light, its knots where Hubble sees
+  them) and Centaurus A's jets and lobes (false colour) are beamed by their speeds as seen from the camera. Earth's
+  auroral ovals glow on the night side about the date's geomagnetic poles (IGRF-14), where Starkov's model puts them for
+  the activity chosen in the View menu (Kp). What is a model is said on each card; `docs/data/phenomena.md` writes it up.
 - **Two size modes.** *True scale* shows specks, as reality does (planets still shine at their real apparent
   magnitude). *Enlarged* draws bodies at least a few pixels across while keeping every distance true.
 - **Travel.** Enter β exactly, or use a logit-scaled fader (0.00001c to 0.99999c) and presets (Voyager 1, Parker
@@ -245,6 +253,7 @@ pixel ratio, when frames take over 8.5 ms.
 | Cosmic microwave background (`public/textures/cmb.png`, `cmb-data.png`) | [WMAP 9-year ILC map](https://lambda.gsfc.nasa.gov/product/wmap/dr5/ilc_map_get.html), NASA / WMAP Science Team | NASA data, public domain |
 | Named galaxies, clusters and young galaxies (`src/sim/cosmos/named.json`) | SIMBAD (CDS) positions; distances, redshifts, disc angles and sizes from the papers cited in each entry and RC3 | Facts quoted with citation |
 | Cosmology and the home clock (`src/physics/cosmology/`, `future.json`) | Planck 2018 parameters (Planck Collaboration 2020) and the CMB temperature of Fixsen (2009); the future of the Sun, the Milky Way, Andromeda and the universe from Schröder & Connon Smith (2008), van der Marel et al. (2012), [Sawala et al. (2025)](https://doi.org/10.1038/s41550-025-02563-1) (survival curve read from their figure 3), Cautun et al. (2019), Loeb (2002), Krauss & Scherrer (2007), Adams & Laughlin (1997) and the others cited in the file | Facts quoted with citation; the Sawala et al. figure is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| The supernovae, the kilonova, the jets and the aurora (`src/sim/phenomena/`) | Light curves, speeds and sizes from the papers cited in the code and `docs/data/phenomena.md`; the IGRF-14 dipole (IAGA, via NOAA NCEI); Starkov's auroral oval (Starkov 1994, via Sigernes et al. 2011) | Facts quoted with citation; IGRF free to use; the code MIT |
 | Typefaces | IBM Plex Sans (IBM), JetBrains Mono (JetBrains), Source Serif 4 (Adobe) | SIL OFL 1.1 |
 
 
@@ -320,6 +329,7 @@ src/sim/galaxy/ the Milky Way: its model, the sky from the Sun, star clusters, n
 src/sim/blackholes/ the black holes' records and the accretion flow's model; src/sim/gravity.ts, fall.ts and
                lensBodies.ts: the hole's gravity each frame, falls, and bodies seen through the lens
 src/sim/cosmos/ beyond it: the Local Group and named galaxies, their particle templates, the cosmic web, the CMB map
+src/sim/phenomena/ the supernovae and their light curves, GW170817's chirp and kilonova, the jets' beaming, the aurora
 src/lib/       number formatting (significant figures, SI grouping, units) and least-squares statistics
 src/render/    shaders, materials, the relativistic scene pass, post-processing, adaptive quality; render/lens/ the
                black hole's lens and render/flow/ the accretion flow's map

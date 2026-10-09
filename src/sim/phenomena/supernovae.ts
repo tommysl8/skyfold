@@ -146,7 +146,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       'Seen in May 1006, the brightest new star in recorded history: Chinese astronomers wrote that things could be seen by its light.',
       'A white dwarf blown apart: no star remains at its centre, and its debris is now 60 light-years across.',
     ],
-    factSources: ['https://doi.org/10.1086/345985', 'https://doi.org/10.1088/0004-637X/781/2/65'],
+    factSources: ['https://doi.org/10.1086/345985', 'https://ui.adsabs.harvard.edu/abs/2014ApJ...781...65W'],
     factSourceLabels: ['Winkler, Gupta & Long 2003', 'Winkler et al. 2014'],
   },
   {
@@ -196,7 +196,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       'Chinese astronomers saw this “guest star” by day for 23 days in July 1054; it stayed visible at night for nearly two years.',
       'It left the Crab Nebula and, at its heart, the Crab Pulsar, spinning 30 times a second.',
     ],
-    factSources: ['https://doi.org/10.1088/2041-8205/771/1/L12', 'https://doi.org/10.1086/316401'],
+    factSources: ['https://ui.adsabs.harvard.edu/abs/2013ApJ...771L..12T', 'https://doi.org/10.1086/316401'],
     factSourceLabels: ['Tominaga, Blinnikov & Nomoto 2013', 'Collins, Claspy & Martin 1999'],
   },
   {
@@ -285,7 +285,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       'Tycho Brahe measured that it did not move against the stars: it was far beyond the Moon, and the heavens were not unchanging.',
       'In 2008 its light, echoing off dust 400 years later, showed the spectrum of a type Ia supernova.',
     ],
-    factSources: ['https://doi.org/10.1086/422716', 'https://doi.org/10.1038/nature07608'],
+    factSources: ['https://ui.adsabs.harvard.edu/abs/2004ApJ...612..357R', 'https://ui.adsabs.harvard.edu/abs/2008Natur.456..617K'],
     factSourceLabels: ['Ruiz-Lapuente 2004', 'Krause et al. 2008'],
   },
   {
@@ -333,7 +333,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       'The last supernova seen in the Milky Way: Kepler followed it for a year and wrote a book about it, De Stella Nova (1606).',
       'It appeared beside Jupiter and Saturn, which were in conjunction, so astrologers were already watching that part of the sky.',
     ],
-    factSources: ['https://doi.org/10.3847/1538-4357/aa71bc', 'https://doi.org/10.3847/0004-637X/817/1/36'],
+    factSources: ['https://ui.adsabs.harvard.edu/abs/2017ApJ...842..112R', 'https://ui.adsabs.harvard.edu/abs/2016ApJ...817...36S'],
     factSourceLabels: ['Ruiz-Lapuente 2017', 'Sankrit et al. 2016'],
   },
   {
@@ -384,7 +384,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       'About two dozen neutrinos from its collapsing core were caught in Japan and the United States three hours before its light: the only neutrinos yet detected from a supernova.',
       'Its blast reached a ring of gas the star had shed 20,000 years before, lighting it up from 1995 onwards like a string of pearls.',
     ],
-    factSources: ['https://doi.org/10.1146/annurev.aa.27.090189.003213', 'https://doi.org/10.1103/PhysRevLett.58.1490', 'https://doi.org/10.3847/0004-637X/829/1/40'],
+    factSources: ['https://ui.adsabs.harvard.edu/abs/1989ARA%26A..27..629A', 'https://doi.org/10.1103/PhysRevLett.58.1490', 'https://ui.adsabs.harvard.edu/abs/2016ApJ...829...40F'],
     factSourceLabels: ['Arnett et al. 1989', 'Hirata et al. 1987', 'Frank et al. 2016'],
   },
 ];

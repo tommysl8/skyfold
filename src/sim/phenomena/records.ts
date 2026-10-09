@@ -84,7 +84,7 @@ export function supernovaRecord(sn: Supernova): BodyRecord {
         : 'Up close (a model): its fireball, then its debris, the forward shock growing to today’s remnant at the speeds measured (free expansion, then the expansion parameter of its proper motions). The remnant shines mostly in X-rays: its shell is shown in false colour.',
       'Its age is counted from when its light reached Earth, as the deep sky is drawn as Earth sees it: at the remnant itself the explosion was earlier by the light’s travel time.',
     ],
-    article: 'what-stars-are-made-of',
+    article: 'when-the-sky-changes',
     provider: fixedProvider(sn.raDeg, sn.decDeg, sn.distancePc * PARSEC_KM, 'Fixed at its remnant’s position and distance'),
   };
 }
@@ -165,7 +165,7 @@ export function kilonovaRecord(): BodyRecord {
       'The glow’s brightness, colour and size follow the blackbody fits to its light; its shape, a fast blue part towards the poles and a slower red one round the waist, is a model (Kasen et al. 2017), and one-part models fit the light too.',
       `From Earth it peaked at about magnitude 17: far too faint to see without a telescope. The merger was seen on ${DATE(MERGER_MS)}; the age here is counted from then.`,
     ],
-    article: 'black-holes',
+    article: 'when-the-sky-changes',
     provider: expandingProvider(GW170817_POS_MPC),
   };
 }
