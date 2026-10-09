@@ -2,7 +2,8 @@
 
 What the star files contain, their byte layouts, frames and units, how every number was made, how accurate it is,
 where it came from, and (§11) how the app uses them. §12 is the catalogue's extension: 3,421,099 more stars in band
-files fetched as the camera goes, and 3,972 pinned stars appended to the core (3,754,841 stars in all).
+files fetched as the camera goes, and 3,972 pinned stars appended to the core (3,754,841 stars in all). §13 is how stars
+look up close, the extreme stars and the two nebulae drawn in 3D.
 
 | File | Size | What it is |
 | --- | --- | --- |
@@ -966,3 +967,153 @@ Strasbourg Astronomical Observatory, France (DOI: 10.26093/cds/vizier)."
 - A resolved companion's light may also be inside the Tycho-2 V of its primary (not subtracted).
 - Brown dwarfs later than about L5 without a measured V are not in (they would show only from a few hundred au).
 - Far-side lensed images come from the head's stars only.
+
+---
+
+## 13. The stars up close
+
+A star near the camera is drawn as a disc of its own shape and surface (`src/sim/stars/closeup.ts`, the per-star
+numbers in `src/sim/stars/extremeStars.ts`, the mesh in `src/render/starShape.ts`, the material
+`createStarSurfaceMaterial` in `src/render/materials.ts` with `shaders/starSurface.*.glsl`, drawn by
+`scene/Bodies.tsx` StarBody). From afar it is the limb-darkened disc it was before, at the same radiance; the cells,
+spots and contrast below appear only once the disc is large on screen. Every star gets the generic look; the stars of
+§13.3 get their measured shapes and the extreme ones of §13.4 are added.
+
+### 13.1 What every star gets
+
+- **Limb darkening for its type.** I(μ)/I(1) = 1 − u (1 − μ) in the red, green and blue channels with the linear
+  coefficients u of Claret & Bloemen (2011, A&A 529, A75; VizieR J/A+A/529/A75, ATLAS models, solar metallicity,
+  ξ = 2 km/s, least-squares) in R, V and B, interpolated in temperature and log g (`limb-darkening.json`, 19
+  temperatures × 6 gravities, built by `scripts/build-limb-darkening.mjs`; where ATLAS has no model at low gravity the
+  nearest gravity at that temperature stands in, listed by the script). u_V runs from 0.91 for a red supergiant to
+  0.47 for an A star and 0.30 for a 30,000 K star. Log g from the record's mass and radius; a star with no mass takes
+  R^1.25 M☉ under 1.5 R☉ and R/20 (1–15) M☉ above, and its card says so. White dwarfs (log g ≈ 8) use the table's
+  edge, log g = 5.
+- **Colour by Planck's law.** Each point's temperature sets its brightness and colour by B_λ(T)/B_λ(T_mean) at 610,
+  550 and 465 nm, times the blackbody colour of the star's mean temperature, so the disc averages to the colour of the
+  star's point of light.
+- **Granulation (a model).** Bright cells about ten pressure scale heights H_p = kT/(μ m_H g) across (μ = 1.3), as
+  on the Sun (H_p ≈ 130 km, granules ≈ 1,300 km): about 3.5 million on the Sun, 2 million on Altair, 6,000 on
+  Betelgeuse. Their temperature contrast is ±3.5% (a model), fading out between 6,500 and 8,500 K, above which stars
+  have no surface convection to show. Each cell lives about 8 minutes (the Sun's granules: Nordlund, Stein & Asplund
+  2009, Living Rev. Sol. Phys. 6, 2) times its size over the Sun's. Cells smaller than about two pixels fade to their
+  mean, so nothing aliases. The cells are baked into a 256² cube map while the disc is over 40 px wide, one face a
+  frame (`render/starCells.ts`): evaluated per pixel they cost 21 ms a frame on the target laptop with Betelgeuse
+  filling the view. The map holds cells down to four texels (up to about 13,000 over the star): red supergiants'
+  granules are in it, a Sun-like star's millions are not drawn.
+- **Time.** The cells are shown on the wall clock, sped up by the least power of ten that brings a turnover under a
+  minute (`surfaceSpeedup`): the Sun's granules 10 times, Betelgeuse's giant cells a million times. Cards say how much.
+- **Contrast.** The display's AgX tone curve compresses a stop of brightness to a few per cent of its range, and the
+  bloom flares anything over its threshold (1.15): up close the disc's own brightness differences are stretched (each
+  stop as 2.4) and its brightest parts roll off below the bloom's threshold, so limb darkening, gravity darkening and
+  cells read as an eye adapted to the surface would see them. The cards of the stars where this matters say so. From
+  afar (under about 30 pixels) the disc is exact.
+- **Shape.** Every star is a sphere of its mean radius, except the fast rotators (§13.3) and Eta Carinae's wind.
+
+### 13.2 Equations
+
+Roche model of a rigidly rotating star (the model of every paper below): with x = r/R_pole and k = Ω²R_pole³/GM,
+1/x + ½ k x² sin²θ = 1 and k = (8/27) ω² for ω = Ω/Ω_crit; R_eq/R_pole = 1.5 at break-up. The surface normal is along
+the effective gravity g = −∇(−GM/r − ½Ω²r² sin²θ), and von Zeipel's law gives T(θ) = T_pole (g/g_pole)^β. The mean
+temperature of a Roche star is (∫T⁴ dA / A)^¼ (`poleTemperatureFromMean`). The rotation pole points at the inclination
+i from our line of sight, at position angle PA (east of north) on the sky (`poleWorld`). The mesh has the volume of the
+star's mean radius (R_eq² R_pole)^⅓, the radius its record keeps.
+
+### 13.3 Fast rotators
+
+| Star | ω = Ω/Ω_crit | β | T_pole (K) | i (°) | Pole PA (°) | Period | R_eq/R_pole (model / paper) | T_eq (model / paper) | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Altair | 0.923 | 0.190 | 8,450 | 57.2 | −61.8 | 8.6 h (from v sin i = 240 km/s) | 1.2415 / 1.2417 | 6,866 / 6,860 ± 150 | Monnier et al. 2007, Science 317, 342, Table 1 (β free) |
+| Vega | 0.774 | 0.231 | 10,070 | 6.2 | −58 | 0.71 d | 1.127 / 1.127 | 8,905 / 8,910 ± 130 | Monnier et al. 2012, ApJL 761, L3, Table 2 (concordance) |
+| Regulus | 0.962 | 0.188 | 14,520 | 86.3 | 258 | 0.61 d (1.64 turns a day) | 1.304 / 1.307 | 11,019 / 11,010 | Che et al. 2011, ApJ 732, 68, Table 4 |
+| Achernar | 0.9805 (from R_eq/R_pole = 1.352) | 0.166 | 17,130 (from a mean of 15,000 K) | 60.6 | 216.9 | from v_eq = 298.8 km/s and R_eq = 9.16 R☉ | 1.352 | 12,660 | Domiciano de Souza et al. 2014, A&A 569, A10; mean temperature and mass 6.1 M☉ as adopted by Domiciano de Souza et al. 2012 (A&A 545, A130) |
+
+The tests check the first three against their papers' flattening and equatorial temperatures. Vega's pole angle is
+fragile (the paper says so: epochs differ by up to 90°). Achernar's polar and equatorial temperatures are worked out
+here, not measured. The interferometric images found the equators darker than any single von Zeipel law; those
+departures are not drawn.
+
+### 13.4 The extreme stars
+
+Registered as named stars (`EXTREME_STARS`) alongside systems.json's, searchable by the names given:
+
+| Star (also found as) | Placed at | Radius | Teff | Source |
+| --- | --- | --- | --- | --- |
+| Mu Cephei (Garnet Star, μ Cep, HIP 107259) | 641 (+148/−144) pc, scaled from Betelgeuse by the size of the molecular layers; catalogue star 660 moved there (its Hipparcos parallax, 0.55 ± 0.20 mas, gave 1,818 pc) | 972 ± 228 R☉ | 3,551 ± 136 K | Montargès et al. 2019, MNRAS 485, 2417, Table 2; photosphere 14.11 ± 0.60 mas (Perrin et al. 2005, A&A 436, 317) |
+| VY Canis Majoris (VY CMa, HIP 35793) | 1.17 ± 0.08 kpc (maser parallaxes, the mean of Choi et al. 2008 and Zhang et al. 2012 as the paper adopts); catalogue star 50094 moved there (Gaia's 2.2 kpc is poor) | 1,420 ± 120 R☉ (Rosseland diameter 11.3 ± 0.3 mas) | 3,490 ± 90 K | Wittkowski et al. 2012, A&A 540, L12, Table 2 |
+| UY Scuti (UY Sct, BD−12 5055) | Gaia DR3 4152993273702130432, 1/(ϖ + 0.017 mas) = 1,874 pc (ϖ = 0.517 ± 0.049 mas; the catalogue's global zero-point, §4.2) | 1,104 R☉: 5.48 ± 0.10 mas at that distance (1,708 ± 192 R☉ at the 2.9 kpc then assumed) | 3,365 ± 134 K | Arroyo-Torres et al. 2013, A&A 554, A76, Tables 2–3; its V = 9.0 sets its point |
+| Stephenson 2-18 (St2-18, Stephenson 2 DFK 1, RSGC2-01) | Gaia DR3 4253084565963481856's position at the kinematic distance of Stephenson 2, 5.83 (+1.91/−0.78) kpc (Davies et al. 2007, ApJ 671, 781) | 2,150 R☉, **disputed** | 3,200 K (a dust model's input) | Fok et al. 2012, ApJ 760, 65 (log L = 5.64, T = 3,200 K at the cluster's distance); Humphreys et al. 2020, AJ 160, 145; Siebert et al. 2026, arXiv:2609.31362; its G = 15.30 stands in for V |
+| Eta Carinae (η Car, HD 93308, Homunculus) | 2,350 ± 50 pc from the Homunculus (Smith 2006, ApJ 644, 1151); catalogue star 52994 moved there | its wind, 1,263 R☉: half its K-band light within 5 mas (van Boekel et al. 2003, A&A 410, L37), stretched 1.5 to 1 along the Homunculus's axis | catalogue colour (reddened) | luminosity ≈ 5 × 10⁶ L☉ (Davidson & Humphreys 1997, ARA&A 35, 1); a binary of 5.5 years (Damineli 1996, ApJ 460, L49) |
+| Achernar (α Eri) | its catalogue place | 9.16 R☉ at the equator, 6.78 at the poles | 15,000 K mean | §13.3 |
+| WR 104 (Pinwheel Nebula) | Gaia DR3 4069167258796371712's position at 2.6 ± 0.7 kpc (Tuthill et al. 2008, ApJ 675, 698) | not measured: drawn 5 R☉ | not measured: drawn 40,000 K, typical of late WC stars (Crowther 2007, ARA&A 45, 177) | its G = 12.90 stands in for V |
+
+**Stephenson 2-18's size is disputed**, and its card says so. The 2,150 R☉ follows by Stefan–Boltzmann from Fok et
+al.'s 3,200 K and 10^5.64 L☉; both rest on a dust model of its infrared light at the cluster's distance, and 3,200 K is
+that model's input rather than a measured temperature. Humphreys et al. (2020) integrate its light to 6.3 × 10⁵ L☉ at
+the cluster's distance but find its near-infrared colours need more extinction than the cluster's and consider its
+membership doubtful; Siebert et al. (2026) could not model its CO lines at the cluster's distance (nor at 4–5 kpc) and
+note it may be a foreground star. Nearer, it would be smaller in proportion to its distance. It is drawn at 2,150 R☉,
+the cluster-distance figure. (The 2,150 R☉ is sometimes attributed to Davies et al. 2010; the paper behind it is Fok
+et al. 2012.)
+
+The stars moved to a paper's distance keep their brightness from the Sun (M_V shifted by 5 log₁₀ of the distance
+ratio) and are held still: their catalogue velocities rest on the poor parallaxes.
+
+Red supergiants (Betelgeuse, Antares, Mu Cephei, VY CMa, UY Sct, Stephenson 2-18) carry about 30 giant convection cells
+over the whole star (a dozen or so on the side we see), with the granules on them at a third of the usual contrast,
+turning over in about a year: a model after the interferometric images and 3D models of red supergiants (Haubois et
+al. 2009, A&A 508, 923; Chiavassa et al. 2010, A&A 515, A12; Ohnaka et al. 2017, Nature 548, 310), with a
+temperature contrast of ±7% (a model).
+
+Active dwarfs. Proxima Centauri carries five starspots 400 K cooler than its surface (a model: spot contrasts of a few
+hundred kelvin, Berdyugina 2005, Living Rev. Sol. Phys. 2, 8), turning with its 83.5-day rotation (Benedict et al.
+1998, AJ 116, 429) on the simulation's clock, and flares: 63 a day, the rate Davenport et al. (2016, ApJL 829, L31)
+extrapolate down to 0.5% in brightness from 66 flares in 37.6 days, each a patch heated towards 10,000 K that rises in
+30 s and decays over ten minutes (shape and place a model), on the surface's clock. Epsilon Eridani has four spots on
+its 11.68-day rotation (Donahue, Saar & Baliunas 1996, ApJ 466, 384).
+
+### 13.5 Two nebulae in 3D (`sim/stars/stellarNebulae.ts`, `scene/StellarNebulae.tsx`, `render/stellarNebulaMaterials.ts`)
+
+**The Homunculus.** A lathe of Smith's (2006) Table 1, the radius of the outer H₂ shell at 47 latitudes, 2,100 au at
+the equator to 22,014 au at 69.5° (the lobes are widest short of their poles) and 21,690 au at the pole, for 2,350 pc
+and an age of 160 years in March 2005. The outflow is a Hubble flow (Smith's expansion speeds are the radii over 160
+years: 648 km/s at the pole), so the shape is scaled by (year − 1845.2)/160 for the simulation's date; before 1845 it
+is not drawn. Its axis is tilted 41° from our line of sight, the south-east lobe towards us at position angle 130°
+(Smith 2006). The skin's light is the star's scattered by dust (a model): 1/r² from the star, a Henyey–Greenstein phase
+function with g = 0.45 (so the near lobe, between us and the star, is the brighter, as in Hubble's pictures) and the
+path length through a thin shell, 1/|n·v|; the colour is the reddish brown of its pictures. Not drawn: the thicker
+[Fe II] inner shell, the Little Homunculus, the equatorial skirt, and the dimming of the star seen through the near
+lobe. It shows within 8–30 times its size of the star.
+
+**WR 104's pinwheel.** Tuthill et al. (2008): an Archimedean spiral turning once every 241.5 ± 0.5 days, expanding at
+0.28 ± 0.02 mas a day (1,260 km/s at 2.6 kpc: 176 au between coils; they quote 170), its dust beginning 13.3 mas (35
+au) from the centre, its position angle 269° on 1998 April 14 (JD 2450918), turning clockwise on the sky (position
+angle falling: the images at longer wavelengths are "advanced … (clockwise)", §2.2), in a plane tilted 12° (0–16°)
+from the sky at position angle 84°. 24,000 dust particles carry their age in coils and are placed on the spiral in the
+vertex shader for the date (`wr104ArmAngleDeg` is its pure twin), so the pattern turns on the simulation's clock. The
+arm's width (9% of its radius, after the shock cone's ≈ 20° half-angle) and the dust's fading outwards (∝ r^−1.6, over
+2.6 coils) are a model; the dust shines in the infrared, where the spiral was imaged, and is shown in false colour. It
+shows within 40–160 coil spacings of the star.
+
+### 13.6 Journeys and search
+
+"Monsters among the stars" (Journeys; scene `monsters-among-the-stars` in `src/content/scenes.ts`) visits Betelgeuse,
+Stephenson 2-18, UY Scuti, VY Canis Majoris, Altair, Achernar, Eta Carinae with the Homunculus and WR 104 (time a
+million times faster there), each with a line comparing its size with the Sun's and the planets' orbits. Every star
+above is found in "Where to?" by the names in §13.4.
+
+### 13.7 Tests
+
+`src/sim/stars/closeup.test.ts`: the Roche flattening of Altair, Vega and Regulus from their fitted ω; the equipotential
+and its normal; their equatorial temperatures from their poles by von Zeipel's law; the pole on the sky; Claret's table
+at grid points; the Sun's granule count and Betelgeuse's; the speed-up; the extreme stars' radii from the cited angular
+diameters and luminosities; every fact and value has its reference. `src/sim/stars/stellarNebulae.test.ts`: the
+Homunculus's table, expansion and speeds; the pinwheel's coil spacing, standoff, speed and turning.
+
+### 13.8 Sources and licences
+
+| Input | Use | Licence / terms |
+| --- | --- | --- |
+| Claret & Bloemen 2011, A&A 529, A75, via VizieR J/A+A/529/A75 (`data-raw/claret2011_tableu_Z0_xi2_LSM_ATLAS.tsv`, sha256 22cf9b02c4398db9e844c910f1d26c92c80cea117efee4ac2c2535f1cfcc1484) | Limb darkening (`limb-darkening.json`) | Numbers from a published table, cited; VizieR asks for acknowledgement |
+| The papers of §13.3–13.5 | Shapes, temperatures, sizes, distances, the nebulae's geometry | Values from the literature, each cited in `extremeStars.ts`, `stellarNebulae.ts` and the cards |
+| Gaia DR3 (positions and UY Scuti's parallax) | Placing UY Scuti, Stephenson 2-18 and WR 104 | CC BY-NC 3.0 IGO, credit ESA/Gaia/DPAC (as §8) |

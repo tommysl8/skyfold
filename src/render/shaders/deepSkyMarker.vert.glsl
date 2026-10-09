@@ -56,9 +56,9 @@ void main() {
   float rPx = aRadius / d * uPxPerRad;
   int style = int(aStyle + 0.5);
   // Compact kinds: the distances within which each shows fully and beyond which it is gone, and its mark's radius (px).
-  vec2 fade = style == 3 ? vec2(600.0, 2000.0) : style == 4 ? vec2(1500.0, 4000.0) : vec2(400.0, 1200.0);
-  float markPx = style == 3 ? 3.5 : style == 4 ? 5.0 : 2.5;
-  bool compact = style >= 3 && style <= 5;
+  vec2 fade = style == 3 ? vec2(600.0, 2000.0) : style == 4 ? vec2(1500.0, 4000.0) : style == 7 ? vec2(1500.0, 6000.0) : vec2(400.0, 1200.0);
+  float markPx = style == 3 || style == 7 ? 3.5 : style == 4 ? 5.0 : 2.5;
+  bool compact = (style >= 3 && style <= 5) || style == 7;
   float big = 1.0 - smoothstep(BIG_FROM_PX, BIG_GONE_PX, rPx);
   float a;
   if (compact) {

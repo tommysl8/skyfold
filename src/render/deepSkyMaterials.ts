@@ -11,8 +11,8 @@ import markerVert from './shaders/deepSkyMarker.vert.glsl?raw';
 import galaxyVert from './shaders/deepSkyGalaxy.vert.glsl?raw';
 import regionVert from './shaders/gwRegion.vert.glsl?raw';
 
-/** The markers' colours by style (sim/deepsky/markers.ts STYLE): clusters blue-white, nebulae lilac, planetary nebulae teal, remnants amber, pulsars cyan, galaxies warm white. */
-export const MARKER_COLOURS = ['#9fb8ff', '#ffd9a8', '#c9a2d8', '#86d8c0', '#ffae7a', '#8fe4ff', '#e6d8bd'] as const;
+/** The markers' colours by style (sim/deepsky/markers.ts STYLE): clusters blue-white, nebulae lilac, planetary nebulae teal, remnants amber, pulsars cyan, galaxies warm white, magnetars magenta. */
+export const MARKER_COLOURS = ['#9fb8ff', '#ffd9a8', '#c9a2d8', '#86d8c0', '#ffae7a', '#8fe4ff', '#e6d8bd', '#ff8fe0'] as const;
 /** How strongly a marker shows at full (they are guides: kept faint). */
 export const MARKER_OPACITY = 0.55;
 /** The merger regions' colours: black holes violet, a black hole and a neutron star blue, neutron stars rose. */
@@ -20,7 +20,7 @@ export const REGION_COLOURS = ['#b39dff', '#8fb6ff', '#ff9fb8'] as const;
 
 const MARKER_FRAG = /* glsl */ `
 #include <logdepthbuf_pars_fragment>
-uniform vec3 uColors[7];
+uniform vec3 uColors[8];
 varying float vAlpha;
 varying float vRing;
 varying float vStyle;
@@ -35,6 +35,9 @@ void main() {
   if (style == 5) {
     // A pulsar: a small soft dot that beats with its spin.
     shape = exp(-6.0 * r * r) * vPulse;
+  } else if (style == 7) {
+    // A magnetar: a dot in a faint ring, beating with its spin.
+    shape = exp(-6.0 * r * r) * vPulse + 0.5 * smoothstep(vRing - 2.0 * w, vRing - w, r) * (1.0 - smoothstep(vRing, vRing + w, r));
   } else if (style == 3) {
     // A planetary nebula: a dot in a ring.
     shape = 0.8 * exp(-10.0 * r * r) + 0.6 * smoothstep(vRing - 2.0 * w, vRing - w, r) * (1.0 - smoothstep(vRing, vRing + w, r));

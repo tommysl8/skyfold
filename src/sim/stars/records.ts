@@ -28,10 +28,12 @@ import {
   type Stars3DExtra,
 } from './catalogue';
 import { AU_KM, AU_PER_PC, C_PC_PER_YR, GM_SUN_KM3_S2, JD_J2000, KMS_TO_PC_PER_YR, MOTION_VALID_YEARS, PARSEC_KM, SUN_RADIUS_KM } from './constants';
-import type { Vec3 } from './frames';
+import { eclipticToWorld, equatorialToEcliptic, unitFromRaDec, type Vec3 } from './frames';
 import { orbitRelativeState, orbitStateInto, type OrbitJson, type StarJson, type SystemJson, type SystemsFile } from './orbits';
 import { luminosityFromAbsMag, radiusFromLuminosity } from './photometry';
 import { STAR_FACTS } from './facts';
+import { starSurface } from './closeup';
+import { CLOSE_UPS, EXTREME_REFS, EXTREME_STARS, type ExtremeStarDef } from './extremeStars';
 import { catalogueNumber, starDisplayName, starLabels, type StarNameTable } from './names';
 
 /** Registry ids of the systems.json stars whose app id differs (the primaries take the system's name, as the articles do). */
@@ -83,6 +85,8 @@ const ARTICLES: Readonly<Record<string, string>> = {
   'hr-8799': 'other-worlds',
   '51-pegasi': 'other-worlds',
   'gliese-581': 'other-worlds',
+  achernar: 'what-stars-are-made-of',
+  regulus: 'what-stars-are-made-of',
 };
 
 // ─── Providers ───────────────────────────────────────────────────────────────────────────
@@ -304,6 +308,13 @@ interface StarBasis {
   constellation?: string;
   orbitLine?: boolean;
   refs: Readonly<Record<string, string>>;
+  /**
+   * Placed by a paper rather than the catalogue (extremeStars.ts): its place, how its distance was found, and its M_V
+   * (the catalogue's, moved to this distance so it looks as bright from the Sun; or from its own V).
+   */
+  place?: { posPc: Vec3; source: string; precision: string; absMagV: number };
+  /** Facts of its own (extremeStars.ts), with the keys of their sources in EXTREME_REFS. */
+  facts?: readonly (readonly [string, string])[];
 }
 
 /** The physical side of a star record, from the catalogue row and (for the named stars) the literature. */
@@ -311,11 +322,12 @@ function starRecord(stars: Stars3D, b: StarBasis): BodyRecord {
   const i = b.index === null ? null : (b.local ?? b.index);
   const j = b.json;
   const flags = i !== null ? stars.flags[i] : 0;
-  const pos: Vec3 = i !== null ? [stars.positions[3 * i], stars.positions[3 * i + 1], stars.positions[3 * i + 2]] : [0, 0, 0];
+  const pos: Vec3 = b.place ? b.place.posPc : i !== null ? [stars.positions[3 * i], stars.positions[3 * i + 1], stars.positions[3 * i + 2]] : [0, 0, 0];
   const distancePc = Math.hypot(pos[0], pos[1], pos[2]);
-  const absMagV = i !== null ? stars.absMag[i] : NaN;
+  const absMagV = b.place ? b.place.absMagV : i !== null ? stars.absMag[i] : NaN;
   const vFromSun = absMagV + 5 * Math.log10(distancePc) - 5;
   const catTeff = i !== null ? stars.teff[i] : 0;
+  const placed = b.place !== undefined;
   // A companion's temperature is only its pair's (catalogue.ts borrowCompanionTemperatures): not its own.
   const borrowed = i !== null && teffIsBorrowed(stars, i);
   // A measured temperature as the paper gives it (the catalogue rounds it to 10 K), else the colour temperature.
@@ -352,7 +364,7 @@ function starRecord(stars: Stars3D, b: StarBasis): BodyRecord {
   if (teffSource === 'unknown')
     notes.push(borrowed ? `No colour of its own is known: drawn at the temperature of the star it pairs with, ${teffK} K.` : 'No colour is known: drawn at the Sun’s temperature.');
   if (j?.distancePc) notes.push(`Placed at its catalogue distance, ${round(distancePc, 4)} pc; the paper behind its size and luminosity adopts ${j.distancePc} pc.`);
-  const vNote = i !== null ? velocityNote(flags) : null;
+  const vNote = i !== null && !placed ? velocityNote(flags) : null;
   if (vNote) notes.push(vNote);
   if (distancePc > 100) notes.push('Its brightness and colour are as seen from the Sun, with the dust in between.');
   if (j?.id === 'spica') notes.push('Spica is a close pair drawn as one star; its companion is left out.');
@@ -374,15 +386,28 @@ function starRecord(stars: Stars3D, b: StarBasis): BodyRecord {
     absMagV: round(absMagV, 4),
     vFromSun: round(vFromSun, 4),
     distancePc: round(distancePc, 7),
-    distanceSource: DISTANCE_SOURCE_TEXT[distanceSource(flags)] ?? 'unknown',
-    distancePrecision: DISTANCE_PRECISION_TEXT[distancePrecision(flags)] ?? 'unknown',
+    distanceSource: b.place?.source ?? DISTANCE_SOURCE_TEXT[distanceSource(flags)] ?? 'unknown',
+    distancePrecision: b.place?.precision ?? DISTANCE_PRECISION_TEXT[distancePrecision(flags)] ?? 'unknown',
     altDistancePc: j?.distancePc,
     altDistanceNote: j?.distancePc ? j.notes : undefined,
     designations: b.designations,
     constellation: b.constellation,
     refs,
   };
-  const facts = j ? STAR_FACTS[j.id] : undefined;
+  const own = b.facts
+    ? { facts: b.facts.map((x) => x[0]), sources: b.facts.map((x) => EXTREME_REFS[x[1]].url), labels: b.facts.map((x) => EXTREME_REFS[x[1]].cite.replace(/ d{4},.*$/, (m) => m.match(/ d{4}/)![0])) }
+    : undefined;
+  const facts = own ?? (j ? STAR_FACTS[j.id] : undefined);
+  // The close-up: its shape, limb darkening, cells, spots and flares (closeup.ts).
+  const dirW = eclipticToWorld(pos);
+  const surface = starSurface({
+    teffK,
+    radiusRsun,
+    massMsun,
+    dirWorld: distancePc > 0 ? [dirW[0] / distancePc, dirW[1] / distancePc, dirW[2] / distancePc] : undefined,
+    spec: CLOSE_UPS[b.id],
+  });
+  notes.push(...surface.notes);
   const physical: BodyRecord['physical'] = {
     radiusKm: radiusRsun * SUN_RADIUS_KM,
     colour: starColour(teffK),
@@ -412,6 +437,7 @@ function starRecord(stars: Stars3D, b: StarBasis): BodyRecord {
     orbitLine: b.orbitLine ? {} : false,
     article: ARTICLES[b.id],
     star,
+    starSurface: surface,
   };
 }
 
@@ -556,9 +582,68 @@ export function namedStarRecords(file: SystemsFile, stars: Stars3D): BodyRecord[
   return out;
 }
 
-/** Every star record from the data: systems first (barycentres, then their stars), then the named stars. */
+/** Citations of EXTREME_REFS, by key, for starRecord. */
+const EXTREME_CITES: Record<string, string> = Object.fromEntries(Object.entries(EXTREME_REFS).map(([k, v]) => [k, v.cite]));
+
+/** M_V of a star of apparent V at d pc. */
+const absMagAt = (v: number, dPc: number): number => v - 5 * Math.log10(dPc / 10);
+
+/**
+ * The record of one of the extreme stars systems.json lacks (extremeStars.ts): from its catalogue row where it has
+ * one, placed at its paper's distance where that is given (held there), else in straight-line motion from the row.
+ */
+export function extremeStarRecord(def: ExtremeStarDef, stars: Stars3D): BodyRecord | null {
+  const j = def.json;
+  const i = j.catalogueIndex;
+  if (i !== null && i >= stars.count) return null;
+  const cat: Vec3 | null = i !== null ? [stars.positions[3 * i], stars.positions[3 * i + 1], stars.positions[3 * i + 2]] : null;
+  const label = 'Held at its place (its motion is not followed)';
+  let place: StarBasis['place'];
+  let provider: PositionProvider;
+  if (Number.isFinite(def.distancePc)) {
+    let unit: Vec3;
+    let absMagV: number;
+    if (cat) {
+      const d = Math.hypot(...cat);
+      unit = [cat[0] / d, cat[1] / d, cat[2] / d];
+      // As bright from the Sun as the catalogue has it.
+      absMagV = stars.absMag[i!] + 5 * Math.log10(d / def.distancePc);
+    } else {
+      unit = equatorialToEcliptic(unitFromRaDec(def.raDeg!, def.decDeg!));
+      absMagV = absMagAt(def.vMag ?? NaN, def.distancePc);
+    }
+    const posPc: Vec3 = [unit[0] * def.distancePc, unit[1] * def.distancePc, unit[2] * def.distancePc];
+    place = { posPc, source: def.distanceSource, precision: def.distancePrecision, absMagV };
+    provider = linearStarProvider(posPc, [0, 0, 0], label);
+  } else if (cat) {
+    const vel: Vec3 = [0, 1, 2].map((k) => stars.velocitiesInt16[3 * i! + k] * stars.velocityUnitKms) as Vec3;
+    provider = linearStarProvider(cat, vel, 'Straight-line motion from the AT-HYG v4.0 / Gaia DR3 catalogue');
+  } else return null;
+  const rec = starRecord(stars, {
+    id: j.id,
+    name: j.name,
+    index: i,
+    json: j,
+    parent: null,
+    provider,
+    positionNote: place ? `Position: ${label.toLowerCase()}, at ${Math.round(def.distancePc).toLocaleString('en-GB')} pc: ${def.distanceSource}.` : `${LINEAR_NOTE}; ${distanceWords(stars, i!)}.`,
+    aliases: [...j.altNames, ...(j.hip ? [`HIP ${j.hip}`] : [])],
+    refs: EXTREME_CITES,
+    place,
+    facts: def.facts,
+  });
+  const notes = [...(rec.modelNotes ?? [])];
+  if (def.vMagNote) notes.push(`Its point’s brightness is ${def.vMagNote}.`);
+  notes.unshift(...def.notes);
+  // A star the catalogue lacks: its place is Gaia DR3's.
+  const dataSource = i === null ? `Position: Gaia DR3 ${j.gaiaDr3} (${EXTREME_REFS.gaiaDr3.cite}); ${rec.star?.refs?.length ? `size, temperature and distance: ${rec.star.refs.join('; ')}` : ''}` : rec.dataSource;
+  return { ...rec, modelNotes: notes, article: def.article ?? rec.article, dataSource, kindText: def.kindText ?? rec.kindText };
+}
+
+/** Every star record from the data: systems first (barycentres, then their stars), then the named stars, then the extreme stars. */
 export function starRecords(file: SystemsFile, stars: Stars3D): BodyRecord[] {
-  return [...file.systems.flatMap((s) => systemRecords(file, s, stars)), ...namedStarRecords(file, stars)];
+  const extreme = EXTREME_STARS.map((d) => extremeStarRecord(d, stars)).filter((r): r is BodyRecord => r !== null);
+  return [...file.systems.flatMap((s) => systemRecords(file, s, stars)), ...namedStarRecords(file, stars), ...extreme];
 }
 
 /** The star-system records merged with the built-in Proxima's (its key, detector, short name, aliases and article stay). */

@@ -6,7 +6,8 @@
  * beyond; its marker (scene/DeepSky.tsx) is hidden meanwhile (pulsarShown).
  *
  * It turns as its marker pulses, on the wall clock (slowed by a power of ten when too fast to watch), its beam towards
- * us at each pulse; a pair moves on the simulation's clock.
+ * us at each pulse; a pair moves on the simulation's clock. A magnetar has its twisted close field (loops a few star
+ * radii across, in magenta) and wider hot spots, and radio beams only if it has been seen pulsing in radio.
  *
  * Part of the deep-sky chunk (mounted by scene/DeepSky.tsx). Cost: nothing far from a pulsar; near one, up to four
  * beams ray-marched over the pixels they cover (24 samples each way), a few thousand line segments and a sphere.
@@ -31,7 +32,7 @@ import {
 import { createBeamMaterial, createFieldLineMaterial, createGlowMaterial, createStarMaterial } from '../render/pulsarMaterials';
 import { psfUniforms } from '../render/materials';
 import { bodyRecords, getBody, type BodyId } from '../sim/bodies';
-import { fieldLines, magneticAxisAt, NS_RADIUS_KM, pairPlaces, rotateAbout, spinPhase, type PulsarModel, type Spin } from '../sim/deepsky/pulsarModel';
+import { fieldLines, magneticAxisAt, NS_RADIUS_KM, pairPlaces, rotateAbout, spinPhase, twistedFieldLines, type PulsarModel, type Spin } from '../sim/deepsky/pulsarModel';
 import { pulsarId } from '../sim/deepsky/records';
 import { smoothstep } from '../sim/deepsky/markers';
 import { sim } from '../sim/sim';
@@ -70,6 +71,9 @@ interface Star {
   beams: { mesh: Mesh; mat: ShaderMaterial }[];
   lines: LineSegments | null;
   linesMat: ShaderMaterial | null;
+  /** A magnetar's twisted loops. */
+  twisted: LineSegments | null;
+  twistedMat: ShaderMaterial | null;
   /** The magnetic frame at phase 0: x, y (z is the magnetic axis). */
   x0: Vector3;
   y0: Vector3;
@@ -85,14 +89,15 @@ interface Built {
   dispose: () => void;
 }
 
-function buildStar(spin: Spin, sphereGeo: SphereGeometry, coneGeo: ConeGeometry, glowGeo: BufferGeometry): Star {
+function buildStar(spin: Spin, sphereGeo: SphereGeometry, coneGeo: ConeGeometry, glowGeo: BufferGeometry, magnetar: PulsarModel['magnetar'] = null): Star {
   const group = new Group();
   const starMat = createStarMaterial();
   const sphere = new Mesh(sphereGeo, starMat);
   sphere.scale.setScalar(NS_RADIUS_KM);
   sphere.frustumCulled = false;
   // The polar caps: where the open field lines meet the star, θ = asin √(R/R_LC).
-  starMat.uniforms.uCapCos.value = Math.cos(Math.asin(Math.sqrt(Math.min(1, NS_RADIUS_KM / spin.lightCylinderKm))));
+  // A magnetar's hot spots: where its twisted loops of 4 star radii meet the surface, 30° from the poles.
+  starMat.uniforms.uCapCos.value = magnetar ? Math.cos(Math.asin(Math.sqrt(1 / 4))) : Math.cos(Math.asin(Math.sqrt(Math.min(1, NS_RADIUS_KM / spin.lightCylinderKm))));
   const glowMat = createGlowMaterial(psfUniforms.uPixelRatio);
   const glow = new Points(glowGeo, glowMat);
   glow.frustumCulled = false;
@@ -109,6 +114,24 @@ function buildStar(spin: Spin, sphereGeo: SphereGeometry, coneGeo: ConeGeometry,
     : [];
   let lines: LineSegments | null = null;
   let linesMat: ShaderMaterial | null = null;
+  let twisted: LineSegments | null = null;
+  let twistedMat: ShaderMaterial | null = null;
+  if (magnetar) {
+    const f = twistedFieldLines(magnetar.twistRad);
+    const g = new BufferGeometry();
+    g.setAttribute('position', new Float32BufferAttribute(f.positions, 3));
+    g.setAttribute('aS', new Float32BufferAttribute(f.s, 1));
+    g.setAttribute('aOpen', new Float32BufferAttribute(f.open, 1));
+    twistedMat = createFieldLineMaterial();
+    // No sweep-back this close in; brighter than a pulsar's field, magenta (false colour).
+    twistedMat.uniforms.uRlc.value = spin.lightCylinderKm;
+    twistedMat.uniforms.uTwist.value = 0;
+    twistedMat.uniforms.uColor.value.set('#ff7ae0').multiplyScalar(7);
+    twisted = new LineSegments(g, twistedMat);
+    twisted.frustumCulled = false;
+    twisted.renderOrder = 1;
+    group.add(twisted);
+  }
   if (spin.beams) {
     const f = fieldLines(spin.lightCylinderKm, NS_RADIUS_KM, 5);
     const g = new BufferGeometry();
@@ -126,7 +149,7 @@ function buildStar(spin: Spin, sphereGeo: SphereGeometry, coneGeo: ConeGeometry,
   if (x0.lengthSq() < 1e-12) x0.set(spin.axis.y, spin.axis.z, spin.axis.x);
   x0.normalize();
   const y0 = new Vector3().crossVectors(spin.mag0, x0).normalize();
-  return { spin, group, sphere, starMat, glow, glowMat, beams, lines, linesMat, x0, y0 };
+  return { spin, group, sphere, starMat, glow, glowMat, beams, lines, linesMat, twisted, twistedMat, x0, y0 };
 }
 
 function build(id: BodyId, model: PulsarModel): Built {
@@ -134,7 +157,7 @@ function build(id: BodyId, model: PulsarModel): Built {
   const sphereGeo = new SphereGeometry(1, 64, 32);
   const coneGeo = unitCone();
   const glowGeo = new BufferGeometry().setAttribute('position', new Float32BufferAttribute([0, 0, 0], 3));
-  const stars = [buildStar(model.spin, sphereGeo, coneGeo, glowGeo)];
+  const stars = [buildStar(model.spin, sphereGeo, coneGeo, glowGeo, model.magnetar)];
   if (model.pair) stars.push(buildStar(model.pair.companion, sphereGeo, coneGeo, glowGeo));
   for (const s of stars) root.add(s.group);
   const orbits: LineLoop[] = [];
@@ -167,6 +190,8 @@ function build(id: BodyId, model: PulsarModel): Built {
       for (const b of s.beams) b.mat.dispose();
       s.lines?.geometry.dispose();
       s.linesMat?.dispose();
+      s.twisted?.geometry.dispose();
+      s.twistedMat?.dispose();
     }
     for (const o of orbits) o.geometry.dispose();
     orbitMat?.dispose();
@@ -235,8 +260,9 @@ function updateStar(s: Star, model: PulsarModel, offset: Vector3, wallS: number,
       u.uOpacity.value = o;
     });
   }
-  if (s.linesMat) {
-    const u = s.linesMat.uniforms;
+  for (const m of [s.linesMat, s.twistedMat]) {
+    if (!m) continue;
+    const u = m.uniforms;
     rotateAbout(s.x0, spin.axis, 2 * Math.PI * phase, x);
     rotateAbout(s.y0, spin.axis, 2 * Math.PI * phase, y);
     u.uRot.value.set(x.x, y.x, mag.x, x.y, y.y, mag.y, x.z, y.z, mag.z);

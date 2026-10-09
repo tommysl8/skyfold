@@ -124,4 +124,10 @@ export const JOURNEYS: Journey[] = [
   }),
   journey({ id: 'virgo-cluster', title: 'The Virgo Cluster', sub: 'Sixty of its brightest galaxies, 54 million light-years away', scene: 'virgo-cluster-close' }),
   journey({ id: 'sgr-a-star-radio', title: 'Sagittarius A* in radio light', sub: 'The ring the Event Horizon Telescope sees, up close', scene: 'sgr-a-star-radio' }),
+  journey({
+    id: 'monsters',
+    title: 'Monsters among the stars',
+    sub: 'The biggest, flattest and wildest stars, up close: Betelgeuse to WR 104’s pinwheel',
+    scene: 'monsters-among-the-stars',
+  }),
 ];

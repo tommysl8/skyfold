@@ -51,6 +51,9 @@ import orbitFrag from './shaders/orbit.frag.glsl?raw';
 import planetVert from './shaders/planet.vert.glsl?raw';
 import planetFrag from './shaders/planet.frag.glsl?raw';
 import sunFrag from './shaders/sun.frag.glsl?raw';
+import starSurfaceVert from './shaders/starSurface.vert.glsl?raw';
+import starSurfaceFrag from './shaders/starSurface.frag.glsl?raw';
+import starCellsFrag from './shaders/starCells.frag.glsl?raw';
 import ringVert from './shaders/ring.vert.glsl?raw';
 import ringFrag from './shaders/ring.frag.glsl?raw';
 import tailVert from './shaders/tail.vert.glsl?raw';
@@ -532,6 +535,57 @@ export function createSunMaterial(color: Color = SUN_COLOR): ShaderMaterial {
     },
     vertexShader: planetVert,
     fragmentShader: sunFrag,
+  });
+}
+
+/**
+ * A star other than the Sun up close (shaders/starSurface.*.glsl; its parameters from sim/stars/closeup.ts, set by
+ * scene/Bodies.tsx StarBody): its own shape and gravity darkening, convection cells, starspots and flares, coloured
+ * by Planck's law about its mean temperature, whose blackbody colour `color` is.
+ */
+export function createStarSurfaceMaterial(color: Color = SUN_COLOR, teffK = SUN_TEFF_K): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uColor: { value: color },
+      uIntensity: { value: 6 },
+      uTeff: { value: teffK },
+      uTPole: { value: teffK },
+      uLimbU: { value: LIMB_DARKENING_U.clone() },
+      uGranFreq: { value: 0 },
+      uGranContrast: { value: 0 },
+      uGiantFreq: { value: 0 },
+      uGiantContrast: { value: 0 },
+      uCells: { value: null },
+      uHasCells: { value: 0 },
+      uSpots: { value: Array.from({ length: 6 }, () => new Vector4(0, 1, 0, 0)) },
+      uSpotCount: { value: 0 },
+      uSpotDT: { value: 0 },
+      uFlare: { value: new Vector4(0, 0, 0, 0) },
+      uContrast: { value: 1 },
+      ...surfaceUniforms,
+    },
+    vertexShader: starSurfaceVert,
+    fragmentShader: starSurfaceFrag,
+  });
+}
+
+/**
+ * A star's convection cells, baked one cube-map face at a time (render/starCells.ts; shaders/starCells.frag.glsl):
+ * drawn on a quad covering the face, no depth.
+ */
+export function createStarCellsMaterial(): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uFace: { value: 0 },
+      uSize: { value: 256 },
+      uGranFreq: { value: 0 },
+      uGiantFreq: { value: 0 },
+      uTime: { value: 0 },
+    },
+    vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: starCellsFrag,
+    depthTest: false,
+    depthWrite: false,
   });
 }
 

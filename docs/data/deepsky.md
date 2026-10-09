@@ -4,7 +4,7 @@ Objects you can find in "Where to?", pick in the view, visit and read about on a
 NGC and IC objects that have a measured distance (OpenNGC), the pulsars of the ATNF Pulsar Catalogue, the Milky Way's
 supernova remnants with distances (Ranasinghe & Leahy 2022, after Green's catalogue), and the mergers of black holes
 and neutron stars heard in gravitational waves (GWTC, via GWOSC). Built 1 October 2026. Code in `scripts/build-ngc.mjs`,
-`build-pulsars.mjs`, `build-snrs.mjs`, `build-gw-events.mjs` and `scripts/deepsky/` (the builds), `src/sim/deepsky/`
+`build-pulsars.mjs`, `build-magnetars.mjs`, `build-snrs.mjs`, `build-gw-events.mjs` and `scripts/deepsky/` (the builds), `src/sim/deepsky/`
 (the formats, the records, the loading, search and picking), `src/scene/DeepSky.tsx`, `src/render/deepSkyMaterials.ts`
 and the shaders `deepSkyMarker.vert.glsl`, `deepSkyGalaxy.vert.glsl` and `gwRegion.vert.glsl`. Counts of each run are in
 `docs/data/deepsky-build-log.txt`.
@@ -17,6 +17,7 @@ and the shaders `deepSkyMarker.vert.glsl`, `deepSkyGalaxy.vert.glsl` and `gwRegi
 | `public/data/deepsky/ngc-galactic.json.gz` | 37 kB | 794 NGC/IC clusters and nebulae of the Milky Way and the Magellanic Clouds |
 | `public/data/deepsky/ngc-existing.json.gz` | 2 kB | 366 NGC/IC/Messier designations of 139 objects the app already has, and which of its bodies each leads to |
 | `public/data/deepsky/pulsars.json.gz` | 175 kB | 4,179 pulsars |
+| `public/data/deepsky/magnetars.json.gz` | 2.7 kB | 25 magnetars of the McGill catalogue, merged into the pulsars when they load (§2, Magnetars) |
 | `public/data/deepsky/snrs.json.gz` | 10 kB | 205 supernova remnants |
 | `public/data/deepsky/gw-events.json.gz` | 22 kB | 282 gravitational-wave mergers |
 
@@ -84,6 +85,39 @@ out: 140 whose dispersion measure is more than YMW16 can account for (the model 
 than a distance) and 74 with no distance at all. A card whose distance comes from the dispersion measure says so in its
 one plain line: such distances are often off by a quarter and sometimes by a factor of two (Yao, Manchester & Wang
 2017).
+
+### Magnetars (McGill Online Magnetar Catalog, 30 entries; 25 placed)
+
+The magnetars of the McGill Online Magnetar Catalog (Olausen & Kaspi 2014, ApJS 212, 6;
+https://www.physics.mcgill.ca/~pulsar/magnetar/main.html), its main table `TabO1.csv` retrieved 9 October 2026, built
+into `public/data/deepsky/magnetars.json.gz` (2.7 kB) by `scripts/build-magnetars.mjs`. The catalogue page allows the
+information to be used freely provided the paper is cited and the page's address given; the numbers are quoted with
+that citation. Each keeps the catalogue's spin period P and its derivative Ṗ (an upper limit where it says so), the
+surface dipole field it infers from them (B = 3.2 × 10¹⁹ (P Ṗ)^½ G), the spin-down power, the characteristic age, the
+2–10 keV luminosity, its associations, the bands it is seen in and its activity, and its distance with the reference the
+catalogue gives (its reference code turned into the ADS bibcode linked on the catalogue's page). Placed: the 24 with a
+period and a distance, and SGR 1935+2154, whose distance the catalogue leaves blank, at 6.6 ± 0.7 kpc from its remnant
+G57.2+0.8 (Zhou et al. 2020, ApJ 905, 99). Left out: SGR 1833−0832 (no distance) and five candidates with no period.
+
+The magnetars are loaded with the pulsars and merged into them (`mergeMagnetars`): the 15 that the ATNF catalogue also
+lists (matched by position within 30″, or 1.5 times the McGill position error where larger: Swift J1818.0−1607's
+position is a burst's) keep their ATNF entry and id, gain the McGill values and the McGill distance, and are named by
+their usual names ("SGR 1806−20", the ATNF J name an alias); the 10 others are added (ids `magnetar-…`). Each is a body
+while the pulsars are loaded (there are few), with its own marker (magenta, a dot in a faint ring, beating with its
+spin, shown from 1.5–6 kpc), and a card: its field, Ṗ, spin-down power, X-ray luminosity and age; a line when its X-ray
+light outshines its spin-down power (the field's decay powers it); and the story of the four known for an event:
+SGR 1806−20's giant flare of 27 December 2004 (Hurley et al. 2005, Nature 434, 1098; Palmer et al. 2005, Nature 434,
+1107), SGR 1935+2154's fast radio burst of 28 April 2020 (CHIME/FRB Collaboration 2020, Nature 587, 54; Bochenek et
+al. 2020, Nature 587, 59), SGR 0526−66's flare of 5 March 1979 (Mazets et al. 1979, Nature 282, 587) and SGR 1900+14's
+of 27 August 1998 (Hurley et al. 1999, Nature 397, 41).
+
+Up close (`scene/PulsarModel.tsx`, `pulsarModel.ts`) a magnetar is the pulsar model with a twisted magnetosphere: five
+shells of closed dipole loops from 1.8 to 12 star radii, each turned about the magnetic axis along its length so its
+footpoints differ by one radian, the twist that carries the currents thought to power magnetars' X-rays (Thompson,
+Lyutikov & Kulkarni 2002, ApJ 574, 332); the loops and the size of the twist are a model, drawn in false colour. Its hot
+spots are where loops of four star radii meet the surface, 30° from the magnetic poles. It has radio beams, and the
+pulsar model's outer field out to its light cylinder, only if it has been seen pulsing in radio (the catalogue's bands include R: 1E 1547.0−5408, PSR J1622−4950, SGR J1745−2900,
+XTE J1810−197, Swift J1818.0−1607, SGR 1935+2154). It is framed by its loops, not its light cylinder.
 
 ### Supernova remnants (Ranasinghe & Leahy 2022, 215 remnants)
 
