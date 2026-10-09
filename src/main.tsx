@@ -67,7 +67,9 @@ if (import.meta.env.DEV) {
     import('./sim/deepsky'),
     import('./scene/GalaxyPictures'),
     import('./sim/phenomena'),
-  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky, pictures, phen]) =>
+    import('./scene/Heliosphere'),
+    import('./scene/CometTails'),
+  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky, pictures, phen, edge, tails]) =>
     Object.assign(window, {
       __ls: {
         sim: s.sim,
@@ -114,6 +116,10 @@ if (import.meta.env.DEV) {
         pictures: { mounted: pictures.galaxyPictures, shares: pictures.pictureShares },
         /** The asteroids and comets: what has loaded, the drawn sections, picking and registering one (sim/asteroids, scene/Asteroids.tsx). */
         asteroids: { state: smallLoad.smallBodies, sections: smallPick.layerSections, pick: smallPick.pickSmallBody, ensure: smallBodies.ensureSmallBody, look: smallScene.asteroidLook, frame: smallScene.asteroidFrame },
+        /** The heliosphere and the Oort cloud (scene/Heliosphere.tsx): look.on false leaves them out, for timing. */
+        edge: { look: edge.heliosphereLook },
+        /** The comets' tails (scene/CometTails.tsx): look.on false leaves them out, for timing. */
+        tails: { look: tails.tailLook },
         /** Render n frames with a fixed timestep (works while the tab is hidden). */
         step(n = 60, dt = 1 / 60) {
           s.sim.debugDt = dt;

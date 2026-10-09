@@ -17,6 +17,8 @@ import { StellarNebulae } from './scene/StellarNebulae';
 import { Orbits } from './scene/Orbits';
 import { Asteroids } from './scene/Asteroids';
 import { CometTails } from './scene/CometTails';
+import { Heliosphere } from './scene/Heliosphere';
+import { VisitorPaths } from './scene/VisitorPaths';
 import { Glints } from './scene/Glints';
 import { NuclearCluster } from './scene/NuclearCluster';
 import { LensRings } from './scene/LensRings';
@@ -30,6 +32,7 @@ import { AdaptiveQuality } from './render/AdaptiveQuality';
 import { LabelSync, LabelsLayer } from './ui/Labels';
 import { HoverSync, HoverTagLayer } from './ui/HoverTag';
 import { ConstellationNameSync, ConstellationNamesLayer } from './ui/ConstellationNames';
+import { RegionNameSync, RegionNamesLayer } from './ui/RegionNames';
 import { Header } from './ui/layout/Header';
 import { Footer } from './ui/layout/Footer';
 import { ReferenceDock } from './ui/reference/ReferenceDock';
@@ -197,6 +200,8 @@ export default function App() {
           <StellarNebulae />
           <Orbits />
           <CometTails />
+          <Heliosphere />
+          <VisitorPaths />
           <Asteroids />
           <Glints />
           <LensRings />
@@ -208,11 +213,13 @@ export default function App() {
           <LabelSync />
           <HoverSync />
           <ConstellationNameSync />
+          <RegionNameSync />
           <OverlaySync />
           <AdaptiveQuality />
           <RenderPipeline />
         </Canvas>
         <ConstellationNamesLayer />
+        <RegionNamesLayer />
         <LabelsLayer />
         <HoverTagLayer />
         <ViewportInstruments />

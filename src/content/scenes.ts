@@ -75,6 +75,7 @@ import { startPace } from '../sim/phenomena/pace';
 import { bodyFixedDir, geomagneticPole } from '../sim/phenomena/aurora';
 import { sunMapHeld } from '../sim/fields';
 import { registerDestinations, type Destination } from './destinations';
+import { NORTH, PORT } from '../sim/heliosphere';
 import { requestDeepSky } from '../sim/deepsky';
 import { fieldAxisWorld } from '../sim/blackholes/fieldAxis';
 
@@ -271,6 +272,10 @@ export const NAMED_SCENES = [
   'edge-of-reach',
   'voyager2-neptune',
   'halley-2061',
+  'halley-1986',
+  'hale-bopp-1997',
+  'visitors-from-other-stars',
+  'edge-of-the-solar-system',
   'trappist-1-worlds',
   'sgr-a-star-shadow',
   'photon-ring',
@@ -419,6 +424,10 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'edge-of-reach': 'The edge of reach',
   'voyager2-neptune': 'Ride Voyager 2 past Neptune',
   'halley-2061': 'Halley comes back',
+  'halley-1986': 'Halley’s Comet in 1986',
+  'hale-bopp-1997': 'Comet Hale–Bopp, 1997',
+  'visitors-from-other-stars': 'Visitors from other stars',
+  'edge-of-the-solar-system': 'The edge of the Solar System',
   'trappist-1-worlds': 'Seven worlds of TRAPPIST-1',
   'sgr-a-star-shadow': 'The shadow of Sgr A*',
   'photon-ring': 'The photon ring',
@@ -1226,6 +1235,29 @@ defineScene('voyager2-neptune', {
   },
 });
 
+/**
+ * A comet near perihelion, seen from above its orbit and a little sunward, so both tails are side on (the camera
+ * `distance` km from it), with time running `warp` times faster once the slew is over.
+ */
+function cometScene(id: BodyId, note: string, startMs: number, distance: number, warp: number): boolean {
+  if (!ready() || !setEpoch(startMs)) return false;
+  updateEphemeris();
+  const h = sim.bodies[id];
+  if (!h?.present) return false;
+  setWarp(1);
+  setPaused(true);
+  useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'visible', showLabels: true, showOrbits: true, selected: id });
+  const r = h.pos.clone().normalize();
+  const n = r.clone().cross(h.vel).normalize();
+  const dir = n.addScaledVector(r, -0.35).normalize();
+  controller.goTo(id, { distance, direction: dir });
+  afterSlew(id, () => {
+    setWarp(warp);
+    setPaused(false);
+  });
+  return true;
+}
+
 /** Halley's perihelion: 2061-07-28 17:17 TDB (JPL Horizons, solution JPL#75). */
 const HALLEY_2061_MS = msFromCivil(2061, 7, 28, 17, 16);
 
@@ -1233,25 +1265,81 @@ defineScene('halley-2061', {
   label: 'Halley comes back',
   note: 'Halley’s Comet rounds the Sun on 28 July 2061, 0.59 au out. Its dust tail curves back along its orbit; the fainter blue ion tail points straight down the solar wind. The tails come from a simple physical model; a day passes in under 9 seconds.',
   unavailable: needs('halley'),
+  run: (note) => cometScene('halley', note, HALLEY_2061_MS - 6 * 86_400_000, 8e7, 10_000),
+});
+
+/** Halley's 1986 perihelion: 1986-02-09 11:22 TDB, 0.587 au (JPL SBDB, solution 75). */
+const HALLEY_1986_MS = msFromCivil(1986, 2, 9, 11, 21);
+
+defineScene('halley-1986', {
+  label: 'Halley’s Comet in 1986',
+  note: 'Halley’s Comet rounds the Sun on 9 February 1986, 0.59 au out; a month later ESA’s Giotto flew 600 km from its nucleus. Its dust tail curves back along its orbit; the fainter blue ion tail points straight down the solar wind, swept a few degrees back by the comet’s own speed. The tails are a model of the shape, as strong and long as Halley’s measured brightness allows; a day passes in under 9 seconds.',
+  unavailable: needs('halley'),
+  run: (note) => cometScene('halley', note, HALLEY_1986_MS - 6 * 86_400_000, 8e7, 10_000),
+});
+
+/** Hale–Bopp's perihelion: 1997-04-01 15:14 TDB, 0.914 au (JPL SBDB, solution 226). */
+const HALE_BOPP_1997_MS = msFromCivil(1997, 4, 1, 15, 13);
+
+defineScene('hale-bopp-1997', {
+  label: 'Comet Hale–Bopp, 1997',
+  note: 'Comet Hale–Bopp rounds the Sun on 1 April 1997, 0.91 au out, in its second year of being visible to the naked eye. Its nucleus, some 60 km across, is several times Halley’s. The broad dust tail curves back along its orbit, the blue ion tail streams straight from the Sun. The tails are a model of the shape, as strong and long as its measured brightness allows; a day passes in under 9 seconds.',
+  unavailable: needs('hale-bopp'),
+  run: (note) => cometScene('hale-bopp', note, HALE_BOPP_1997_MS - 8 * 86_400_000, 9e7, 10_000),
+});
+
+/** ʻOumuamua was found on 19 October 2017, already leaving. */
+const OUMUAMUA_FOUND_MS = msFromCivil(2017, 10, 19, 12, 0);
+
+defineScene('visitors-from-other-stars', {
+  label: 'Visitors from other stars',
+  note: 'Three bodies are known to have come from other stars: ʻOumuamua, found on 19 October 2017 as it left, the comet Borisov in 2019 and the comet 3I/ATLAS in 2025. Their paths, from JPL’s orbits, cross the inner Solar System on open orbits; far out they run straight, back towards where each came from and on to where it goes. ʻOumuamua is drawn as a model: a long body, tumbling every 8.67 hours.',
+  unavailable: needs('oumuamua', 'borisov', 'atlas-3i'),
   run: (note) => {
-    if (!ready() || !setEpoch(HALLEY_2061_MS - 6 * 86_400_000)) return false;
+    if (!ready() || !setEpoch(OUMUAMUA_FOUND_MS)) return false;
     updateEphemeris();
-    const h = sim.bodies.halley;
-    if (!h?.present) return false;
     setWarp(1);
     setPaused(true);
-    useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'visible', showLabels: true, showOrbits: true, selected: 'halley' });
-    // From above the orbit and a little sunward, so both tails are seen side on.
-    const r = h.pos.clone().normalize();
-    const n = r.clone().cross(h.vel).normalize();
-    const dir = n.addScaledVector(r, -0.35).normalize();
-    controller.goTo('halley', { distance: 8e7, direction: dir });
-    afterSlew('halley', () => {
-      setWarp(10_000);
+    useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'visible', showLabels: true, showOrbits: true, selected: 'oumuamua' });
+    // High above the inner Solar System, tipped a little: all three paths and the planets' orbits in view.
+    controller.goTo('sun', { distance: 9 * AU_KM, direction: ABOVE.clone().normalize() });
+    afterSlew('sun', () => {
+      setWarp(100_000);
       setPaused(false);
     });
     return true;
   },
+});
+
+/** The edge scene's two views: the heliosphere side on, then the Oort cloud, au from the Sun; and the pause between, s. */
+const EDGE_HELIO_AU = 900;
+const EDGE_OORT_AU = 400_000;
+const EDGE_PAUSE_S = 14;
+
+defineScene('edge-of-the-solar-system', {
+  label: 'The edge of the Solar System',
+  note: 'The Sun’s wind blows a bubble in the gas between the stars, the heliosphere. It slows abruptly at the termination shock, 75 to 160 au out, and ends at the heliopause, where Voyager 1 crossed in 2012 at 121.6 au and Voyager 2 in 2018 at 119 au: both are now outside it. After a pause the view pulls back to a model of the Oort cloud of comets, thought to reach 100,000 au. Both shapes are models, fitted to what the Voyagers and IBEX measured.',
+  unavailable: needs('voyager1', 'voyager2'),
+  run: (note) =>
+    scene(note, () => {
+      resetToNow();
+      updateEphemeris();
+      useUI.setState({ showLabels: true, selected: 'voyager1' });
+      // From the port side and a little north: the bubble side on, its nose to one side, both Voyagers outside it.
+      const e = { x: PORT.x + 0.35 * NORTH.x, y: PORT.y + 0.35 * NORTH.y, z: PORT.z + 0.35 * NORTH.z };
+      const dir = new Vector3(e.x, e.z, -e.y).normalize();
+      controller.goTo('sun', { distance: EDGE_HELIO_AU * AU_KM, direction: dir });
+      afterSlew('sun', () => {
+        cancelSceneStep();
+        const move = controller.moves;
+        const timer = setTimeout(() => {
+          pendingStep = null;
+          if (controller.moves !== move || useUI.getState().tripActive) return;
+          controller.goTo('sun', { distance: EDGE_OORT_AU * AU_KM, direction: dir });
+        }, EDGE_PAUSE_S * 1000);
+        pendingStep = () => clearTimeout(timer);
+      });
+    }),
 });
 
 // ─── The Milky Way (sim/galaxy) ─────────────────────────────────────────────────────────
