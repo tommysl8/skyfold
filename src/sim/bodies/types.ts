@@ -304,6 +304,11 @@ export interface BodyVisual {
   /** A comet: draw its coma and its dust and ion tails (scene/CometTails.tsx). */
   tails?: boolean;
   /**
+   * The comet's magnitude law, total magnitude M1 + 5 log10 Δ + K1 log10 r (JPL SBDB), which sets how strong and
+   * long its tails are drawn at each distance from the Sun (render/cometTail.ts). Missing: JPL's defaults, 15 and 10.
+   */
+  tailMagnitudes?: { m1: number; k1: number };
+  /**
    * A plain sphere in the body's colour, with no procedural surface: a body no image shows (the
    * planets of other stars).
    */

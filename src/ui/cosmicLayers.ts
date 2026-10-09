@@ -92,13 +92,13 @@ export const SURVEY_CARD = {
   line: '13.5 million galaxies and quasars from DESI and the SDSS, out to 23 billion light-years: a map, not what the eye would see.',
   caveat: 'Placed by redshift: a galaxy’s own motion moves it along our line of sight, which stretches clusters into spikes pointing at us. The empty wedges are sky the surveys could not see: behind the Milky Way’s disc, and much of the south.',
   more: [
-    'Orange: red galaxies, mostly old stars. Blue: galaxies forming stars. Violet: quasars, gas falling into a supermassive black hole and outshining its galaxy; paler, bluer violet streaks are Quaia’s. Glows hold the light of galaxies too small to draw from here.',
-    'Quaia’s redshifts come from Gaia’s low-resolution spectra, not a spectrograph: a typical one is uncertain by 4 % of 1 + z, about 200 Mpc in distance, and a tenth of them by over 700 Mpc. Each streak runs over its quasar’s likely distances, holding the light of one point, and the least certain are fainter. Quasars that DESI or the SDSS measured are drawn from those surveys instead.',
+    'Orange: red galaxies, mostly old stars. Blue: galaxies forming stars. Violet: quasars, gas falling into a supermassive black hole and outshining its galaxy; paler, bluer violet streaks are Quaia’s, grey streaks Gaia’s galaxies. Glows hold the light of galaxies too small to draw from here.',
+    'Quaia’s and Gaia’s redshifts come from Gaia’s low-resolution spectra, not a spectrograph: a typical one is uncertain by 4 % of 1 + z, about 200 Mpc in distance, and a tenth of the quasars’ by over 700 Mpc. Each streak runs over its object’s likely distances, holding the light of one point, and the least certain are fainter. What DESI or the SDSS measured is drawn from those surveys instead. Behind the Milky Way’s plane no survey sees galaxies: that band is empty because it is hidden, not because nothing is there.',
     'A survey, not a census: far away only the brightest galaxies were seen, and each survey chose different kinds, so the map thins and changes colour with distance. Two thirds of the sky has not been mapped this way: blank is unobserved, not empty.',
   ],
   /** Shown under the caveat while Quaia's quasars show (from QUAIA_LOAD_KM). */
-  quaia: 'Quasars over the whole sky from Gaia (Quaia), in the wedges too: their distances are rough, so they are drawn stretched along the line of sight.',
-  credit: 'DESI Data Release 1 (CC BY 4.0) and SDSS DR17 (public domain); acknowledgements in the About page’s sources. Quaia: Storey-Fisher et al. 2024, ApJ 964, 69 (CC BY 4.0)',
+  quaia: 'Quasars (Quaia) and nearer galaxies over the whole sky from Gaia, in the wedges too: their distances are rough, so they are drawn stretched along the line of sight.',
+  credit: 'DESI Data Release 1 (CC BY 4.0) and SDSS DR17 (public domain); acknowledgements in the About page’s sources. Quaia: Storey-Fisher et al. 2024, ApJ 964, 69 (CC BY 4.0). Gaia DR3 galaxies: ESA/Gaia/DPAC (CC BY-NC 3.0 IGO)',
 } as const;
 
 /** Whether the web shows now (at all). */

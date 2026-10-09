@@ -21,6 +21,7 @@ import { SURVEY_SOURCES } from '../surveys/format.ts';
 import type { Vec3 } from '../galaxy/frames';
 import { gpsToUnixMs, regionRadiusRad, type DeepSkySetId, type GwEvent, type Magnetar, type NgcGalactic, type NgcGalaxy, type Pulsar, type Snr, type SnrFile } from './format';
 import { NS_RADIUS_KM, pulsarModel, radioMagnetar, shownPulse } from './pulsarModel';
+import { dipoleFieldG, twistedReach } from './magnetosphere';
 
 const LY_PER_PC = PARSEC_KM / LIGHT_YEAR_KM;
 const doiUrl = (doi: string) => `https://doi.org/${doi}`;
@@ -515,6 +516,13 @@ export function pulsarRecord(p: Pulsar, entry: DeepSkyEntry): BodyRecord {
   if (Number.isFinite(p.pbDays)) facts.push(`It orbits ${p.companion && COMPANION[p.companion] ? COMPANION[p.companion] : 'a companion'} every ${p.pbDays < 1 ? `${rounded(p.pbDays * 24)} hours` : `${rounded(p.pbDays)} days`}${home.cluster ? `, in the globular cluster ${home.cluster}` : ''}.`);
   else if (home.cluster) facts.push(`In the globular cluster ${home.cluster}.`);
   if (famous?.note) facts.push(famous.note);
+  if (model) {
+    // Its field and light cylinder, where the card has room (the data sheet always has both).
+    const b = p.p1 > 0 ? dipoleFieldG(p.p0, p.p1) : NaN;
+    const rlc = model.spin.lightCylinderKm;
+    const line = `${Number.isFinite(b) ? `Its field is about ${sci(b)} gauss at the surface; its` : 'Its'} light cylinder, where the field turning with it would reach the speed of light, is ${rlc < 1e5 ? Math.round(rlc).toLocaleString('en-GB') : sci(rlc)} km out.`;
+    if (facts.length < 3 && [...facts, line].join(' ').length <= 330) facts.push(line);
+  }
   const charAgeYr = p.p1 > 0 ? p.p0 / (2 * p.p1) / (365.25 * 86400) : NaN;
   const info: DeepSkyInfo = {
     type: pulsarWhat(p),
@@ -526,6 +534,8 @@ export function pulsarRecord(p: Pulsar, entry: DeepSkyEntry): BodyRecord {
       ...(Number.isFinite(p.dm) ? [{ l: 'Dispersion measure', v: String(p.dm), u: 'pc cm⁻³', title: ATNF }] : []),
       ...(Number.isFinite(charAgeYr) ? [{ l: 'Characteristic age P/2Ṗ', v: rounded(charAgeYr), u: 'years', title: 'An upper limit on its true age if it was born spinning fast' }] : []),
       ...(Number.isFinite(p.pbDays) ? [{ l: 'Orbital period', v: rounded(p.pbDays, 4), u: 'days', title: ATNF }] : []),
+      ...(p.p1 > 0 ? [{ l: 'Surface magnetic field', v: sci(dipoleFieldG(p.p0, p.p1)), u: 'G', title: `3.2 × 10¹⁹ (P Ṗ)^½ G, from the period and its slowing: ${ATNF}` }] : []),
+      ...(model ? [{ l: 'Light-cylinder radius', v: rounded(model.spin.lightCylinderKm, 4), u: 'km', title: 'c·P/2π' }] : []),
     ],
     hostGalaxy: home.galaxy,
     cardNote: p.method === 'dm' ? DM_DISTANCE_NOTE : undefined,
@@ -535,7 +545,7 @@ export function pulsarRecord(p: Pulsar, entry: DeepSkyEntry): BodyRecord {
   const pair = model?.pair;
   const modelNotes = [
     model
-      ? `Up close: the neutron star, about 24 km across, its two radio beams and its magnetic field, turning ${slowed}. Radio is invisible to the eye: the beams are shown in false colour, their width from its spin (Rankin 1993). From afar it is a small marker that pulses with it.`
+      ? `Up close: the neutron star, about 24 km across, its two radio beams and its magnetic field, turning ${slowed}. Radio is invisible to the eye: the beams are shown in false colour, their width from its spin (Rankin 1993). From afar it is a small marker that pulses with it. View › Magnetic field lines draws its whole magnetosphere, a model after force-free simulations (Contopoulos et al. 1999; Spitkovsky 2006): the closed zone, the open lines wound into the wind and the striped wind’s current sheet${pair ? `, and its companion’s${p.jname.startsWith('J0737-3039') ? ', B’s squeezed by A’s wind (Lyutikov & Thompson 2005)' : ' (its spin and field not measured)'}` : ''}.`
       : 'Shown as a small marker. A neutron star about 24 km across, it is far too small and faint to see.',
     ...(model?.orientation === 'measured'
       ? ['The tilt of its spin axis is measured (from the X-ray rings round it, or from its orbit); its beam sweeps over us each turn, as it must for us to see it pulse.']
@@ -586,7 +596,7 @@ function magnetarRecord(p: Pulsar, m: Magnetar, entry: DeepSkyEntry): BodyRecord
   const home = m.assoc?.includes('LMC') ? ('Large Magellanic Cloud' as const) : m.assoc?.includes('SMC') ? ('Small Magellanic Cloud' as const) : undefined;
   const facts: string[] = [];
   const field = Number.isFinite(m.bG)
-    ? `a magnetic field of about ${sci(m.bG)} gauss at its surface${m.bG > 1e14 ? ', hundreds of times a typical pulsar’s and a thousand million million times Earth’s' : ''}`
+    ? `a magnetic field of about ${sci(m.bG)} gauss at its surface${m.bG > 1e14 ? ', 100 to 1,000 times a normal pulsar’s and a thousand million million times Earth’s' : ''}`
     : 'a field too strong to measure from its spin alone';
   facts.push(`A magnetar: a neutron star with ${field}, inferred from how fast its ${rounded(m.p0, 3)}-second spin is slowing.`);
   if (Number.isFinite(m.lxErgS) && Number.isFinite(m.edotErgS) && m.lxErgS > m.edotErgS)
@@ -612,7 +622,7 @@ function magnetarRecord(p: Pulsar, m: Magnetar, entry: DeepSkyEntry): BodyRecord
   };
   const slowed = pulse.slowedBy === 1 ? 'at its real rate' : `${pulse.slowedBy.toLocaleString('en-GB')} times slower than it really does`;
   const modelNotes = [
-    `Up close: the neutron star, about 24 km across, turning ${slowed}, with hot spots where its strongest field lines meet the surface, and its magnetosphere drawn as dipole loops a few star radii across, twisted about the magnetic axis by about a radian, as Thompson, Lyutikov & Kulkarni (2002) describe magnetars. The loops are a model, in false colour.`,
+    `Up close: the neutron star, about 24 km across, turning ${slowed}, with hot spots where its strongest field lines meet the surface, and its magnetosphere drawn as dipole loops a few star radii across, twisted about the magnetic axis by about a radian, as Thompson, Lyutikov & Kulkarni (2002) describe magnetars. The loops are a model, in false colour. View › Magnetic field lines draws more of them, out to ${Math.round(twistedReach(m.bG))} star radii, where its field has fallen to about 10¹¹ gauss and the twisted field’s currents scatter its X-rays.`,
     radio
       ? 'It has been seen pulsing in radio: its radio beams are drawn, their width from its spin (Rankin 1993).'
       : 'It has not been seen pulsing in radio: no beams are drawn. It is seen in X-rays.',

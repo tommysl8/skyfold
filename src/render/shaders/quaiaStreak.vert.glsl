@@ -1,5 +1,5 @@
-// Quaia's quasars (scene/Surveys.tsx; sim/surveys/quaia.ts): each a soft streak along our line of sight, as long as its
-// distance is uncertain, one quad a quasar (instanced: `corner` picks the quad's corner, the a* attributes are the
+// Quaia's quasars and Gaia DR3's galaxies (scene/Surveys.tsx; sim/surveys/quaia.ts): each a soft streak along our line of
+// sight, as long as its distance is uncertain, one quad an object (instanced: `corner` picks the quad's corner, the a* attributes are the
 // quasar's), one draw a node of Quaia's octree, as the survey's points (survey.vert.glsl), whose light law, colours and
 // shifts it keeps.
 //
@@ -25,8 +25,10 @@ attribute float aSigma; // the distance error's code (quaia.ts sigmaByte)
 // node's centre from the Sun (comoving Mpc), for the line of sight.
 uniform float uPixelRatio;
 uniform float uNearMpc;
-uniform vec3 uColor;
+uniform vec3 uColor;     // Quaia's quasars (class 3)
 uniform float uLnT;
+uniform vec3 uClassColor[4]; // the others (Gaia's galaxies: grey, class 2), as the survey's points
+uniform float uClassLnT[4];
 uniform vec2 uLum;       // log10 L/L* of byte 0, and of one step
 uniform vec2 uSigmaCode; // log2 of the error (Mpc) at code 0, and codes an octave
 uniform vec3 uFade;      // the errors (Mpc) the fade runs between, and its floor
@@ -108,16 +110,18 @@ void main() {
   float l = exp2(3.3219281 * (uLum.x + aAttr.y * uLum.y));
   float px = mapSizePx(l, d, uPixelRatio);
   a *= mapLight(l) * mapDepth(d) * mapUnitPx2(uPixelRatio) * uPointKernel;
-  vec3 base = uColor;
+  int cls = int(aAttr.x + 0.5) & 3;
+  vec3 base = cls == 3 ? uColor : uClassColor[cls];
+  float lnT = cls == 3 ? uLnT : uClassLnT[cls];
   float lnDe = lnD - L;
   if (lnDe != 0.0) {
-    vec4 b0 = blackbodyLn(uLnT);
-    vec4 b1 = blackbodyLn(uLnT + lnDe);
+    vec4 b0 = blackbodyLn(lnT);
+    vec4 b1 = blackbodyLn(lnT + lnDe);
     vec3 cc = base * (b1.rgb / max(b0.rgb, vec3(1e-3)));
     float lc = dot(cc, vec3(0.2126, 0.7152, 0.0722));
     base = lc > 0.0 ? cc * (dot(base, vec3(0.2126, 0.7152, 0.0722)) / lc) : base;
     float lnF = b1.a - b0.a - 2.0 * lnDe - (uRetarded > 0.5 ? 2.0 * L : 0.0) + uLnExposure;
-    if (L > 0.5) lnF = mapFloorLnF(lnF, uLnT, lnD, b0.a, uLnExposure);
+    if (L > 0.5) lnF = mapFloorLnF(lnF, lnT, lnD, b0.a, uLnExposure);
     a *= exp(clamp(0.5 * lnF, -60.0, 2.0));
   }
   float sigma = exp2(uSigmaCode.x + aSigma / uSigmaCode.y);

@@ -1,6 +1,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { msFromCivil } from '../lib/time';
-import { setSimTime } from '../sim/sim';
+import { setSimTime, sim } from '../sim/sim';
+import { AU_KM } from '../physics/constants';
+import { getBody } from '../sim/bodies';
+import { tailBrightness } from '../render/cometTail';
 import { updateEphemeris } from '../sim/ephemeris';
 import { useUI } from '../state/ui';
 import { controller } from '../controls/cameraController';
@@ -206,16 +209,19 @@ describe('journeys', () => {
       tracks: parseTracks(readJson<TracksIndex>('public/data/tracks.json'), readBytes('public/data/tracks.bin')),
     });
     updateEphemeris();
-    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'm87-jet', 'aurora', 'sun-future', 'constellations-drift', 'stars-that-change']);
+    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'hale-bopp', 'visitors', 'edge', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'crab-magnetosphere', 'magnetar-field', 'double-pulsar-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'aurora', 'galactic-field', 'galactic-field-sky', 'magnetic-uranus', 'magnetic-jupiter', 'magnetic-sun', 'sun-future', 'constellations-drift', 'stars-that-change']);
     for (const j of JOURNEYS) {
       expect(parseScene(j.scene), j.id).not.toBeNull();
       expect(j.look.length, j.id).toBeGreaterThan(40);
       // TRAPPIST-1 needs the stars and the planetary systems (sim/exoplanets/exoplanets.test.ts runs it); the fall
       // into Sgr A* and its radio light need the Milky Way, Cygnus X-1's disc the stars (blackHoleScenes.test.ts runs them);
       // the supernovae and the kilonova their records, M87 the galaxies (articleScenes.test.ts runs every named scene);
-      // the extreme stars' tour needs the stars (articleScenes.test.ts runs it from the Learn article).
-      if (['trappist', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'm87-jet'].includes(j.id))
+      // the extreme stars' tour needs the stars (articleScenes.test.ts runs it from the Learn article), the magnetic
+      // field's two scenes the Milky Way.
+      if (['trappist', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'galactic-field', 'galactic-field-sky'].includes(j.id))
         expect(sceneStatus(j.scene).reason).toBe(LATER);
+      // The pulsars' fields wait for the pulsar catalogue (articleScenes.test.ts registers it and runs them).
+      else if (['crab-magnetosphere', 'magnetar-field', 'double-pulsar-field'].includes(j.id)) expect(sceneStatus(j.scene).reason).toBe('Loading the pulsar catalogue…');
       // The famous galaxies and the Virgo Cluster need the galaxies (articleScenes.test.ts runs them).
       else if (['famous-galaxies', 'virgo-cluster'].includes(j.id)) expect(sceneStatus(j.scene).ok).toBe(false);
       // The constellations' drift and the variables' tour need the stars (articleScenes.test.ts runs every named scene).
@@ -234,6 +240,28 @@ describe('journeys', () => {
     expect(byId.sunlight.clock).toBe('1 s here = 100 s');
     expect(byId.proxima.look).toMatch(/^A steady push of one Earth gravity takes you to the nearest star in 3\.5 years/);
     expect(byId.moon.look).toMatch(/^A month passes in 25 seconds\./);
+  });
+});
+
+describe('the comets’ scenes', () => {
+  it('set the date to each great comet’s perihelion, its tails near full strength', () => {
+    // (The Solar System is registered by the journeys’ test above.)
+    for (const [scene, id, au] of [
+      ['halley-1986', 'halley', 0.587],
+      ['hale-bopp-1997', 'hale-bopp', 0.914],
+    ] as const) {
+      expect(runScene(scene), scene).toBe(true);
+      updateEphemeris();
+      const b = sim.bodies[id];
+      const r = b.pos.distanceTo(sim.bodies.sun.pos) / AU_KM;
+      // A week before perihelion.
+      expect(r).toBeGreaterThan(au);
+      expect(r).toBeLessThan(au + 0.08);
+      const law = getBody(id)!.visual!.tailMagnitudes!;
+      expect(tailBrightness(r, law.m1, law.k1)).toBeGreaterThan(0.8);
+      expect(useUI.getState().selected).toBe(id);
+    }
+    cancelSceneStep();
   });
 });
 

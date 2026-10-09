@@ -2,17 +2,22 @@
  * Comet tails, as a simple physical model (scene/CometTails.tsx draws them):
  *
  *  Activity. Ices sublimate when sunlight warms the nucleus: water, which drives most comets,
- *  from inside about 3 au. The gas production rate goes roughly as the sunlight, r⁻² (r the
- *  distance from the Sun in au), and falls away steeply outside 3 au, to nothing at 5 au (some
- *  comets, Hale–Bopp among them, stay active further out on CO and CO₂; that is left out). The
- *  brightness also scales with the nucleus's surface area, R² (bigger comets make more gas and
- *  dust): Q ∝ (R / 5 km)² r⁻² S(r), with S a smooth step from 1 at 3 au to 0 at 5 au, and the
- *  tails' brightness saturates as 1 − e^(−Q).
+ *  from inside about 3 au; outside it activity falls away steeply, to nothing at 5 au (some
+ *  comets, Hale–Bopp among them, stay active further out on CO and CO₂; that is left out). How
+ *  active a comet is at r au from the Sun is read from its own magnitude law, the total
+ *  magnitude JPL's Small-Body Database fits to its observations: m = M1 + 5 log10 Δ + K1 log10 r.
+ *  Without the distance from the observer, M1 + K1 log10 r is the light of its coma and tails as
+ *  seen from 1 au, the measure of how much gas and dust it makes there. The tails' strength
+ *  is that magnitude on a linear scale (as the eye takes brightness) from TAIL_MAG_FAINT, where
+ *  nothing shows, to TAIL_MAG_FULL, a great comet, times S(r), a smooth step from 1 at 3 au
+ *  to 0 at 5 au. Lengths grow with the light too: the ion tail as its square root, the age of
+ *  the oldest dust drawn as its fourth root, within the ranges seen.
  *
  *  Ion tail. Ions picked up by the solar wind stream away from the Sun at its speed, about
  *  400 km/s, so the tail points along the solar wind as the comet sees it: v_sw r̂ − v_comet
- *  (straight, and a few degrees off the anti-solar direction; Biermann 1951). Its length is
- *  set to 5 × 10⁷ km, typical of what is seen; it thins with distance from the head.
+ *  (straight, and a few degrees off the anti-solar direction; Biermann 1951). It is 5 × 10⁷ km
+ *  long for a comet of heliocentric magnitude 5, from 3 × 10⁶ to 1.5 × 10⁸ km, thinning with
+ *  distance from the head.
  *
  *  Dust tail. Dust leaves the nucleus with the comet's own velocity and then feels the Sun's
  *  gravity weakened by radiation pressure: μ(1 − β), with β the ratio of radiation pressure
@@ -23,7 +28,8 @@
  *  comet in its orbital plane. Older dust has spread and dimmed.
  *
  * Not modelled: jets, striae, the gas coma's chemistry, anti-tails from large grains seen
- * edge-on, and outbursts. The tails are illustrative in brightness and exact in direction.
+ * edge-on, and outbursts. The tails are a model of the shape: exact in direction, gentle and
+ * illustrative in brightness (a real tail's surface brightness is not computed).
  *
  * All functions write into caller-owned objects: they run every frame for comets on screen.
  */
@@ -35,31 +41,63 @@ export interface V3 {
   z: number;
 }
 
-/** Inside this distance from the Sun, activity follows r⁻² (au)… */
+/** Inside this distance from the Sun (au) a comet's activity follows its magnitude law… */
 export const ACTIVITY_FULL_AU = 3;
 /** …and outside this, there is none. */
 export const ACTIVITY_OFF_AU = 5;
 /** Solar wind speed, km/s. */
 export const SOLAR_WIND_KM_S = 400;
-/** Length of the ion tail, km. */
+/** Length of the ion tail at heliocentric magnitude ION_REF_MAG, km… */
 export const ION_TAIL_KM = 5e7;
+export const ION_REF_MAG = 5;
+/** …and the range it is kept to, km. */
+export const ION_TAIL_RANGE_KM: readonly [number, number] = [3e6, 1.5e8];
 /** Radiation-pressure parameters of the dust drawn (β ≤ 1: gravity at least balanced), fine grains last. */
 export const DUST_BETAS = [0.06, 0.15, 0.35, 0.65, 1] as const;
-/** Oldest dust drawn, s (30 days). */
+/** Oldest dust drawn at heliocentric magnitude ION_REF_MAG, s (30 days)… */
 export const DUST_AGE_S = 30 * 86_400;
+/** …and the range it is kept to, s. */
+export const DUST_AGE_RANGE_S: readonly [number, number] = [10 * 86_400, 60 * 86_400];
+/** Heliocentric magnitude (M1 + K1 log10 r) at which the tails fade out entirely… */
+export const TAIL_MAG_FAINT = 17;
+/** …and at which they are drawn at full strength (a great comet: Halley in 1986 reached 3.7, Hale–Bopp 4.6). */
+export const TAIL_MAG_FULL = 3;
+/** M1 and K1 where JPL has none (as the small-body layer: docs/data/asteroids.md §6). */
+export const DEFAULT_M1 = 15;
+export const DEFAULT_K1 = 10;
 
-/** Relative gas and dust production at `rAu` from the Sun: 1 at 1 au (see the module comment). */
+/** The onset of activity: 1 inside ACTIVITY_FULL_AU, 0 outside ACTIVITY_OFF_AU, a smooth step between. */
 export function cometActivity(rAu: number): number {
   if (!(rAu > 0) || rAu >= ACTIVITY_OFF_AU) return 0;
   const x = Math.min(1, Math.max(0, (ACTIVITY_OFF_AU - rAu) / (ACTIVITY_OFF_AU - ACTIVITY_FULL_AU)));
-  const s = x * x * (3 - 2 * x);
-  return s / (rAu * rAu);
+  return x * x * (3 - 2 * x);
 }
 
-/** How bright the tails are drawn, 0–1, for a nucleus of radius `radiusKm` at `rAu`. */
-export function tailBrightness(rAu: number, radiusKm: number): number {
-  const q = cometActivity(rAu) * (radiusKm / 5) ** 2;
-  return 1 - Math.exp(-q);
+/** A comet's heliocentric magnitude at `rAu`: M1 + K1 log10 r, its total magnitude seen from 1 au (NaN M1, K1: the defaults). */
+export function heliocentricMagnitude(M1: number, K1: number, rAu: number): number {
+  const m1 = Number.isFinite(M1) ? M1 : DEFAULT_M1;
+  const k1 = Number.isFinite(K1) ? K1 : DEFAULT_K1;
+  return m1 + k1 * Math.log10(Math.max(rAu, 1e-3));
+}
+
+/** How strongly the coma and tails are drawn, 0–1, for a comet of magnitude law M1, K1 at `rAu` from the Sun. */
+export function tailBrightness(rAu: number, M1: number, K1: number): number {
+  const on = cometActivity(rAu);
+  if (on <= 0) return 0;
+  const m = heliocentricMagnitude(M1, K1, rAu);
+  return on * Math.min(1, Math.max(0, (TAIL_MAG_FAINT - m) / (TAIL_MAG_FAINT - TAIL_MAG_FULL)));
+}
+
+const clamp = (x: number, r: readonly [number, number]) => Math.min(r[1], Math.max(r[0], x));
+
+/** Length of the ion tail, km: as the square root of the comet's light at `rAu`, within ION_TAIL_RANGE_KM. */
+export function ionTailKm(rAu: number, M1: number, K1: number): number {
+  return clamp(ION_TAIL_KM * 10 ** (-0.2 * (heliocentricMagnitude(M1, K1, rAu) - ION_REF_MAG)), ION_TAIL_RANGE_KM);
+}
+
+/** Age of the oldest dust drawn, s: as the fourth root of the comet's light at `rAu`, within DUST_AGE_RANGE_S. */
+export function dustAgeS(rAu: number, M1: number, K1: number): number {
+  return clamp(DUST_AGE_S * 10 ** (-0.1 * (heliocentricMagnitude(M1, K1, rAu) - ION_REF_MAG)), DUST_AGE_RANGE_S);
 }
 
 /**

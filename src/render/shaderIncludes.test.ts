@@ -17,6 +17,7 @@ import { Color, ShaderChunk, type ShaderMaterial } from 'three';
 import * as materials from './materials';
 import { LATER_MATERIALS } from './precompile';
 import { galaxyLayer } from './galaxyLayer';
+import { createGalacticFieldMaterial, createGalacticFieldSkyMaterial } from './galacticFieldMaterials';
 import { lensUniforms } from './lens/lensUniforms';
 import { flowUniforms } from './flow/flowMap';
 import { diskUniforms } from './disk/diskMap';
@@ -210,7 +211,7 @@ function programOf(name: string, m: ShaderMaterial): Program {
   return { name, vertex: m.vertexShader, fragment: m.fragmentShader, defines: { ...(m.defines ?? {}) } };
 }
 
-/** Every material factory of render/materials.ts, the background compiles (the lens's included), the Galaxy layer's composite and the relativistic remap. */
+/** Every material factory of render/materials.ts, the background compiles (the lens's included), the Galaxy layer's composite, the magnetic field's and the relativistic remap. */
 function allPrograms(): { programs: Program[]; problems: string[] } {
   const programs: Program[] = [];
   const problems: string[] = [];
@@ -225,6 +226,9 @@ function allPrograms(): { programs: Program[]; problems: string[] } {
   }
   LATER_MATERIALS.forEach(([make], i) => programs.push(programOf(`LATER_MATERIALS[${i}]`, make())));
   programs.push(programOf('galaxyLayer.composite', galaxyLayer.composite));
+  // The magnetic field's chunk (scene/GalacticField.tsx).
+  programs.push(programOf('createGalacticFieldMaterial', createGalacticFieldMaterial()));
+  programs.push(programOf('createGalacticFieldSkyMaterial', createGalacticFieldSkyMaterial()));
   programs.push({ name: 'remap', vertex: remapVert, fragment: remapFrag, defines: {} });
   return { programs, problems };
 }

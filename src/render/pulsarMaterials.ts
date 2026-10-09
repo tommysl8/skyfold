@@ -9,9 +9,14 @@
  *  - The field lines: a dipole's, turned with the star and swept back near the light cylinder, the open ones (which
  *    leave through the light cylinder, carrying the pulsar's wind) with light flowing out along them.
  *  - The glow: a soft point on the star, so it shows when it is under a pixel, flaring when a beam points at us.
+ *  - With View › Magnetic field lines, the whole magnetosphere (sim/deepsky/magnetosphere.ts): thin lines coloured by
+ *    the field's polarity (cyan where it points away from the star, amber where it points in, violet across the tops
+ *    of the closed loops), with dashes flowing along the field; and the striped wind's current sheet, a faint surface
+ *    brightest where it is seen edge-on. False colour throughout. The Double Pulsar's B is confined in the vertex
+ *    shader where A's wind presses on it (uConfine; the CPU twin is magnetosphere.ts confinedField).
  * All but the star are added light with no depth writes.
  */
-import { AdditiveBlending, BackSide, Color, Matrix3, ShaderMaterial, Vector3 } from 'three';
+import { AdditiveBlending, AddEquation, BackSide, Color, CustomBlending, DoubleSide, Matrix3, OneFactor, ShaderMaterial, Vector3, Vector4, ZeroFactor } from 'three';
 
 const BEAM_VERT = /* glsl */ `
 #include <common>
@@ -183,7 +188,7 @@ varying float vR;
 void main() {
   #include <logdepthbuf_fragment>
   float base = vOpen > 0.5 ? 0.07 * (1.0 - smoothstep(0.6, 1.0, vS)) : 0.045;
-  float flow = vOpen > 0.5 ? 0.6 * pow(0.5 + 0.5 * sin(6.2831853 * (vS * 4.0 - uTime * 0.35)), 10.0) * (1.0 - smoothstep(0.7, 1.0, vS)) : 0.0;
+  float flow = vOpen > 0.5 ? 0.6 * pow(max(0.0, 0.5 + 0.5 * sin(6.2831853 * (vS * 4.0 - uTime * 0.35))), 10.0) * (1.0 - smoothstep(0.7, 1.0, vS)) : 0.0;
   vec3 c = (uColor * base + uFlow * flow) * uOpacity;
   gl_FragColor = vec4(c, 1.0);
 }
@@ -288,6 +293,165 @@ export function createGlowMaterial(pixelRatio: { value: number }): ShaderMateria
     vertexShader: GLOW_VERT,
     fragmentShader: GLOW_FRAG,
     blending: AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+  });
+}
+
+const SPHERE_VERT = /* glsl */ `
+#include <common>
+#include <logdepthbuf_pars_vertex>
+attribute float aArc;  // km along its line
+attribute float aPol;  // B_r/|B|: +1 out of the star, −1 into it
+attribute float aFlow; // +1: the field runs the way the line is drawn
+attribute float aW;    // brightness, 0 to 1
+uniform mat3 uRot;     // the set's frame → world, now
+uniform vec4 uConfine; // the Double Pulsar's B: unit direction to A (world) and the magnetopause, km (w = 0: none)
+uniform float uTail;   // the confined field's reach downwind, in magnetopause radii
+varying float vArc;
+varying float vPol;
+varying float vFlow;
+varying float vW;
+void main() {
+  vec3 p = uRot * position;
+  if (uConfine.w > 0.0) {
+    // r' = r_lim tanh(r / r_lim), r_lim from the magnetopause towards A to uTail of it straight downwind.
+    float r = length(p);
+    float c = dot(p, uConfine.xyz) / max(r, 1e-6);
+    float t = 0.5 - 0.5 * c;
+    float lim = uConfine.w * (1.0 + (uTail - 1.0) * pow(t, 2.5));
+    float x = r / lim;
+    // tanh written out (GLSL ES 3's tanh overflows for large arguments on some GPUs).
+    float e = exp(-2.0 * min(x, 20.0));
+    p *= r > 0.0 ? lim * (1.0 - e) / (1.0 + e) / r : 1.0;
+  }
+  vArc = aArc;
+  vPol = aPol;
+  vFlow = aFlow;
+  vW = aW;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  #include <logdepthbuf_vertex>
+}
+`;
+
+const SPHERE_FRAG = /* glsl */ `
+#include <logdepthbuf_pars_fragment>
+uniform float uTime;    // s
+uniform float uDashKm;  // the dashes' spacing, km
+uniform float uSpeed;   // dashes per second
+uniform float uOpacity;
+uniform float uGain;
+uniform vec3 uPlus;
+uniform vec3 uMinus;
+uniform vec3 uMid;
+varying float vArc;
+varying float vPol;
+varying float vFlow;
+varying float vW;
+void main() {
+  #include <logdepthbuf_fragment>
+  float pol = clamp(vPol, -1.0, 1.0);
+  vec3 col = pol >= 0.0 ? mix(uMid, uPlus, pol) : mix(uMid, uMinus, -pol);
+  // max(): pow of a rounding error below 0 is NaN, which the bloom would spread over the view.
+  float dash = pow(max(0.5 + 0.5 * sin(6.2831853 * (vArc / uDashKm - sign(vFlow) * uTime * uSpeed)), 0.0), 8.0);
+  vec3 c = col * vW * (0.05 + 0.35 * dash) * uGain * uOpacity;
+  gl_FragColor = vec4(c, 1.0);
+}
+`;
+
+const SHEET_VERT = /* glsl */ `
+#include <common>
+#include <logdepthbuf_pars_vertex>
+attribute float aU;  // radius in light-cylinder radii
+uniform mat3 uRot;
+varying float vU;
+varying vec3 vView;
+void main() {
+  vec4 mv = modelViewMatrix * vec4(uRot * position, 1.0);
+  vU = aU;
+  vView = mv.xyz;
+  gl_Position = projectionMatrix * mv;
+  #include <logdepthbuf_vertex>
+}
+`;
+
+const SHEET_FRAG = /* glsl */ `
+#include <logdepthbuf_pars_fragment>
+uniform float uOpacity;
+uniform float uReach;
+uniform vec3 uColor;
+varying float vU;
+varying vec3 vView;
+void main() {
+  #include <logdepthbuf_fragment>
+  // Brightest seen edge-on (a thin sheet's light along the line of sight grows as 1/|cos|), held finite.
+  vec3 n = normalize(cross(dFdx(vView), dFdy(vView)));
+  float mu = abs(dot(n, normalize(vView)));
+  float edge = min(2.0, 0.2 / max(mu, 0.1));
+  float fade = smoothstep(1.0, 1.4, vU) * (1.0 - smoothstep(0.45 * uReach, 0.95 * uReach, vU));
+  // Faint ridges half a wavelength (π R_LC) apart along the radius: where the sheet folds over in the spiral.
+  float ridge = 0.55 + 0.45 * cos(2.0 * vU);
+  gl_FragColor = vec4(uColor * edge * fade * ridge * uOpacity, 1.0);
+}
+`;
+
+/**
+ * Added light that leaves the target's alpha alone. The scene pass composites the scene over what is drawn behind it by
+ * its alpha (surface coverage: render/LightspeedScenePass.ts), so field lines and the wind's sheet, which cover
+ * nothing, must not write it: added alpha would blank out the Milky Way's glow behind them (and, near a black hole,
+ * discs of the lensed sky round the shadow).
+ */
+export const ADDED_LIGHT = {
+  blending: CustomBlending,
+  blendEquation: AddEquation,
+  blendSrc: OneFactor,
+  blendDst: OneFactor,
+  blendSrcAlpha: ZeroFactor,
+  blendDstAlpha: OneFactor,
+} as const;
+
+/** Polarity colours (false colour): away from the star, into it, and across the tops of the closed loops. */
+export const FIELD_PLUS = new Color('#5fd8ff');
+export const FIELD_MINUS = new Color('#ffa25c');
+export const FIELD_MID = new Color('#a99cff');
+
+/** A whole magnetosphere's lines (magnetosphere.ts FieldLineSet), turned by uRot. */
+export function createMagnetosphereMaterial(): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uRot: { value: new Matrix3() },
+      uConfine: { value: new Vector4(0, 0, 1, 0) },
+      uTail: { value: 6 },
+      uTime: { value: 0 },
+      uDashKm: { value: 100 },
+      uSpeed: { value: 0.35 },
+      uOpacity: { value: 0 },
+      uGain: { value: 1 },
+      uPlus: { value: FIELD_PLUS.clone() },
+      uMinus: { value: FIELD_MINUS.clone() },
+      uMid: { value: FIELD_MID.clone() },
+    },
+    vertexShader: SPHERE_VERT,
+    fragmentShader: SPHERE_FRAG,
+    ...ADDED_LIGHT,
+    depthWrite: false,
+    transparent: true,
+  });
+}
+
+/** The striped wind's current sheet (magnetosphere.ts stripedSheet), turned by uRot. */
+export function createSheetMaterial(): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uRot: { value: new Matrix3() },
+      uOpacity: { value: 0 },
+      uReach: { value: 5 },
+      uColor: { value: new Color('#c9c2ff').multiplyScalar(0.03) },
+    },
+    vertexShader: SHEET_VERT,
+    fragmentShader: SHEET_FRAG,
+    side: DoubleSide,
+    ...ADDED_LIGHT,
     depthWrite: false,
     transparent: true,
   });
