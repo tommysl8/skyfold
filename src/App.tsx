@@ -83,12 +83,24 @@ function GalacticFieldLayer() {
     </Suspense>
   ) : null;
 }
+// And the magnetic field lines, the first time View › Magnetic field lines is turned on (sim/fields).
+const FieldLines = lazy(() => import('./scene/FieldLines'));
 
 function PhenomenaLayer() {
   const started = useSyncExternalStore(subscribePhenomena, () => phenomena.started);
   return started ? (
     <Suspense fallback={null}>
       <Phenomena />
+    </Suspense>
+  ) : null;
+}
+
+/** Mounted only while the view is on: off, nothing of it draws (what it traced is kept for next time). */
+function FieldLinesLayer() {
+  const on = useUI((s) => s.fieldLines);
+  return on ? (
+    <Suspense fallback={null}>
+      <FieldLines />
     </Suspense>
   ) : null;
 }
@@ -176,6 +188,7 @@ export default function App() {
           <DeepSkyLayer />
           <PhenomenaLayer />
           <GalacticFieldLayer />
+          <FieldLinesLayer />
           <Constellations />
           <PlanetHosts />
           <EclipticGrid />

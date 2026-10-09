@@ -206,7 +206,7 @@ describe('journeys', () => {
       tracks: parseTracks(readJson<TracksIndex>('public/data/tracks.json'), readBytes('public/data/tracks.bin')),
     });
     updateEphemeris();
-    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'crab-magnetosphere', 'magnetar-field', 'double-pulsar-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'aurora', 'galactic-field', 'galactic-field-sky']);
+    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'crab-magnetosphere', 'magnetar-field', 'double-pulsar-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'aurora', 'galactic-field', 'galactic-field-sky', 'magnetic-uranus', 'magnetic-jupiter', 'magnetic-sun']);
     for (const j of JOURNEYS) {
       expect(parseScene(j.scene), j.id).not.toBeNull();
       expect(j.look.length, j.id).toBeGreaterThan(40);

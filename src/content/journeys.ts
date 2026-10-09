@@ -146,4 +146,7 @@ export const JOURNEYS: Journey[] = [
   journey({ id: 'aurora', title: 'The northern lights from space', sub: 'Earth’s auroral oval on the night side', scene: 'aurora' }),
   journey({ id: 'galactic-field', title: 'The Milky Way’s magnetic field', sub: 'Field lines of the disc, the halo and the X-field, from far above', scene: 'galactic-field' }),
   journey({ id: 'galactic-field-sky', title: 'The Galaxy’s field across our sky', sub: 'From Earth: the field’s direction, measured from polarised radio light', scene: 'galactic-field-sky' }),
+  journey({ id: 'magnetic-uranus', title: 'Uranus’s tipped magnetic field', sub: 'Tilted 60° and off centre, wobbling round as the planet turns', scene: 'magnetic-uranus', clock: '1 s here = 17 min' }),
+  journey({ id: 'magnetic-jupiter', title: 'Jupiter’s magnetosphere', sub: 'The largest thing any planet has, from Juno’s model of its field', scene: 'magnetic-jupiter', clock: '1 s here = 5 min' }),
+  journey({ id: 'magnetic-sun', title: 'The Sun’s magnetic field today', sub: 'Loops and open field over the corona, from the date’s HMI map', scene: 'magnetic-sun' }),
 ];
