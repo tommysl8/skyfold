@@ -188,3 +188,105 @@ The first version drew rings and regions up to 400 px across and cost 0.68 ms in
 is the cost of point sprites on this GPU, so no marker is drawn wider than 200 px (a region 70 px, the selected one
 250), and the framing of the objects keeps theirs within that. The markers are a few thousand points culled in the
 vertex shader unless near or big enough.
+
+## 5. Magnetic field lines: pulsars, magnetars, the Double Pulsar and GW170817
+
+With View › Magnetic field lines on (off by default), the close-up of a pulsar, a magnetar or a pair of neutron stars
+draws the star's whole magnetosphere in place of its few loops, and GW170817's model draws the two stars' fields as they
+merge. With the switch off nothing of this is made or drawn: the close-ups are as in §2. Everything here is a **model**:
+no neutron star's field has been mapped. What is measured is each pulsar's spin period and its slowing, which give its
+light cylinder and the strength of its dipole; the shapes come from published solutions. The cards say so, and give the
+numbers.
+
+Code: `src/sim/deepsky/magnetosphere.ts` (the pulsars' and magnetars' lines, the striped wind's sheet, the Double
+Pulsar's magnetopause) and `mergerField.ts` (GW170817), with their tests; `src/render/pulsarMaterials.ts`
+(`createMagnetosphereMaterial`, `createSheetMaterial`) and `src/render/mergerFieldMaterial.ts`; `src/scene/PulsarModel.tsx`
+and `src/scene/MergerField.tsx`.
+
+**Measured, per pulsar** (ATNF; McGill for the magnetars): the spin period P, which sets the light cylinder
+R_LC = cP/2π (the Crab's 1,590 km, a millisecond pulsar's under 100 km, a magnetar's 10⁵ km), and its slowing Ṗ, which
+sets the dipole field the catalogues quote, B = 3.2 × 10¹⁹ (PṖ)^½ G (the Crab's 3.8 × 10¹²). The card gives both where
+it has room, the data sheet always. The tilt of the magnetic axis α and of the spin axis to us ζ are the close-up's own
+(§2): measured for the Crab, Vela and the Double Pulsar, chosen for the rest.
+
+**A pulsar's magnetosphere**, in the frame turning with the star; it turns with the beams' spin phase, so lines and
+beams keep step:
+
+- *The closed zone*: dipole loops r = L sin²θ about the magnetic axis, nine shells from 0.07 R_LC to the last closed
+  line, L = R_LC, which touches the light cylinder at the "Y-point" where the force-free aligned rotator's closed zone
+  ends (Contopoulos, Kazanas & Fendt 1999, ApJ 511, 351). The force-free solutions are near a dipole inside about half
+  the light cylinder; nearer it their closed lines bulge out, which is not drawn.
+- *The open lines*: from the polar cap, sin²θ_pc = R/R_LC (Goldreich & Julian 1969; the Crab's cap is 5° in radius),
+  dipolar out to three-quarters of the light cylinder, then bending over to run radially at the split monopole's angle
+  θ∞ = acos(1 − f) for a footpoint holding a share f of the cap's flux (Michel 1973, ApJ 180, L133: a monopole's flux is
+  uniform in cos θ), so the last open line runs into the equator at the Y-point, as in CKF 1999 and Spitkovsky 2006
+  (ApJ 648, L51). The force-free solutions open somewhat more flux than the dipole's cap; the cap here is the dipole's.
+- *The winding*: each open line is wound back about the spin axis as the Goldreich–Julian current makes it,
+  B_φ/B_p = −ϖΩ/c, one radian per light-cylinder radius of poloidal length: the split monopole's Archimedean spiral
+  beyond the light cylinder (Michel 1973). Drawn out to five light-cylinder radii.
+- *The striped wind*: an oblique rotator's open field reverses across a current sheet that follows the magnetic equator
+  outwards at about c, m̂(t − r/c)·r̂ = 0: an undulating spiral sheet reaching exactly the latitudes ±α (Bogovalov
+  1999, A&A 349, 1017; Spitkovsky 2006 found it in the force-free oblique rotator). It is drawn as a faint surface,
+  brightest where seen edge-on, with ridges where it folds; the wind's lines take the sign of m̂(t − r/c)·r̂, so at a
+  fixed latitude within ±α they alternate in stripes half a wavelength (πR_LC) apart.
+- *Spin-down*: the force-free oblique rotator loses L = (μ²Ω⁴/c³)(1 + sin²α) (Spitkovsky 2006), twice as much at
+  α = 90° as aligned. Used by the tests only (with the catalogue's field convention the Crab's comes within a factor of
+  three of its measured 4.5 × 10³⁸ erg/s).
+
+**Magnetars**: the close-up's twisted loops (§2), denser (nine shells, twenty azimuths), reaching out to where the
+dipole field has fallen to B_1keV = 8.6 × 10¹⁰ G, the field at which the electrons' cyclotron energy is 1 keV and the
+twisted field's currents scatter the star's X-rays (Thompson, Lyutikov & Kulkarni 2002's resonant scattering zone):
+r = R (B/B_1keV)^⅓, so each magnetar's measured spin-down field sets the size of its drawn field, from 4 star radii for
+SGR 0418+5729 (6 × 10¹² G) to 28 for SGR 1806−20 (2 × 10¹⁵ G). The twist, about a radian between a loop's footpoints,
+is TLK 2002's; its size in any one magnetar is not measured. The cards say their fields are 100 to 1,000 times a normal
+pulsar's.
+
+**Binary pulsars**: both stars of a pair get their magnetospheres. The companion of a pulsar that is not itself seen
+pulsing is drawn with the close-up's chosen 1 s spin, so the size of its field is an illustration (its spin and field
+are not measured). **The Double Pulsar** is the exception, and measured: pulsar A's wind presses on B's magnetosphere,
+and the eclipses of A's pulses by B's closed field, flickering at B's spin, were modelled by Lyutikov & Thompson (2005,
+ApJ 634, 1223). B's field ends at the magnetopause where A's wind pressure Ė_A/(4πcD²) equals B's magnetic pressure,
+B's dipole written through its own spin-down: R = (cD/Ω_B)^½ (Ė_B/Ė_A)^¼, 4 × 10⁹ cm at D = 8 × 10¹⁰ cm (their eq. 4,
+with Ė_A = 5.8 × 10³³ and Ė_B = 1.6 × 10³⁰ erg/s), worked out each frame at the stars' separation. B's dipole loops (out
+to 6 R_mp) are moved in as r′ = r_lim tanh(r/r_lim), r_lim = R_mp towards A growing to six times that straight
+downwind (in the vertex shader; `confinedField` is its CPU twin, for the tests): compressed on the day side, drawn out
+into a tail, as Earth's field is by the solar wind. The tail's length is illustrative.
+
+**GW170817** (`mergerField.ts`): the stars' fields were not measured; about 10¹² G each is assumed, typical of the old
+neutron stars of the binary pulsars.
+
+- *Inspiral*: each star's dipole carried round with it, the moments chosen anti-parallel with one tilted 30° (their
+  orientations are not known). Drawn as the vacuum field of the two dipoles, traced once in units of the separation
+  (its shape is the same at every separation; RK4 from seeds round each star, both ways along the field) and scaled to
+  the separation each frame. Lines that join the two stars are twisted a radian about the line between them: the
+  force-free simulations find the flux tube joining them twisted by the orbit and released in flares (Palenzuela et al.
+  2013, PRL 111, 061105; Most & Philippov 2020, ApJL 893, L6; Most & Philippov 2023, PRL 130, 245201). The whole is
+  swept back beyond the orbit's light cylinder c/Ω (Ω from Kepler's law: seven separations out 12 s before the merger,
+  2.4 at contact).
+- *Merger*: the joined field reconnects in a burst, its lines torn and flung outwards at nearly c with a white flash,
+  to about 1,000 km: really over a few milliseconds, shown over a quarter of a second (the scene runs the first three
+  seconds at their real pace).
+- *Remnant*: the field amplified a thousandfold or more within milliseconds by the shear between the stars (the
+  Kelvin–Helmholtz instability: Kiuchi et al. 2015, PRD 92, 124034, from 10¹³ G by at least 10³ in 4–5 ms), wound
+  round the axis, and about 60 ms after the merger an ordered helical field along the axis, the funnel of an incipient
+  jet (Ruiz et al. 2016, ApJL 824, L6: about 4,000 M after the merger for stars of 1.625 M☉, around a black hole of spin
+  0.74 with a disc lasting about 0.1 s, the field above its poles about 10¹⁶ G, the funnel's flow mildly relativistic,
+  Γ ≈ 1.1–1.25). Drawn as the paraboloidal field of a hole of that spin and 2.6 M☉ (`sim/blackholes/holeField.ts`),
+  drawn scaled up with the funnel's head as it grows at half the speed of light, its shape kept (a choice: GRB
+  170817A's jet had broken out of the debris by the time of the gamma rays, 1.74 s after the merger). The field fades
+  out between 1.5 and 3 s. The burst is smaller than the debris's glare: from a few thousand km it shows only as the
+  inspiral's lines vanishing into the merger's flash.
+
+**Look**: thin lines in false colour, cyan where the field points out of the star, amber where it points in, violet
+across the tops of the closed loops; dashes flow along the field, the way it points. Added light, no depth writes.
+
+**Scenes** (`content/scenes.ts`; each turns the switch on, and the next scene turns it back): "The Crab pulsar's
+magnetosphere", "A magnetar's twisted field" (SGR 1806−20), "The Double Pulsar's magnetic fields" and "Two neutron
+stars merge: their magnetic fields", also in Journeys. A pulsar's scene waits for the pulsar catalogue, which it asks
+for.
+
+**Cost**: nothing while the switch is off (nothing is even built). With it on, near a pulsar: its lines (about 25,000
+segments for a pulsar, 11,500 for a magnetar, 9,000 for the Double Pulsar's B) built once in a few milliseconds, and the
+wind's sheet (96 × 128 quads). Measured with `window.__ls.perf.ab` in "The Crab pulsar's magnetosphere" (3,200 × 1,584 at
+pixel ratio 2, 9 October 2026), the GPU shared with other work and the rounds noisy: about 1.1 ms between the best
+frames (15.5 ms off, 16.7 ms on).

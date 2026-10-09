@@ -6,7 +6,8 @@
  * their Kepler orbits are: ui/asteroidCard.ts), and near Sagittarius A* the two models there: the
  * stars round it (a statistical model of the nuclear star cluster and disc, its text in
  * sim/galaxy/nuclearCluster.ts) and the glowing gas falling into it (the accretion flow's model,
- * sim/blackholes/accretion.ts). Each says what the layer is and whether it is a model; each opens to say
+ * sim/blackholes/accretion.ts), and the Milky Way's magnetic field (its model's lines in 3D, or the field over the sky
+ * measured from the Solar System: sim/galaxy/fieldView.ts). Each says what the layer is and whether it is a model; each opens to say
  * more, keeps its credits and references under Sources (closed: Sources.tsx), and shows whenever its layer does,
  * unless it has been put away with its Hide: that hides the note only, never the layer (the View menu turns layers on
  * and off), and is remembered between visits until View › Layer notes brings the notes back (state/ui.ts hiddenNotes).
@@ -29,9 +30,13 @@ import { kindArticle } from '../../content/bodyArticles';
 import { Sources } from './Sources';
 import { ASTEROID_CARD, asteroidCardShown } from '../asteroidCard';
 import { smallBodies } from '../../sim/asteroids/load';
+import { FIELD_CARD, FIELD_SKY_SOURCE, FIELD_SKY_TEXT, fieldShares } from '../../sim/galaxy/fieldView';
 
 /** The web's card shows once this much of the layer shows. */
 const WEB_CARD_SHARE = 0.3;
+
+/** The magnetic field's card shows once either of its pictures shows this much. */
+const FIELD_CARD_SHARE = 0.1;
 
 /** The Learn article both the web and the CMB map belong to. */
 const COSMOS_ARTICLE = 'the-expanding-universe';
@@ -124,6 +129,7 @@ export function LayerCards() {
   const surveysMode = useUI((s) => s.surveys);
   const flowOn = useUI((s) => s.accretionFlow);
   const beltsOn = useUI((s) => s.showBelts);
+  const fieldOn = useUI((s) => s.fieldLines);
   const hidden = useUI((s) => s.hiddenNotes);
   const away = (key: string) => hidden.includes(key);
   const belts = !away('belts') && asteroidCardShown(beltsOn);
@@ -139,7 +145,11 @@ export function LayerCards() {
   const nsc = !away('nsc') && nuclear.w > 0 && nuclear.points > 0;
   // The gas while it is drawn and conspicuous: its point bright, or resolved by the lens (flowPoint: 99 when not drawn).
   const flow = !away('flow') && flowOn && flowPoint(FLOW_HOLE, flowNow).magnitude < FLOW_CARD_MAG;
-  if (!web && !surveys && !cmb && !nsc && !flow && !belts) return null;
+  // The Galaxy's field: which of its two pictures shows (the lines away from the Solar System, the sky's near it).
+  const field = fieldOn && !away('field') ? fieldShares(sim.camera.pos) : null;
+  const fieldSky = !!field && field.sky >= FIELD_CARD_SHARE && (!relView.active || relView.split);
+  const fieldLines = !!field && field.lines >= FIELD_CARD_SHARE;
+  if (!web && !surveys && !cmb && !nsc && !flow && !belts && !fieldSky && !fieldLines) return null;
   const holeArticle = kindArticle('black-hole');
   return (
     <div className="flex w-full max-w-[380px] flex-col gap-1.5">
@@ -152,6 +162,17 @@ export function LayerCards() {
           sources={[`${CMB_CARD.credit}.`]}
           article={COSMOS_ARTICLE}
           onClose={() => hideNote('cmb')}
+        />
+      )}
+      {(fieldLines || fieldSky) && (
+        <LayerCard
+          title={FIELD_CARD.title}
+          line={fieldSky ? FIELD_SKY_TEXT[FIELD_SKY_SOURCE].line : FIELD_CARD.lines}
+          caveat={fieldSky ? 'Measured: the field’s direction across the line of sight, not which way it points, faint and contrast limited.' : FIELD_CARD.linesCaveat}
+          more={FIELD_CARD.more}
+          sources={fieldSky ? [`${FIELD_SKY_TEXT[FIELD_SKY_SOURCE].credit}.`, ...FIELD_CARD.sources] : FIELD_CARD.sources}
+          article="our-galaxy"
+          onClose={() => hideNote('field')}
         />
       )}
       {belts && (

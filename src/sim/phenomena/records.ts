@@ -161,7 +161,7 @@ export function kilonovaRecord(): BodyRecord {
     dataSource: 'Abbott et al. 2017, 2019; Waxman et al. 2018',
     positionNote: 'Position: NGC 4993 (OpenNGC) at the gravitational waves’ distance, as the catalogue places GW170817; carried by the expansion of the universe.',
     modelNotes: [
-      'The inspiral follows the chirp of the measured masses (the quadrupole formula) at its real pace in time, but the stars are drawn turning 100 times slower than they did (12 to 800 orbits a second at the end), so they can be followed. Their look is a model: their temperature is not known.',
+      'The inspiral follows the chirp of the measured masses (the quadrupole formula) at its real pace in time, but the stars are drawn turning 100 times slower than they did (12 to 800 orbits a second at the end), so they can be followed. Their look is a model: their temperature is not known. View › Magnetic field lines draws their fields, the burst at the merger and the remnant’s jet funnel as a model after simulations (Palenzuela et al. 2013; Most & Philippov 2020; Kiuchi et al. 2015; Ruiz et al. 2016): their fields were not measured, about 10¹² gauss each is assumed.',
       'The glow’s brightness, colour and size follow the blackbody fits to its light; its shape, a fast blue part towards the poles and a slower red one round the waist, is a model (Kasen et al. 2017), and one-part models fit the light too.',
       `From Earth it peaked at about magnitude 17: far too faint to see without a telescope. The merger was seen on ${DATE(MERGER_MS)}; the age here is counted from then.`,
     ],

@@ -72,6 +72,8 @@ export interface UIState {
   auroraKp: number;
   /** Relativistic jets: M87's and Centaurus A's (sim/phenomena/jets.ts). */
   jets: boolean;
+  /** Magnetic field lines: the Sun's and the planets' measured fields, and the Milky Way's (sim/fields). */
+  fieldLines: boolean;
   /** The map of the cosmic microwave background over the sky (contrast enhanced). */
   showCmb: boolean;
   /** First-visit welcome screen. */
@@ -190,7 +192,8 @@ export interface UIState {
       | 'accretionDisks'
       | 'holePanelAuto'
       | 'aurora'
-      | 'jets',
+      | 'jets'
+      | 'fieldLines',
   ) => void;
   setSizeMode: (m: SizeMode) => void;
 }
@@ -234,6 +237,8 @@ export const savedPrefs = (s: UIState) => ({
   aurora: s.aurora,
   auroraKp: s.auroraKp,
   jets: s.jets,
+  // New in this version with its default (off): a saved state without it keeps it, so no migration.
+  fieldLines: s.fieldLines,
   showFps: s.showFps,
   // Not leftOpen: the physics reference opens only when asked for, never on a reload.
   rightOpen: s.rightOpen,
@@ -280,6 +285,7 @@ export const useUI = create<UIState>()(
       aurora: true,
       auroraKp: 3,
       jets: true,
+      fieldLines: false,
       showCmb: false,
       welcomeOpen: !welcomed(),
       tourStep: null,

@@ -22,3 +22,7 @@ Thumbs.db
 .idea/
 .vercel/
 __pycache__/
+
+# Planck-derived drapery (scripts/build-field-sky.mjs --source planck): the ESA archives' terms are
+# CC BY-NC 3.0 IGO, so it is built locally only and never redistributed (docs/data/galactic-field.md)
+public/textures/field-sky-planck.png

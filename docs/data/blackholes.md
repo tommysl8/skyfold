@@ -16,7 +16,7 @@ Sections 1 to 3 say what ships, how it is rebuilt and what is data rather than m
 checked; 5 the black holes' data; 6 the nuclear star cluster; 7 the accretion flow; 8 the sources and licences; 9 the
 known limitations; 10 how the app uses it all; 11 the measured cost and the checks on the GPU; 12 Cygnus X-1's thin
 disc and the 1.3 mm "Radio eyes"; 13 the second table: the X-ray binaries of BlackCAT, the Magellanic Clouds and M33,
-the galaxies' black holes, their discs and the tour.
+the galaxies' black holes, their discs and the tour; 14 the magnetic field lines (View › Magnetic field lines).
 
 ## 1. Outputs
 
@@ -137,6 +137,7 @@ view, opens, beside the Guide's section):
 | 28 | **Assumed phase** (GRS 1915+105: its ephemeris does not say which conjunction it marks): its companion is put nearest to us at J2000.0 and its place is illustrative | its card and data sheet |
 | 29 | **Ranges drawn at a stated value**: GX 339−4's mass, tilt and distance at the middles of their ranges; XTE J1650−500's mass at the middle of its limits, with the tilt it needs; Nova Velorum 1993 for a normal donor | each one's card and data sheet |
 | 30 | **The galaxies' black holes**: masses scaled from their papers' distances to the app's; no gas round them and none of their galaxy's starlight close by (the sky there is darker than it would be); no fall offered | each one's card and data sheet |
+| 31 | **Magnetic field lines are a model** (§14): Sgr A*'s and M87*'s consistent with the EHT's polarisation, not a measured 3D field, drawn for spins of 0.94 and 0.5 (not measured); the binaries' and Centaurus A's illustrative; not drawn inside the photon sphere | Sgr A*'s, M87*'s and those holes' cards (a line under Facts); the field scenes' notes |
 
 Labels 1, 2, 10, 12, 13, 14, 18 and 22 are also in the captions and text of the Learn article *Black holes*
 (`src/content/learn/articles/black-holes.md`), where the lensing hint's **Read more** leads.
@@ -1633,3 +1634,70 @@ no gas. The discs are a typical state, not today's (GRS 1915+105 has been hidden
 **Refreshing.** Edit the second table (`scripts/blackholes-more.mjs`), run `node scripts/build-blackholes.mjs` and
 `npx vitest run src/sim/blackholes src/content/moreBlackHoles.test.ts`. A new galaxy's hole needs only its galaxy's id
 or NGC designation; the build finds its place and distance.
+
+## 14. Magnetic field lines
+
+With View › Magnetic field lines on (off by default), the black holes with a drawn disc or jet show an ordered magnetic
+field threading them: Sgr A* and M87*, matched to the Event Horizon Telescope's polarisation, and Cygnus X-1,
+GRS 1915+105, LMC X-1, LMC X-3, M33 X-7 and Centaurus A's hole, illustrative. Holes with neither (the Gaia holes, the
+quiet X-ray binaries, the other galaxies' holes) have none. With the switch off nothing of this is loaded or drawn.
+**It is a model consistent with the EHT's polarisation, not a measured 3D field**: the cards and the scenes say so.
+
+Code: `src/sim/blackholes/holeField.ts` (the field and its numbers; tests in `holeField.test.ts`), `fieldAxis.ts` (its
+axis in world axes), `src/render/holeFieldMaterial.ts` (the lensed lines) and `src/scene/HoleFieldLines.tsx` (a chunk
+of its own, mounted only while the switch is on).
+
+**What is measured** (quoted on Sgr A*'s and M87*'s cards):
+
+| | M87* (EHT 2021, Papers VII and VIII: ApJL 910, L12, L13) | Sgr A* (EHT 2024, Papers VII and VIII: ApJL 964, L25, L26) |
+| --- | --- | --- |
+| Resolved linear polarisation ⟨\|m\|⟩ | 5.7–10.7 % | 24–28 % (up to about 40 %) |
+| \|β₂\| (the pattern's rotationally symmetric mode) | 0.04–0.07 | 0.14–0.24 |
+| ∠β₂ | −163° to −129° | −168° to −85° (the mean Faraday rotation taken off, as an external screen) |
+| Accretion favoured | magnetically arrested (MAD); passing models a = 0, ±0.5 | MAD; the one model passing every constraint: a = 0.94, i = 150° |
+| Field in the emitting gas | about 1–30 G (one-zone estimate) | |
+
+**The model.** The paraboloidal field of Blandford & Znajek (1977, MNRAS 179, 433), in units of M = GM/c² on the hole
+drawn without spin (horizon at 2M): ψ = r(1 − cos θ) + 2M(1 + cos θ)(1 − ln(1 + cos θ)) − 4M(1 − ln 2). Lines with
+ψ < 4M ln 2 thread the horizon and open into a funnel, z ∝ ϖ² far out (M87's jet is nearly a paraboloid, ϖ ∝ z^0.58:
+Asada & Nakamura 2012, ApJL 745, L28); five shares of the horizon's flux, eight azimuths, both hemispheres, out to 60 M.
+Lines with larger ψ start on the disc (at 6, 9, 14 and 22 M), drawn fainter, out to 30 M. Each line turns: those
+threading the horizon at Ω_F = Ω_H/2, Ω_H = a/(2r₊), r₊ = 1 + √(1 − a²) (the rate that carries the most power out,
+Blandford & Znajek 1977; close to what force-free simulations find, Komissarov 2001, McKinney & Gammie 2004), those on
+the disc with its gas, Ω_K = 1/(r^1.5 + a). Turning, each is wound back, B_φ = −(Ω_F ϖ/c) B_p, i.e. dφ/ds = −Ω_F along
+its poloidal length (the flat-space relation; the lapse and frame dragging near the horizon are left out), so beyond
+the light surface ϖ = c/Ω_F (5.7 M for a = 0.94) the funnel is a tight helix. The field reverses across the disc's
+plane: out of the hole in the north (cyan), in at the south (amber). Spins drawn: Sgr A* 0.94 and M87* 0.5 (the EHT's
+passing models; neither measured: the lens still draws every hole without spin, label 1), the binaries their records'
+estimates (Cygnus X-1 0.9985, GRS 1915+105 0.98, LMC X-1 0.92, LMC X-3 0.21, M33 X-7 0.84), Centaurus A 0.5 (not
+measured). Axes: Sgr A*'s flow model's (GRAVITY 2023's flares, its angular momentum pointing away from us), M87*'s and
+Centaurus A's jets as `sim/phenomena/jets.ts` lays them out (M87*'s spin pointing away from us, as the EHT's i = 163°
+has it), the binaries' disc normals.
+
+**The pitch against the EHT** (`holeField.test.ts`): if the polarisation is at right angles to the field (optically thin
+synchrotron), ∠β₂ = 2η, η the polarisation's angle from radial, puts the sky-projected field 90° − |η| from radial:
+8.5–25.5° for M87*, 6–47.5° for Sgr A*. The drawn field seen face-on where the funnel's wall passes ϖ = 3.5 M (whose
+light a face-on observer sees near b = ϖ/√(1 − 2M/ϖ) ≈ 5.3 M, the ring's radius) lies 22° (M87*, a = 0.5) and 46°
+(Sgr A*, a = 0.94) from radial: inside both ranges. This is a geometrical reading only: the gas's motion (aberration)
+and Faraday rotation also turn the polarisation, which is why the EHT compares simulated images, not fields.
+
+**Lensing.** Lines drawn straight near a hole would sit where no light comes from. While the lens is drawn, each vertex
+goes to its image by the exact point lens (tier 2, `shaders/lensExact.glsl` lensImageExact, as the S-stars' orbit
+lines), at its straight-line distance for the depth test, and the set is drawn twice: the primary image and the
+secondary (on the far side, hugging the photon ring), the latter dimmed as √μ. A segment whose ends lie either side of
+the line through the camera and the hole, behind the hole, is dropped: its images jump across the Einstein ring (a
+line's image breaks at the caustic, as a star's does). The solver does not apply inside the photon sphere: the lines
+fade out from 3.9 M to 3.2 M and are not drawn inside (the horizon is at 2 M), nor in a fall's raindrop frame or with
+the camera inside 3 M. The exact program compiles in the background the first time it is wanted (about a second); until
+then the lines are not drawn. With the lens off (View › Gravitational lensing) they are drawn straight, as everything
+then is. They are guides, on the orbit lines' layer: in flight's relativistic view they are left out, as the orbit lines
+are.
+
+**Scenes**: "M87*'s magnetic field" and "Sgr A*'s magnetic field" (60 M from the hole, 65–70° from its axis, the flow
+off), also in Journeys; the next scene turns the switch back.
+
+**Cost**: nothing while the switch is off (the chunk is not even loaded). With it on, near one of these holes: about
+13,800 segments (27,600 vertices), two images, one exact solve per vertex per image. Measured with
+`window.__ls.perf.ab` (switch off against on, three rounds) in the scene "Sgr A*'s magnetic field", 3,200 × 1,584 at
+pixel ratio 2, 9 October 2026, the GPU shared with other work: 1.1 ms (rounds 0.78, 1.18 and 1.10 ms) on frames of
+16 ms.
