@@ -16,6 +16,9 @@ import { articleForBody } from './bodyArticles';
 import { useUI } from '../state/ui';
 import { stopTrip } from '../ui/tripActions';
 import { cancelSceneStep, flightOf, KNOWN_TARGETS, LATER, NAMED_SCENES, parseScene, predictFlight, resolveTarget, runScene, sceneNote, sceneStatus } from './scenes';
+import { adoptSet, buildSet } from '../sim/deepsky/runtime';
+import { DEEP_SKY_FILES, MAGNETARS_FILE, type ColumnFile } from '../sim/deepsky/format';
+import { gunzipFile } from '../test/stars';
 
 const SOURCES = import.meta.glob<string>('./learn/articles/*.md', { query: '?raw', import: 'default', eager: true });
 
@@ -28,6 +31,10 @@ const SPECS: { file: string; spec: string }[] = RENDERED.flatMap(({ file, html }
 
 beforeAll(() => {
   registerUniverse();
+  // The pulsar catalogue, as its loader takes it in (its best-known pulsars and the magnetars become bodies): the
+  // field scenes of the Crab, SGR 1806−20 and the Double Pulsar need it.
+  const file = (path: string): ColumnFile => JSON.parse(new TextDecoder().decode(gunzipFile(`public/${path}`))) as ColumnFile;
+  adoptSet(buildSet('pulsars', file(DEEP_SKY_FILES.pulsars), file(MAGNETARS_FILE)));
   // A fixed date, so the flights' reachability does not depend on when the tests run.
   setSimTime(msFromCivil(2026, 9, 26, 12));
   updateEphemeris();

@@ -60,6 +60,17 @@ const DocView = lazy(() => import('./ui/docs/DocView'));
 const DeepSky = lazy(() => import('./scene/DeepSky'));
 // And the phenomena's models (supernovae, the kilonova, the jets, the aurora), once one is first near (sim/phenomena).
 const Phenomena = lazy(() => import('./scene/Phenomena'));
+// And the field lines threading the black holes, while View › Magnetic field lines is on (sim/blackholes/holeField.ts).
+const HoleFieldLines = lazy(() => import('./scene/HoleFieldLines'));
+
+function HoleFieldLayer() {
+  const on = useUI((s) => s.fieldLines);
+  return on ? (
+    <Suspense fallback={null}>
+      <HoleFieldLines />
+    </Suspense>
+  ) : null;
+}
 
 // And the Milky Way's magnetic field, while View › Magnetic field lines is on (nothing of it loads or runs before).
 const GalacticField = lazy(() => import('./scene/GalacticField'));
@@ -177,6 +188,7 @@ export default function App() {
           <LensRings />
           <AccretionFlow />
           <AccretionDisk />
+          <HoleFieldLayer />
           <BlackHoleLens />
           <LightPulses />
           <LabelSync />

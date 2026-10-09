@@ -216,6 +216,10 @@ Fowler shared the 1983 Nobel Prize in Physics with Subrahmanyan Chandrasekhar; H
 The Crab Nebula is what remains of a star whose explosion Chinese astronomers recorded in 1054, bright enough to see in daylight for nearly a month. Its collapsed core, a neutron star, still spins at the centre about 30 times a second.[^nasacrab]
 :::
 
+::: see-it crab-magnetosphere
+The Crab pulsar's magnetic field, drawn as a model: loops turning with the star out to 1,590 km, where turning with it would take the speed of light, and beyond them lines wound into a spiral wind.
+:::
+
 ## Ghosts from the core
 
 Every helium nucleus the Sun makes comes with two neutrinos, particles so aloof that almost all of them pass straight through the Sun, the Earth and you. They leave the core in about two seconds, so they report on it almost live.[^davis2002]
