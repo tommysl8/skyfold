@@ -75,10 +75,13 @@ then. They are guides (the relativistic view leaves them out), the names follow 
 ## 6. Look and cost
 
 Two translucent shells added to the scene, each brighter where the line of sight grazes it (1/|cos| of the angle to
-the surface, capped at 8): the heliopause pale blue, the termination shock lilac, both very faint. The cloud is
+the surface, capped at about 8): the heliopause pale blue, the termination shock lilac, both very faint. The cloud is
 additive points 1.6 CSS px across. Geometry: the heliopause 4,100 vertices, the shock 2,700, the cloud 24,000 points,
-built the first time each is wanted. Measured on the reference laptop (see the report in the commit): the shells
-filling most of the view from 900 au, and the cloud from 300,000 au, each well under the 1–2 ms budget.
+built the first time they are wanted; nothing is drawn or computed but a distance and two fades a frame otherwise.
+Measured with `window.__ls.perf.ab` and `__ls.edge.look.on` (the layer out and in, four rounds, canvas 3200 × 1584,
+in the development build on the shared development machine, where single rounds swing by ±1 ms): the bubble side on
+from 900 au, filling half the view, 0.2 ms median (best rounds 16.48 against 16.96 ms, 0.5 ms); the cloud from
+300,000 au, 0.4 ms median.
 
 ## 7. In the app
 

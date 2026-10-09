@@ -11,7 +11,7 @@ import { useFrame } from '@react-three/fiber';
 import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, Group, Line, ShaderMaterial } from 'three';
 import { AU_KM } from '../physics/constants';
 import { GUIDES_LAYER } from '../render/LightspeedScenePass';
-import { bodyPositionAt, isBody, registryVersion, subscribeRegistry } from '../sim/bodies';
+import { bodyPositionAt, isBody, subscribeRegistry } from '../sim/bodies';
 import { solarSystemHidden } from '../sim/derived';
 import { sim } from '../sim/sim';
 import { VISITORS } from '../sim/solarSystem/interstellar';
@@ -97,11 +97,12 @@ function smoothstep(a: number, b: number, x: number) {
 }
 
 export function VisitorPaths() {
-  const version = useSyncExternalStore(subscribeRegistry, registryVersion);
+  // The visitors registered (rebuilt only when that set changes: each path is sampled once, about 5,000 track evaluations).
+  const present = useSyncExternalStore(subscribeRegistry, () => IDS.filter((id) => isBody(id)).join(','));
   const group = useMemo(() => new Group(), []);
   const lines = useMemo(() => {
-    void version;
-    return IDS.filter((id) => isBody(id)).map((id) => {
+    const ids = (present ? present.split(',') : []) as (keyof typeof VISITORS)[];
+    return ids.map((id) => {
       const material = new ShaderMaterial({
         uniforms: { uColor: { value: COLOUR }, uOpacity: { value: 0 }, uNow: { value: 0 } },
         vertexShader: VERT,
@@ -118,7 +119,7 @@ export function VisitorPaths() {
       line.visible = false;
       return { id, line, material, tpMs: msOfJd(VISITORS[id].tpJd) };
     });
-  }, [version]);
+  }, [present]);
 
   useEffect(() => {
     for (const l of lines) group.add(l.line);

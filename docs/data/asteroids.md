@@ -232,8 +232,10 @@ and illustrative.
 The layer's comets with tails are chosen twice a second while the layer shows (and at once when the date jumps by
 two days): of the comets about the Sun with a magnitude law, those inside 5 au, strongest first, at most six, none
 weaker than 2 % (`src/sim/asteroids/activeComets.test.ts` finds Hyakutake, NEOWISE, Tsuchinshan–ATLAS and 12P at
-their perihelia). A tail is computed and drawn only while it is at least 2 px long on screen. Each costs 120 grain
-orbits and 72 release states a frame on the CPU, and one draw of 193 vertices. Tests: `src/render/cometTail.test.ts`
+their perihelia). A tail is computed and drawn only while it is at least 2 px long on screen. Each costs 115 grain
+orbits and 23 release states a frame on the CPU (0.09 ms in Node), and one draw of 193 vertices; Halley's in the
+1986 scene cost 0.38 ms of GPU time (`window.__ls.perf.ab` with `__ls.tails.look.on`, two rounds, 0.21 and 0.55 ms,
+canvas 3200 × 1584, development build). Tests: `src/render/cometTail.test.ts`
 (anti-sunward ion tail with its aberration, dust in the orbit plane behind the comet, ½βgt² for fresh dust, the
 magnitude law's scaling), and the two scenes' dates in `src/content/scenes.test.ts`.
 
