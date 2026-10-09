@@ -65,6 +65,8 @@ On a touch screen, drag to look around and hold the arrows at the right edge to 
 Almost everything you see comes from real measurements:
 
 - **Solar System:** positions from Astronomy Engine and JPL Horizons; the named and large asteroids and every comet from the JPL Small-Body Database (about 33,000, with a sample of the rest), on their Kepler orbits.
+- **Round Earth:** the ISS, Tiangong, Hubble and, with View › Satellites, every active satellite, placed by SGP4 from the
+  current orbital elements CelesTrak serves; eclipses of the Sun and the Moon where and when they happen.
 - **Stars:** 3.75 million from AT-HYG, the Gaia Catalogue of Nearby Stars and Gaia DR3, with Gaia distances and motions.
 - **Planets of other stars:** the NASA Exoplanet Archive.
 - **Galaxies:** the Local Volume Database and Cosmicflows-4.

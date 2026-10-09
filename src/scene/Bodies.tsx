@@ -38,7 +38,7 @@ import {
   Vector3,
 } from 'three';
 import { blackbodyRgb } from '../physics/blackbody';
-import { SUN_TEFF_K } from '../physics/constants';
+import { SUN_RADIUS_KM, SUN_TEFF_K } from '../physics/constants';
 import {
   bodyRecords,
   displayRadiusKm,
@@ -258,10 +258,14 @@ export function Planet({ id }: { id: BodyId }) {
 function placeEclipsers(id: BodyId, material: ShaderMaterial, centre: Vector3, trueScale: number): void {
   const u = material.uniforms;
   const list = eclipsersOf(id, registryVersion());
+  const b = sim.bodies[id];
+  const sun = sim.bodies.sun;
   let n = 0;
   for (const e of list) {
     const o = sim.bodies[e.id];
-    if (!o?.present) continue;
+    if (!o?.present || !b || !sun) continue;
+    // Only while its penumbra can reach this body (an eclipse season): otherwise the shader skips it altogether.
+    if (!inPenumbra(sun.pos, o.pos, e.radiusKm, b.pos, displayRadiusKm(getBody(id)!))) continue;
     u.uOccluders.value[n].set(o.apparentPos.x - sim.camera.pos.x, o.apparentPos.y - sim.camera.pos.y, o.apparentPos.z - sim.camera.pos.z, e.radiusKm);
     u.uOccluderGlow.value[n].set(e.glow[0], e.glow[1], e.glow[2]);
     if (++n === 4) break;
@@ -269,6 +273,21 @@ function placeEclipsers(id: BodyId, material: ShaderMaterial, centre: Vector3, t
   u.uOccluderCount.value = n;
   u.uCenterW.value.copy(centre);
   u.uTrueScale.value = trueScale;
+}
+
+const ax = new Vector3();
+const off = new Vector3();
+
+/** Whether the penumbra of a sphere (centre `o`, radius `r`) lit by the Sun at `s` reaches a body at `p` of radius `rb`. */
+function inPenumbra(s: Vector3, o: Vector3, r: number, p: Vector3, rb: number): boolean {
+  ax.copy(o).sub(s);
+  const so = ax.length();
+  ax.divideScalar(so);
+  off.copy(p).sub(o);
+  const along = off.dot(ax);
+  if (along <= 0) return false;
+  const perp = off.addScaledVector(ax, -along).length();
+  return perp < r + (along * (SUN_RADIUS_KM + r)) / so + rb;
 }
 
 function ringGeometry(inner: number, outer: number, segments: number): BufferGeometry {

@@ -216,10 +216,10 @@ function goldenMin(fn: (t: AstroTime) => number, near: AstroTime, hours: number)
 /**
  * The light Earth's atmosphere bends into its umbra, in units of full sunlight on the Moon, red because the blue is
  * scattered out on the way through. The real Moon in totality is about 10⁻⁴ as bright as the full Moon (Danjon
- * L = 2–3); this is about a hundred times that, so the copper Moon can be seen at all at the view's exposure (the
- * Moon's card says so).
+ * L = 2–3); this is a few hundred times that (about half of it at the shadow's centre, where less bent light
+ * reaches), so the copper Moon shows at the view's exposure (the Moon's card says so).
  */
-export const EARTH_UMBRA_GLOW: readonly [number, number, number] = [0.02, 0.0065, 0.0022];
+export const EARTH_UMBRA_GLOW: readonly [number, number, number] = [0.06, 0.017, 0.005];
 
 export interface Eclipser {
   id: BodyId;

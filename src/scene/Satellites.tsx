@@ -343,7 +343,7 @@ function Swarm() {
     u.uEarthRel.value.copy(earth.apparentPos).sub(sim.camera.pos);
     u.uSunDir.value.copy(sun.apparentPos).sub(earth.apparentPos).normalize();
     u.uPointSize.value = 1.7 * gl.getPixelRatio();
-    u.uOpacity.value = 0.55 * share;
+    u.uOpacity.value = 0.5 * share;
     u.uDebris.value = ui.satelliteDebris ? 1 : 0;
     const sel = ui.selected ? picked.get(ui.selected) : undefined;
     u.uHidden.value = sel ? sel.index : -1;
@@ -420,8 +420,8 @@ function Trace() {
 
 /** The craft that live there: while one is selected or in focus, its points are marked. */
 const LAGRANGE_CRAFT = new Set(['jwst', 'soho']);
-/** Marked also while the camera is within this distance of one (km), fading out over the last half. */
-const LAGRANGE_NEAR_KM = 4e6;
+/** Marked also while the camera is within this distance of one (km; Earth is 1.5 million km away), fading out over the last half. */
+const LAGRANGE_NEAR_KM = 6e5;
 const MOON_SHARE = BODIES.moon.gmKm3S2! / (BODIES.earth.gmKm3S2! + BODIES.moon.gmKm3S2!);
 
 const RING_VERT = /* glsl */ `

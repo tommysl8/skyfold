@@ -31,7 +31,7 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   orbit); each card gives the figure.
   Ceres, Vesta, the dwarf planets and large trans-Neptunian objects, Arrokoth, four comets (with dust and ion tails
   from a simple physical model), the three interstellar visitors, and Voyager 1 and 2, New Horizons, Pioneer 10,
-  Parker Solar Probe and JWST follow Chebyshev fits to JPL Horizons (spacecraft within 25 km, and under a km near
+  Parker Solar Probe, JWST, Juno, Europa Clipper and SOHO follow Chebyshev fits to JPL Horizons (spacecraft within 25 km, and under a km near
   their flybys). Moons are textured with USGS and NASA mosaics and turn by the IAU rotation models; eight
   irregular bodies, 67P and Arrokoth among them, use real shape models, and Nix, Hydra and Haumea their measured
   ellipsoids; Jupiter, Uranus, Neptune, Haumea and Quaoar
@@ -101,6 +101,13 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   them) and Centaurus A's jets and lobes (false colour) are beamed by their speeds as seen from the camera. Earth's
   auroral ovals glow on the night side about the date's geomagnetic poles (IGRF-14), where Starkov's model puts them for
   the activity chosen in the View menu (Kp). What is a model is said on each card; `docs/data/phenomena.md` writes it up.
+- **Round Earth.** The ISS, Tiangong and Hubble as bodies with cards and simple shapes, placed by SGP4 (Vallado et al.
+  2006, checked against its test cases) from the current GP elements, fetched from CelesTrak by the browser and kept
+  in its cache; with View › Satellites every active satellite (about 16,700, and the tracked debris of four break-ups)
+  moved on the GPU from SGP4's mean elements, dimmed in Earth's shadow, within 30 days of the elements. Eclipses are
+  drawn per pixel from the share of the Sun's disc each point sees: the Moon's shadow on Earth (the 2017 and 2024
+  eclipses within 3 s and 2 km of NASA's greatest eclipse) and Earth's on the Moon, red in the umbra (Danjon's rule;
+  NASA's contacts to 4 s). `docs/data/near-earth.md` writes it up.
 - **Two size modes.** *True scale* shows specks, as reality does (planets still shine at their real apparent
   magnitude). *Enlarged* draws bodies at least a few pixels across while keeping every distance true.
 - **Travel.** Enter β exactly, or use a logit-scaled fader (0.00001c to 0.99999c) and presets (Voyager 1, Parker
@@ -247,6 +254,7 @@ first, at most 50.
 | Voyager 1 state vectors | [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) | NASA/JPL-Caltech |
 | Moon orbit models (`public/data/moons.json`) | Fitted to [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) satellite ephemerides (MAR099, JUP365, SAT441, URA182/URA184, NEP097/NEP105, PLU060) and the [JPL satellite mean elements](https://ssd.jpl.nasa.gov/sats/elem/) | NASA/JPL-Caltech |
 | Trajectories of dwarf planets, comets, interstellar objects and spacecraft (`public/data/tracks.bin`, `tracks.json`) | Fitted to [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) (spacecraft ephemerides from NASA/JPL, NASA/JHUAPL/SwRI and NASA/GSFC) | NASA/JPL-Caltech |
+| Satellites' orbital elements (fetched at run time, not shipped) | [CelesTrak](https://celestrak.org/) GP data of the US Space Force's catalogue; SGP4 after Vallado et al. 2006 (python-sgp4, MIT) | Not redistributed; CelesTrak's usage policy |
 | Physical data, rotation models, facts and rings (`public/data/bodies.json`, `rings.json`) | JPL Solar System Dynamics and Small-Body Database; IAU WGCCRE 2015 rotation models (Archinal et al. 2018) via NAIF `pck00011.tpc`; PDS Small Bodies Node and Rings Node; NASA and ESA mission pages; the papers cited in each file | US Government works and published values |
 | Moon, Ceres and Vesta maps (`public/textures/{io,europa,ganymede,callisto,enceladus,tethys,dione,rhea,iapetus,titan,triton,charon,ceres,vesta,phobos,mimas,deimos}.jpg`) | Global mosaics from [USGS Astrogeology](https://astrogeology.usgs.gov/) (Voyager, Galileo, Cassini, New Horizons, Dawn and Viking data: NASA/JPL-Caltech, SSI, DLR, JHUAPL/SwRI, UCLA/MPS/IDA, LPI; Mimas by T. Roatsch, DLR; Triton by P. Schenk; Phobos and Deimos by P. Stooke) | Public domain / no use constraints |
 | Uranian moon maps (`public/textures/{miranda,ariel,umbriel,titania,oberon}.jpg`) | Voyager 2 maps from [NASA 3D Resources](https://github.com/nasa/NASA-3D-Resources) | NASA, free and without copyright |

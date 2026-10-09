@@ -2105,7 +2105,7 @@ defineScene('solar-eclipse', {
 
 defineScene('lunar-eclipse', {
   label: PENDING_LABELS['lunar-eclipse'],
-  note: 'The Moon passes through Earth’s shadow: first the penumbra’s faint dimming, then the umbra creeps across it, and in totality it glows copper with sunlight bent through Earth’s atmosphere, the light of every sunrise and sunset on Earth at once (drawn about a hundred times brighter than it is, so it can be seen). Contacts as NASA predicts them, to a few seconds.',
+  note: 'The Moon passes through Earth’s shadow: first the penumbra’s faint dimming, then the umbra creeps across it, and in totality it glows copper with sunlight bent through Earth’s atmosphere, the light of every sunrise and sunset on Earth at once (drawn a few hundred times brighter than it is, as a long exposure shows it). Contacts as NASA predicts them, to a few seconds.',
   unavailable: needs('earth', 'moon', 'sun'),
   run: (fallbackNote) => {
     if (!ready()) return false;

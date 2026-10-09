@@ -93,7 +93,9 @@ vec3 eclipseLight(vec3 p) {
     if (d >= rs + ro) continue;
     float uncovered = 1.0 - discOverlap(rs, ro, d) / sunArea;
     light *= uncovered;
-    light += uOccluderGlow[i] * (1.0 - uncovered);
+    // The bent light is brightest near the shadow's edge (light grazing the atmosphere's top bends least).
+    float depth = clamp(d / max(ro - rs, 1e-6), 0.0, 1.0);
+    light += uOccluderGlow[i] * (1.0 - uncovered) * mix(0.55, 1.0, depth * depth);
   }
   return light;
 }
