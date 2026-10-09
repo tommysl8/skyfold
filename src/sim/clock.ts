@@ -100,12 +100,13 @@ export const TIME_MAX_MS = msFromCivil(1e13, 1, 1);
 
 /**
  * Set the simulation epoch (UTC ms). Not allowed mid-trip, nor in a fall. Like "now", it zeroes the
- * chronometers and discards pulses in flight, since time may have run backwards.
+ * chronometers and discards pulses in flight, since time may have run backwards. `anywhere`: within the clock's own
+ * limits instead of the setter's (a saved place's date, which a trip may have carried far past 9999).
  */
-export function setEpoch(ms: number): boolean {
+export function setEpoch(ms: number, anywhere = false): boolean {
   const ui = useUI.getState();
   if (ui.tripActive || ui.fallActive || !Number.isFinite(ms)) return false;
-  setSimTime(Math.min(EPOCH_MAX_MS, Math.max(EPOCH_MIN_MS, ms)));
+  setSimTime(anywhere ? Math.min(TIME_MAX_MS, Math.max(TIME_MIN_MS, ms)) : Math.min(EPOCH_MAX_MS, Math.max(EPOCH_MIN_MS, ms)));
   sim.live = false;
   zeroChrono();
   clearPulses();

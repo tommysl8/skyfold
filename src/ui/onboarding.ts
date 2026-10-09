@@ -7,6 +7,7 @@
  */
 import { useUI, WELCOME_KEY } from '../state/ui';
 import { flushStorage } from '../lib/persistStorage';
+import { stopSavingPlace } from './resume';
 
 /** Remember that the welcome screen has been seen. */
 export function markWelcomed(): void {
@@ -40,10 +41,12 @@ export function showWelcome(): void {
 
 /**
  * Forget everything Skyfold saved in this browser: panel sizes and states, display toggles,
- * collapsed sections, physics notes already shown, and the welcome screen.
+ * collapsed sections, physics notes already shown, the welcome screen, the place last seen and
+ * the saved places.
  */
 export function resetPreferences(): void {
   flushStorage(); // so no pending write lands after the keys are removed
+  stopSavingPlace(); // nor the view's last save as the page goes
   try {
     for (const k of Object.keys(localStorage)) {
       if (k.startsWith('lightspeed.')) localStorage.removeItem(k);
