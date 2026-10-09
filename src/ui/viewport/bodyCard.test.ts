@@ -15,7 +15,7 @@ import { MILKY_WAY_MODEL_LABEL } from '../../sim/galaxy/records';
 import { edgeAngle, einsteinAngle, shadowAngle, raindropDarkRadius } from '../../physics/schwarzschild';
 import { hoverAccelKmS2 } from '../../physics/geodesics';
 import { C_KM_S, G0_KM_S2, GM_SUN_KM3_S2, PARSEC_KM, AU_KM } from '../../physics/constants';
-import { BLACK_HOLES, binaryHoleRecords, holeJson, isolatedHoleRecord, m87StarRecord } from '../../sim/blackholes/records';
+import { BLACK_HOLES, binaryHoleRecords, catalogueGalaxyHoleRecord, galaxyHoleRecord, holeJson, isolatedHoleRecord, m87StarRecord } from '../../sim/blackholes/records';
 import { FLOW_TEXTS } from '../../sim/blackholes/accretion';
 import { NSC_LAYER_CARD } from '../../sim/galaxy/nuclearCluster';
 import { milkyWayRecord, sgrAFrom, sgrARecord } from '../../sim/galaxy/records';
@@ -110,7 +110,11 @@ function holeRecords(): BodyRecord[] {
   const m87Star = m87StarRecord(holeJson('m87-star')!, m87);
   const binaries = binaryHoleRecords(BLACK_HOLES).filter((r) => r.kind === 'black-hole');
   const ogle = isolatedHoleRecord(holeJson('ogle-2011-blg-0462')!);
-  return [sgrA, m87Star, ...binaries, ogle];
+  // The other galaxies' holes: at a stand-in for their galaxy, or at their catalogue galaxy's place.
+  const galaxies = BLACK_HOLES.holes
+    .filter((h) => h.id !== 'm87-star' && (h.placement === 'galaxy-centre' || h.placement === 'catalogue-galaxy'))
+    .map((h) => (h.placement === 'catalogue-galaxy' ? catalogueGalaxyHoleRecord(h) : galaxyHoleRecord(h, { ...m87, id: h.host!, name: h.hostName! })));
+  return [sgrA, m87Star, ...binaries, ogle, ...galaxies];
 }
 
 /** A static observer's view of a hole of mass `msun` at r (units of GM/c²), as holeView gives it. */

@@ -26,9 +26,19 @@ export interface Journey {
   run: () => boolean;
 }
 
+/**
+ * A journey from its scene. What to look for is the scene's note as it reads when asked (a note worded from the data,
+ * such as the black-hole tour's, is only complete once those data are in).
+ */
 function journey(j: { id: string; title: string; sub: string; scene: string; clock?: string }): Journey {
-  const look = sceneNote(j.scene) ?? '';
-  return { ...j, look, flight: flightOf(j.scene) ?? undefined, run: () => runScene(j.scene, { note: look }) };
+  return {
+    ...j,
+    get look() {
+      return sceneNote(j.scene) ?? '';
+    },
+    flight: flightOf(j.scene) ?? undefined,
+    run: () => runScene(j.scene, { note: sceneNote(j.scene) ?? '' }),
+  };
 }
 
 export const JOURNEYS: Journey[] = [
@@ -93,6 +103,18 @@ export const JOURNEYS: Journey[] = [
     title: 'The disc of Cygnus X-1',
     sub: 'Just above a black hole’s glowing disc, its far side bent over the top',
     scene: 'cyg-x-1-disk',
+  }),
+  journey({
+    id: 'black-hole-tour',
+    title: 'A tour of black holes',
+    sub: 'Seven stops, from GRS 1915+105 to one of the heaviest known, 16 s each',
+    scene: 'black-hole-tour',
+  }),
+  journey({
+    id: 'lmc-x-1-disk',
+    title: 'A black hole in another galaxy',
+    sub: 'Above the disc of LMC X-1, in the Large Magellanic Cloud',
+    scene: 'lmc-x-1-disk',
   }),
   journey({ id: 'sgr-a-star-radio', title: 'Sagittarius A* in radio light', sub: 'The ring the Event Horizon Telescope sees, up close', scene: 'sgr-a-star-radio' }),
 ];

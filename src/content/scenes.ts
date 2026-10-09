@@ -161,6 +161,9 @@ const TARGET_NAMES = {
   'gaia-bh3': 'Gaia BH3',
   'cyg-x-1': 'Cygnus X-1',
   'ogle-2011-blg-0462': 'OGLE-2011-BLG-0462',
+  'grs-1915': 'GRS 1915+105',
+  'lmc-x-1': 'LMC X-1',
+  'm33-x-7': 'M33 X-7',
   'orion-nebula': 'Orion Nebula',
   'crab-nebula': 'Crab Nebula',
   'eagle-nebula': 'Eagle Nebula',
@@ -178,6 +181,9 @@ const TARGET_NAMES = {
   m81: 'Bode’s Galaxy (M81)',
   m87: 'M87',
   'm87-star': 'M87*',
+  'm31-star': 'M31*',
+  'ngc-4258-bh': 'M106’s black hole',
+  'ngc-4889-bh': 'NGC 4889’s black hole',
   'centaurus-a': 'Centaurus A',
   sombrero: 'Sombrero Galaxy',
   whirlpool: 'Whirlpool Galaxy',
@@ -265,6 +271,9 @@ export const NAMED_SCENES = [
   'm87-star-close',
   'cyg-x-1-disk',
   'cyg-x-1-from-above',
+  'lmc-x-1-disk',
+  'grs-1915-disk',
+  'black-hole-tour',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -380,6 +389,9 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'm87-star-close': 'M87* from 1,000 au',
   'cyg-x-1-disk': 'The disc of Cygnus X-1',
   'cyg-x-1-from-above': 'Cygnus X-1 from above',
+  'lmc-x-1-disk': 'A black hole in another galaxy',
+  'grs-1915-disk': 'GRS 1915+105 as we see it',
+  'black-hole-tour': 'A tour of black holes',
 };
 
 /** Define (or replace) a named scene. */
@@ -466,11 +478,12 @@ const GALAXY_TARGETS: ReadonlySet<string> = new Set([
 ]);
 const LOADING_GALAXIES = 'Loading the galaxies…';
 /**
- * The black holes besides Sgr A* (sim/blackholes): the ones in the Milky Way arrive with the star
- * catalogue, M87* with the galaxies (blackHoleStatus says which).
+ * The black holes besides Sgr A* (sim/blackholes): the binaries (those in the Magellanic Clouds and M33 too) and the
+ * lone hole arrive with the star catalogue, M87* and the other galaxies' holes with the galaxies (blackHoleStatus says
+ * which).
  */
-const STELLAR_HOLE_TARGETS: ReadonlySet<string> = new Set(['gaia-bh1', 'gaia-bh2', 'gaia-bh3', 'cyg-x-1', 'ogle-2011-blg-0462']);
-const GALAXY_HOLE_TARGETS: ReadonlySet<string> = new Set(['m87-star']);
+const STELLAR_HOLE_TARGETS: ReadonlySet<string> = new Set(['gaia-bh1', 'gaia-bh2', 'gaia-bh3', 'cyg-x-1', 'ogle-2011-blg-0462', 'grs-1915', 'lmc-x-1', 'm33-x-7']);
+const GALAXY_HOLE_TARGETS: ReadonlySet<string> = new Set(['m87-star', 'm31-star', 'ngc-4258-bh', 'ngc-4889-bh']);
 const BUSY = 'A flight is under way: finish it or abort it first';
 /** A fall into a black hole holds tripActive as a flight does, but is stopped rather than aborted. */
 const FALLING = 'A fall into a black hole is under way: stop it (Stop the fall) or let it end first';
@@ -1701,6 +1714,231 @@ defineScene('cyg-x-1-from-above', {
       useUI.setState({ selected: CYG_X1 });
       const dir = sunward(CYG_X1);
       toHole(CYG_X1, CYG_X1_ABOVE_VIEW.rM, dir, () => cygX1Hover(CYG_X1_ABOVE_VIEW.rM, sunward(CYG_X1)));
+    }),
+});
+
+// ─── The other discs, and a tour of black holes ────────────────────────────────────────────
+
+const LMC_X1: BodyId = 'lmc-x-1';
+const GRS_1915: BodyId = 'grs-1915';
+
+/**
+ * A direction from a black hole with a thin disc at `elevationDeg` above the disc's plane (world axes), on the side
+ * away from its companion turned a quarter round the disc, as cygX1View does for Cygnus X-1: the companion sits off to
+ * one side and the disc's far side is seen against the sky.
+ */
+export function discView(hole: BodyId, elevationDeg: number): Vector3 {
+  const bh = getBody(hole)?.blackHole;
+  const n = bh?.disk?.normalWorld ?? [0, 1, 0];
+  const normal = new Vector3(n[0], n[1], n[2]);
+  const c = bh?.companion;
+  const star = c && sim.bodies[c]?.present ? sim.bodies[c].pos.clone().sub(sim.bodies[hole].pos) : new Vector3(1, 0, 0);
+  const across = new Vector3().crossVectors(normal, star);
+  if (across.lengthSq() < 1e-30) across.set(1, 0, 0).cross(normal);
+  across.normalize();
+  const el = (elevationDeg * Math.PI) / 180;
+  return across.multiplyScalar(Math.cos(el)).addScaledVector(normal, Math.sin(el)).normalize();
+}
+
+/** Hover for a disc scene along dir: looking at the hole with the disc's axis up, so its plane lies level across the view. */
+function discHover(hole: BodyId, rM: number, dir: Vector3): void {
+  const n = getBody(hole)?.blackHole?.disk?.normalWorld ?? [0, 1, 0];
+  controller.hoverAt(hole, rM, dir, dir.clone().negate(), { x: n[0], y: n[1], z: n[2] });
+}
+
+/** The angle between the disc's axis and a direction from the hole (folded to 0–90°: either face), degrees. */
+export function discTiltDeg(hole: BodyId, dir: Vector3): number {
+  const n = getBody(hole)?.blackHole?.disk?.normalWorld;
+  if (!n) return NaN;
+  const c = Math.abs(new Vector3(n[0], n[1], n[2]).dot(dir.clone().normalize()));
+  return (Math.acos(Math.min(1, c)) * 180) / Math.PI;
+}
+
+/** "160,000 light-years", "2.7 million light-years", from where a body is now. */
+function lightYearsAway(id: BodyId): string {
+  const b = sim.bodies[id];
+  const ly = b?.present ? b.pos.distanceTo(sim.bodies.sun.pos) / LIGHT_YEAR_KM : NaN;
+  if (!Number.isFinite(ly)) return 'far';
+  if (ly >= 1e6) return `${Number((ly / 1e6).toPrecision(2))} million light-years`;
+  const step = 10 ** Math.max(0, Math.floor(Math.log10(ly)) - 1);
+  return `${(Math.round(ly / step) * step).toLocaleString('en-GB')} light-years`;
+}
+
+/** A mass in words: "10.9 solar masses", "140 million solar masses", "21 billion solar masses". */
+function massWords(m: number): string {
+  if (!Number.isFinite(m)) return 'its mass still loading';
+  if (m >= 1e9) return `${Number((m / 1e9).toPrecision(2))} billion solar masses`;
+  if (m >= 1e6) return `${Number((m / 1e6).toPrecision(2))} million solar masses`;
+  return `${Number(m.toPrecision(3))} solar masses`;
+}
+
+const holeMass = (id: BodyId): number => getBody(id)?.blackHole?.massMsun ?? NaN;
+/** r = rM M from a hole, km, rounded to `step`, in words ("6,400 km"). */
+const rKmWords = (id: BodyId, rM: number, step = 100): string => `${(Math.round((rM * holeMKm(id)) / step) * step).toLocaleString('en-GB')} km`;
+
+/** How a disc scene's note ends: what is a model, with the disc's own luminosity. */
+function discModel(hole: BodyId): string {
+  const d = getBody(hole)?.blackHole?.disk;
+  const pct = d ? Math.round(d.eddingtonFraction * 100) : NaN;
+  return `The disc is a model: a thin disc at ${pct} % of its Eddington luminosity, a typical state rather than today’s, each ring a blackbody, drawn without the hole’s spin; its gas turns ${(d?.slowdown ?? 1000).toLocaleString('en-GB')} times slower than real, and its swirls are illustrative.`;
+}
+
+/** LMC X-1's disc scene: r (units of M) and elevation above the disc's plane (degrees). */
+export const LMC_X1_DISK_VIEW = { rM: 60, elevationDeg: 10 };
+/** GRS 1915+105 at our own angle: on the line to the Sun. */
+export const GRS_1915_VIEW = { rM: 120 };
+
+defineScene('lmc-x-1-disk', {
+  label: 'A black hole in another galaxy',
+  get note() {
+    const { rM, elevationDeg } = LMC_X1_DISK_VIEW;
+    return `${rM / 2} horizon radii (${rKmWords(LMC_X1, rM)}) from LMC X-1, ${elevationDeg}° above its disc, in the Large Magellanic Cloud ${lightYearsAway(LMC_X1)} away: a black hole of ${massWords(holeMass(LMC_X1))} drinking the wind of a giant O star. Its inner rings blaze; its far side is bent up over the black hole, and the side whose gas comes towards you is far brighter. ${discModel(LMC_X1)}`;
+  },
+  unavailable: needs(LMC_X1),
+  run: (note) =>
+    scene(note, () => {
+      holeViews(LMC_X1, { disk: true });
+      useUI.setState({ selected: LMC_X1 });
+      const { rM, elevationDeg } = LMC_X1_DISK_VIEW;
+      toHole(LMC_X1, rM, discView(LMC_X1, elevationDeg), () => discHover(LMC_X1, rM, discView(LMC_X1, elevationDeg)));
+    }),
+});
+
+defineScene('grs-1915-disk', {
+  label: 'GRS 1915+105 as we see it',
+  get note() {
+    const { rM } = GRS_1915_VIEW;
+    const tilt = isBody(GRS_1915) ? Math.round(discTiltDeg(GRS_1915, sunward(GRS_1915))) : NaN;
+    return `${rM / 2} horizon radii (${rKmWords(GRS_1915, rM)}) from GRS 1915+105, ${lightYearsAway(GRS_1915)} away, on the line to the Sun: its disc as we see it, ${tilt}° from its axis, the far side bent up over the shadow. From 1992 to 2018 it was one of the brightest X-ray sources in the sky, flaring and firing jets; since then it has been mostly hidden behind its own gas. ${discModel(GRS_1915)}`;
+  },
+  unavailable: needs(GRS_1915),
+  run: (note) =>
+    scene(note, () => {
+      holeViews(GRS_1915, { disk: true });
+      useUI.setState({ selected: GRS_1915 });
+      const { rM } = GRS_1915_VIEW;
+      toHole(GRS_1915, rM, sunward(GRS_1915), () => discHover(GRS_1915, rM, sunward(GRS_1915)));
+    }),
+});
+
+/** One stop of the tour: the hole, where the camera hovers (r in units of M; along the line to the Sun or above its disc) and what to say. */
+export interface TourStop {
+  hole: BodyId;
+  rM: number;
+  /** 'sun': on the line to the Sun (as we see it); a number: that many degrees above its disc's plane. */
+  view: 'sun' | number;
+  text: () => string;
+}
+
+/** How long the tour holds at each stop, s. */
+export const TOUR_STOP_S = 16;
+
+/**
+ * The tour of black holes: from the Milky Way out to one of the heaviest known, each held TOUR_STOP_S seconds. Three
+ * discs (each a model, its typical state), then four holes at the centres of galaxies, weighed four ways.
+ */
+export const BLACK_HOLE_TOUR: readonly TourStop[] = [
+  {
+    hole: GRS_1915,
+    rM: GRS_1915_VIEW.rM,
+    view: 'sun',
+    text: () => `GRS 1915+105, ${massWords(holeMass(GRS_1915))}, ${lightYearsAway(GRS_1915)} away across the Galaxy, seen as we see it: its disc of hot gas as it shone in its bright years, 1992–2018.`,
+  },
+  {
+    hole: LMC_X1,
+    rM: LMC_X1_DISK_VIEW.rM,
+    view: LMC_X1_DISK_VIEW.elevationDeg,
+    text: () => `LMC X-1, ${massWords(holeMass(LMC_X1))}, in the Large Magellanic Cloud ${lightYearsAway(LMC_X1)} away: its disc, fed by the wind of a giant O star, has shone steadily since it was found in 1969.`,
+  },
+  {
+    hole: 'm33-x-7',
+    rM: 100,
+    view: 'sun',
+    text: () => `M33 X-7, ${massWords(holeMass('m33-x-7'))}, ${lightYearsAway('m33-x-7')} away in the Triangulum Galaxy, seen nearly edge-on as we see it: once an orbit its companion eclipses it.`,
+  },
+  {
+    hole: 'm31-star',
+    rM: 100,
+    view: 'sun',
+    text: () => `M31*, ${massWords(holeMass('m31-star'))}, at the centre of the Andromeda Galaxy, weighed by the motions of the stars round it. Its galaxy’s own starlight is not drawn here, so its Einstein disc is dark.`,
+  },
+  {
+    hole: 'ngc-4258-bh',
+    rM: 100,
+    view: 'sun',
+    text: () => `The black hole of M106 (NGC 4258), ${massWords(holeMass('ngc-4258-bh'))}, ${lightYearsAway('ngc-4258-bh')} away: weighed by water masers in a thin disc orbiting it, the most precise mass of any black hole beyond our own galaxy.`,
+  },
+  {
+    hole: 'm84-bh',
+    rM: 100,
+    view: 'sun',
+    text: () => `The black hole of M84, ${massWords(holeMass('m84-bh'))}, in the Virgo cluster ${lightYearsAway('m84-bh')} away, weighed by a disc of glowing gas the Hubble telescope saw turning round it.`,
+  },
+  {
+    hole: 'ngc-4889-bh',
+    rM: 100,
+    view: 'sun',
+    text: () => `The black hole of NGC 4889, ${massWords(holeMass('ngc-4889-bh'))}, in the Coma cluster ${lightYearsAway('ngc-4889-bh')} away: one of the heaviest known. Its horizon would hold the Solar System many times over, yet from 100 horizon radii the view is the same as at every black hole.`,
+  },
+];
+
+/** The tour's note at stop i: where it is, and how it goes on. */
+export function tourNote(i: number): string {
+  const n = BLACK_HOLE_TOUR.length;
+  const next = i + 1 < n ? ` The tour moves on in ${TOUR_STOP_S} s; move the camera to stay.` : ' The last stop: the tour ends here.';
+  return `Stop ${i + 1} of ${n}. ${BLACK_HOLE_TOUR[i].text()}${next} The discs are models of a typical state, drawn without spin; the holes are drawn exactly, as general relativity says one that does not spin looks.`;
+}
+
+/** Where the tour's camera hovers at a stop, from the hole (world axes). */
+function tourDir(stop: TourStop): Vector3 {
+  return stop.view === 'sun' ? sunward(stop.hole) : discView(stop.hole, stop.view);
+}
+
+/** Go to stop i of the tour, and once there wait TOUR_STOP_S seconds for the next (dropped if the camera is moved or another scene starts). */
+function tourStop(i: number): void {
+  const stop = BLACK_HOLE_TOUR[i];
+  if (!stop) return;
+  if (!isBody(stop.hole)) {
+    tourStop(i + 1);
+    return;
+  }
+  useUI.setState({ selected: stop.hole, holePanel: { hole: stop.hole, open: true }, journeyNote: tourNote(i) });
+  toHole(stop.hole, stop.rM, tourDir(stop), () => {
+    const dir = tourDir(stop);
+    if (getBody(stop.hole)?.blackHole?.disk) discHover(stop.hole, stop.rM, dir);
+    else controller.hoverAt(stop.hole, stop.rM, dir);
+    if (i + 1 < BLACK_HOLE_TOUR.length) tourNext(i + 1);
+  });
+}
+
+function tourNext(i: number): void {
+  cancelSceneStep();
+  const move = controller.moves;
+  const timer = setTimeout(() => {
+    pendingStep = null;
+    if (controller.moves !== move || useUI.getState().tripActive) return;
+    tourStop(i);
+  }, TOUR_STOP_S * 1000);
+  pendingStep = () => clearTimeout(timer);
+}
+
+/** Step the tour on at once (for the tests, which cannot wait): the stop it would go to next. */
+export function tourAdvanceForTests(i: number): void {
+  cancelSceneStep();
+  tourStop(i);
+}
+
+defineScene('black-hole-tour', {
+  label: 'A tour of black holes',
+  get note() {
+    return tourNote(0);
+  },
+  unavailable: needs(...BLACK_HOLE_TOUR.map((s) => s.hole)),
+  run: (note) =>
+    scene(note, () => {
+      // Every view the tour needs, turned on at its start (so the next scene turns them back).
+      useUI.setState({ lensing: true, accretionDisks: true, showOrbits: false, accretionFlow: false });
+      tourStop(0);
     }),
 });
 

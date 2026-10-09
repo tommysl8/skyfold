@@ -1,10 +1,17 @@
 // Builds src/sim/blackholes/blackholes.json: the real black holes the app draws besides the Galaxy's own (Sgr A*'s
 // mass and place stay in src/sim/galaxy/sstars.json; its entry here carries only what a black hole's record adds),
-// their companion stars and the binaries' orbits, every value with the key of the paper it comes from.
+// their companion stars and the binaries' orbits, every value with the key of the paper it comes from. The tables are
+// this file's (the first eleven holes) and scripts/blackholes-more.mjs's (the X-ray binaries of BlackCAT and of the
+// Magellanic Clouds and M33, and the black holes at the centres of nearby galaxies).
 //
-// Run from the repo root (no downloads, no inputs besides this file; the output is deterministic):
+// Run from the repo root (no downloads; the output is deterministic):
 //
 //   node scripts/build-blackholes.mjs
+//
+// Its inputs besides the two tables: public/data/deepsky/ngc-galaxies.json.gz, for the place of a galaxy of the NGC
+// catalogue with a black hole at its centre (as the deep-sky layer places that galaxy); and the file it writes, whose
+// companions' catalogue indices scripts/build-stars3d-ext.mjs fills in (the Gaia black holes' stars, pinned in the
+// catalogue's head) and which a rebuild keeps.
 //
 // What it computes from the hand-kept table below:
 //  - each binary's barycentre: position (pc) and velocity (km/s) at J2000, heliocentric, J2000 ecliptic axes, from its
@@ -26,12 +33,15 @@
 // Julian dates are used as given (TCB for Gaia, HJD/BJD UTC for ground spectroscopy: the differences, under 70 s, are
 // far below every uncertainty here). Cost: a few milliseconds.
 
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import * as MORE from './blackholes-more.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'src', 'sim', 'blackholes', 'blackholes.json');
+const NGC_GALAXIES = join(ROOT, 'public', 'data', 'deepsky', 'ngc-galaxies.json.gz');
 
 // ─── Constants (as scripts/build-stars3d.mjs and src/physics/constants.ts) ───────────────────────────────────────
 
@@ -896,6 +906,16 @@ const SYSTEMS = [
   },
 ];
 
+// ─── The second table: scripts/blackholes-more.mjs ───────────────────────────────────────────────────────────────
+
+for (const [k, v] of Object.entries(MORE.REFS)) {
+  if (REFS[k] && REFS[k] !== v) throw new Error(`reference ${k} defined twice, differently`);
+  REFS[k] = v;
+}
+HOLES.push(...MORE.HOLES);
+const MORE_IDS = new Set(MORE.SYSTEMS.map((S) => S.id));
+SYSTEMS.push(...MORE.SYSTEMS);
+
 // ─── Build ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const R_SUN_AU = 695700 / AU_KM;
@@ -932,7 +952,10 @@ function buildSystem(S) {
   const iDeg = o.iDeg.value;
   const OmegaDeg = full ? o.OmegaDeg.value : 0;
   const omegaDeg = full ? o.omegaStarDeg.value : 90;
-  const tPeriJD = full ? o.tPeriJD.value : o.T0JD.value - P / 2;
+  // An X-ray binary with no ephemeris used for its phase: the donor nearest to us at J2000.0 (assumed, labelled).
+  const phaseAssumed = !full && !o.T0JD;
+  const T0 = full ? null : phaseAssumed ? JD_J2000 : o.T0JD.value;
+  const tPeriJD = full ? o.tPeriJD.value : T0 - P / 2;
   const aAu = keplerAu(mBh + mStar, P);
   const basis = campbellBasis({ iDeg, OmegaDeg, omegaDeg }, raDeg, decDeg);
   const orbitIcrs = { aAu, e, periodDays: P, tPeriJD, P: basis.P, Q: basis.Q };
@@ -957,11 +980,10 @@ function buildSystem(S) {
   const awayAt = (jd) => dot(orbitState(orbitIcrs, jd).pos, away);
   const rvAt = (jd) => dot(orbitState(orbitIcrs, jd).vel, away);
   if (!full) {
-    const T0 = o.T0JD.value;
     const z = awayAt(T0);
     const dt = P * 1e-3;
     checks.push(
-      `at T0 (JD ${T0}) the donor is ${(-z).toFixed(6)} au in front of the hole (a sin i = ${(aAu * Math.sin(iDeg * DEG)).toFixed(6)} au); its radial velocity goes from ${rvAt(T0 - dt).toFixed(2)} to ${rvAt(T0 + dt).toFixed(2)} km/s across it`,
+      `at ${phaseAssumed ? 'the assumed T0, J2000.0' : 'T0'} (JD ${T0}) the donor is ${(-z).toFixed(6)} au in front of the hole (a sin i = ${(aAu * Math.sin(iDeg * DEG)).toFixed(6)} au); its radial velocity goes from ${rvAt(T0 - dt).toFixed(2)} to ${rvAt(T0 + dt).toFixed(2)} km/s across it`,
     );
     if (!(Math.abs(z + aAu * Math.sin(iDeg * DEG)) < 1e-9 * aAu && rvAt(T0 - dt) < 0 && rvAt(T0 + dt) > 0)) throw new Error(`${S.id}: donor not in front at T0`);
   } else if (o.T0JD) {
@@ -982,6 +1004,15 @@ function buildSystem(S) {
     star.radiusRsun = { value: r(rl / R_SUN_AU, 4), ref: 'Eggleton1983', note: `the Roche lobe of q = ${r(q, 3)} at a = ${aAu.toFixed(4)} au` };
     checks.push(`the donor fills its Roche lobe: R = ${(rl / R_SUN_AU).toFixed(2)} R☉ (Eggleton 1983)`);
   }
+  // A disc drawn in the binary's plane must lie inside the hole's Roche lobe (Eggleton 1983, for q = M_BH / M_star).
+  if (hole.disk) {
+    const rlCm = eggleton(mBh / mStar) * aAu * AU_KM * 1e5;
+    const rOut = hole.disk.rOutCm.value;
+    // (said in the checks of the second table's systems; Cygnus X-1's are kept as they were)
+    if (MORE_IDS.has(S.id))
+      checks.push(`the disc's outer edge, ${rOut.toExponential(2)} cm, inside the hole's Roche lobe, ${rlCm.toExponential(2)} cm (Eggleton 1983)`);
+    if (!(rOut < rlCm)) throw new Error(`${S.id}: the disc reaches beyond the hole's Roche lobe`);
+  }
   for (const c of checks) say(`  ${S.id}: ${c}`);
 
   const published = full
@@ -999,12 +1030,21 @@ function buildSystem(S) {
         ...(o.publishedA1Au ? { a1Au: o.publishedA1Au } : {}),
         ...(o.publishedA0Mas ? { a0Mas: o.publishedA0Mas } : {}),
       }
-    : {
+    : phaseAssumed
+      ? {
+          kind: 'period of the donor’s orbit (no ephemeris used for its phase)',
+          periodDays: o.periodDays,
+          iDeg: o.iDeg,
+          ...(o.KstarKms ? { KstarKms: o.KstarKms } : {}),
+          ...(o.q ? { q: o.q } : {}),
+          rule: 'e = 0 and ω★ = 90° assumed; the donor put nearest to us at J2000.0 (JD 2451545.0), so tPeriJD = 2451545.0 − P/2; Ω = 0° (north) and i < 90° (anticlockwise) assumed',
+        }
+      : {
         kind: 'spectroscopic ephemeris of the donor (T0: its inferior conjunction)',
         periodDays: o.periodDays,
         T0JD: o.T0JD,
         iDeg: o.iDeg,
-        KstarKms: o.KstarKms,
+        ...(o.KstarKms ? { KstarKms: o.KstarKms } : {}),
         ...(o.q ? { q: o.q } : {}),
         ...(o.publishedAAu ? { aAu: o.publishedAAu } : {}),
         rule: 'e = 0 and ω★ = 90° assumed, so tPeriJD = T0 − P/2 (the donor nearest to us at T0); Ω = 0° (north) and i < 90° (anticlockwise) assumed',
@@ -1027,6 +1067,7 @@ function buildSystem(S) {
         distancePc: r(norm(posPc), 8),
         massMsun: r(mBh + mStar, 8),
       },
+      ...(phaseAssumed ? { phaseAssumed: true } : {}),
       orbits: [
         {
           id: `${S.hole}-orbit`,
@@ -1041,7 +1082,7 @@ function buildSystem(S) {
           pHat: pHat.map((x) => r(x, 12)),
           qHat: qHat.map((x) => r(x, 12)),
           eclipticAngles: Object.fromEntries(Object.entries(angles).map(([k, v]) => [k, r(v, 8)])),
-          source: full ? 'published orbit' : 'published ephemeris, orientation assumed',
+          source: full ? 'published orbit' : phaseAssumed ? 'published period, phase and orientation assumed' : 'published ephemeris, orientation assumed',
           published,
           assumed: S.assumed ?? [],
         },
@@ -1062,9 +1103,88 @@ const walk = (x) => {
   if (Array.isArray(x)) x.forEach(walk);
   else if (x && typeof x === 'object') for (const [k, v] of Object.entries(x)) (k === 'ref' ? note(v) : k === 'refs' && Array.isArray(v) ? v.forEach(note) : walk(v));
 };
-const holes = HOLES.map((h) => ({ ...h }));
+// The galaxies of the NGC catalogue with a black hole at the centre: their place as the deep-sky layer has it.
+const ngc = (() => {
+  if (!HOLES.some((h) => h.placement === 'catalogue-galaxy')) return null;
+  const f = JSON.parse(gunzipSync(readFileSync(NGC_GALAXIES)).toString('utf8'));
+  const col = Object.fromEntries(f.columns.map((c, i) => [c, i]));
+  return new Map(f.rows.map((row) => [row[col.name], (k) => row[col[k]]]));
+})();
+function catalogueGalaxy(h) {
+  const g = ngc?.get(h.ngc);
+  if (!g) throw new Error(`${h.id}: ${h.ngc} is not in ${NGC_GALAXIES}`);
+  if (g('source') !== 'cf4') throw new Error(`${h.id}: ${h.ngc} has no Cosmicflows-4 distance`);
+  const pos = [g('x'), g('y'), g('z')];
+  const anchor = g('ax') === null ? pos : [g('ax'), g('ay'), g('az')];
+  return {
+    designation: h.ngc,
+    name: h.hostName,
+    aliases: g('aliases'),
+    raDeg: g('raDeg'),
+    decDeg: g('decDeg'),
+    distMpc: g('distMpc'),
+    distLoMpc: g('distLoMpc'),
+    distHiMpc: g('distHiMpc'),
+    methods: g('methods'),
+    edm: g('edm'),
+    posMpc: pos,
+    anchorMpc: anchor,
+  };
+}
+// The galaxies the app registers with the others, where it places them (Mpc from the Sun): named.json's and the Local
+// Volume Database's positions.
+const placedMpc = (() => {
+  const out = new Map();
+  const named = JSON.parse(readFileSync(join(ROOT, 'src', 'sim', 'cosmos', 'named.json'), 'utf8'));
+  for (const o of named.objects) if (o.positionEclMpc) out.set(o.id, Math.hypot(...o.positionEclMpc));
+  const local = JSON.parse(gunzipSync(readFileSync(join(ROOT, 'public', 'data', 'local-galaxies.json.gz'))).toString('utf8'));
+  for (const g of local.galaxies) if (!out.has(g.id.replace(/_/g, '-').toLowerCase())) out.set(g.id.replace(/_/g, '-').toLowerCase(), Math.hypot(...g.positionEclKpc) / 1000);
+  return out;
+})();
+
+/** "1.43 × 10⁸": a mass in the first table's words. */
+const sci = (x) => {
+  const p = Math.floor(Math.log10(x));
+  return `${Number((x / 10 ** p).toPrecision(3))} × 10${String(p).replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d])}`;
+};
+
+/**
+ * A supermassive hole's mass at the distance its galaxy is placed at: a mass from motions seen on the sky (stars, gas,
+ * masers) grows in proportion to the distance assumed, M ∝ D, so the published mass is scaled from the paper's distance
+ * to the app's (as Kormendy & Ho 2013 scale theirs to their adopted distances).
+ */
+function scaledMass(h, dMpc) {
+  const p = h.massPublished;
+  const k = dMpc / p.distMpc;
+  const s = (x) => Number((x * k).toPrecision(3));
+  const unc = typeof p.unc === 'number' ? s(p.unc) : Array.isArray(p.unc) ? p.unc.map(s) : undefined;
+  const note = `${sci(p.value)} M☉ at the ${p.distMpc} Mpc the paper assumed, scaled to the ${Number(dMpc.toPrecision(4))} Mpc its galaxy is placed at (a mass from motions grows with the distance assumed)`;
+  say(`  ${h.id}: ${sci(p.value)} M☉ at ${p.distMpc} Mpc → ${sci(s(p.value))} M☉ at ${dMpc.toFixed(4)} Mpc`);
+  return { value: s(p.value), ...(unc !== undefined ? { unc } : {}), ref: p.ref, note };
+}
+
+say('Black holes at the centres of galaxies:');
+const holes = HOLES.map((h) => {
+  if (h.placement === 'galaxy-centre' && h.massPublished) {
+    const d = placedMpc.get(h.host);
+    if (!d) throw new Error(`${h.id}: no placed distance for ${h.host}`);
+    return { ...h, mass: scaledMass(h, d) };
+  }
+  if (h.placement !== 'catalogue-galaxy') return { ...h };
+  const { ngc: _designation, ...rest } = h;
+  const galaxy = catalogueGalaxy(h);
+  say(`  ${h.id}: at the centre of ${h.ngc}, ${galaxy.distMpc} Mpc (Cosmicflows-4)`);
+  return { ...rest, galaxy, mass: scaledMass(h, Math.hypot(...galaxy.posMpc)) };
+});
 walk(holes);
 walk(built);
+
+// The companions' catalogue indices that scripts/build-stars3d-ext.mjs filled in (stars pinned in the head): kept.
+const previous = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : null;
+for (const b of built) {
+  const old = previous?.companions?.find((c) => c.id === b.star.id);
+  if (b.star.catalogueIndex === null && typeof old?.catalogueIndex === 'number') b.star.catalogueIndex = old.catalogueIndex;
+}
 
 const file = {
   format: 'lightspeed.black-holes',
