@@ -188,7 +188,7 @@ varying float vR;
 void main() {
   #include <logdepthbuf_fragment>
   float base = vOpen > 0.5 ? 0.07 * (1.0 - smoothstep(0.6, 1.0, vS)) : 0.045;
-  float flow = vOpen > 0.5 ? 0.6 * pow(0.5 + 0.5 * sin(6.2831853 * (vS * 4.0 - uTime * 0.35)), 10.0) * (1.0 - smoothstep(0.7, 1.0, vS)) : 0.0;
+  float flow = vOpen > 0.5 ? 0.6 * pow(max(0.0, 0.5 + 0.5 * sin(6.2831853 * (vS * 4.0 - uTime * 0.35))), 10.0) * (1.0 - smoothstep(0.7, 1.0, vS)) : 0.0;
   vec3 c = (uColor * base + uFlow * flow) * uOpacity;
   gl_FragColor = vec4(c, 1.0);
 }
