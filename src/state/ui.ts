@@ -64,6 +64,14 @@ export interface UIState {
   deepSky: 'auto' | 'on' | 'off';
   pulsars: 'auto' | 'on' | 'off';
   gwEvents: 'auto' | 'on' | 'off';
+  /**
+   * Earth's auroral ovals (sim/phenomena/aurora.ts), on the night side, and the geomagnetic activity they are drawn
+   * for: the Kp index, 0 (quiet) to 9 (an extreme storm); 3 is a typical moderate night.
+   */
+  aurora: boolean;
+  auroraKp: number;
+  /** Relativistic jets: M87's and Centaurus A's (sim/phenomena/jets.ts). */
+  jets: boolean;
   /** The map of the cosmic microwave background over the sky (contrast enhanced). */
   showCmb: boolean;
   /** First-visit welcome screen. */
@@ -180,7 +188,9 @@ export interface UIState {
       | 'lensing'
       | 'accretionFlow'
       | 'accretionDisks'
-      | 'holePanelAuto',
+      | 'holePanelAuto'
+      | 'aurora'
+      | 'jets',
   ) => void;
   setSizeMode: (m: SizeMode) => void;
 }
@@ -220,6 +230,10 @@ export const savedPrefs = (s: UIState) => ({
   deepSky: s.deepSky,
   pulsars: s.pulsars,
   gwEvents: s.gwEvents,
+  // New in this version with their defaults (on, Kp 3): a saved state without them keeps them, so no migration.
+  aurora: s.aurora,
+  auroraKp: s.auroraKp,
+  jets: s.jets,
   showFps: s.showFps,
   // Not leftOpen: the physics reference opens only when asked for, never on a reload.
   rightOpen: s.rightOpen,
@@ -263,6 +277,9 @@ export const useUI = create<UIState>()(
       deepSky: 'auto',
       pulsars: 'auto',
       gwEvents: 'auto',
+      aurora: true,
+      auroraKp: 3,
+      jets: true,
       showCmb: false,
       welcomeOpen: !welcomed(),
       tourStep: null,

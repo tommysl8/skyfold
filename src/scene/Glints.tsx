@@ -73,6 +73,8 @@ export function Glints() {
     // Black holes: their point is the accretion flow's.
     const hole = new Uint8Array(n);
     const sun = blackbodyRgb(SUN_TEFF_K);
+    // Stars whose colour changes with the date (a supernova's light curve): their colour is rewritten when it changes.
+    const variable: number[] = [];
     list.forEach((e, i) => {
       if (e.record.visual?.renderer === 'layer') own[i] = 1;
       if (e.record.kind === 'black-hole') {
@@ -88,6 +90,7 @@ export function Glints() {
         temp[i] = lum.teffK;
         limit[i] = 1;
         color.set(blackbodyRgb(lum.teffK), i * 3);
+        if (lum.variable) variable.push(i);
         return;
       }
       const c = new Color(e.record.physical.colour);
@@ -104,6 +107,7 @@ export function Glints() {
     g.userData.registry = registryVersion();
     g.userData.own = own;
     g.userData.hole = hole;
+    g.userData.variable = Int32Array.from(variable);
     g.userData.bodies = n;
     // Which body each extra vertex holds (its colours are that body's), −1 for none.
     g.userData.extraOwner = new Int32Array(EXTRA_SLOTS).fill(-1);
@@ -220,6 +224,8 @@ export function Glints() {
     }
     geometry.setDrawRange(0, n + extra);
     pos.needsUpdate = mag.needsUpdate = fade.needsUpdate = rad.needsUpdate = lnDx.needsUpdate = true;
+    const variable = geometry.userData.variable as Int32Array;
+    for (let k = 0; k < variable.length; k++) starColour(variable[k], list[variable[k]].record.physical.luminous!.teffK);
     material.uniforms.uPixelRatio.value = gl.getPixelRatio();
   });
 
@@ -237,6 +243,21 @@ export function Glints() {
     C[3 * i + 2] = rgb[2];
     S[i] = spec;
     col.needsUpdate = sp.needsUpdate = true;
+  }
+
+  /** A star whose temperature changes (sim/phenomena): its colour and temperature (uploaded only when they change by 0.5 % or more). */
+  function starColour(i: number, teffK: number): void {
+    const temp = geometry.attributes.aTemp as BufferAttribute;
+    const T = temp.array as Float32Array;
+    if (Math.abs(T[i] - teffK) <= 0.005 * teffK) return;
+    const col = geometry.attributes.aColor as BufferAttribute;
+    const C = col.array as Float32Array;
+    const rgb = blackbodyRgb(teffK);
+    T[i] = teffK;
+    C[3 * i] = rgb[0];
+    C[3 * i + 1] = rgb[1];
+    C[3 * i + 2] = rgb[2];
+    col.needsUpdate = temp.needsUpdate = true;
   }
 
   /** Give extra vertex s the colour, temperature and limit of body i (uploaded only when its owner changes). */

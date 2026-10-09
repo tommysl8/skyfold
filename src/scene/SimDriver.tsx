@@ -27,6 +27,7 @@ import { deepSkyLayersNow } from '../ui/deepSkyLayers';
 import { isWithin } from '../sim/bodies';
 import { updateCosmicSky } from '../sim/cosmos/expansion';
 import { nscPointsGate } from '../sim/galaxy/nuclearCluster';
+import { updatePhenomena } from '../sim/phenomena';
 
 // The nuclear star cluster's points are drawn only once the lensed programs have compiled (scene/NuclearCluster.tsx):
 // until then their light stays in the glow (sim/galaxy/nuclearCluster.ts updateNuclear).
@@ -110,6 +111,8 @@ export function SimDriver() {
 
     // World
     updateEphemeris();
+    // The supernovae's and the kilonova's light at this date, and which of the phenomena's models are near (sim/phenomena)
+    updatePhenomena();
     if (!initialised.current) {
       initialised.current = true;
       controller.placeAt('earth', 26_000);

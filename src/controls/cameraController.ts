@@ -76,7 +76,7 @@ const UP = new Vector3(0, 1, 0);
 const Z_UP = new Vector3(0, 0, 1);
 const upScratch = new Vector3();
 /** Kinds seen along our line of sight (niceDirection), when this far from the Sun (a light-year) or farther. */
-const FROM_EARTH_KINDS: ReadonlySet<string> = new Set(['galaxy', 'cluster', 'nebula', 'pulsar']);
+const FROM_EARTH_KINDS: ReadonlySet<string> = new Set(['galaxy', 'cluster', 'nebula', 'pulsar', 'transient']);
 const FROM_EARTH_KM = 9.46e12;
 const ZERO = new Vector3();
 /** Farthest orbit distance, km (about 10¹¹ light-years: beyond the observable universe's 4.4 × 10²³ km radius). */
@@ -441,6 +441,22 @@ export class CameraController implements ControllerHoleApi {
   spin(radPerS: number): void {
     this.spinRate = radPerS;
     this.spinMove = this.moves;
+  }
+
+  /**
+   * Ease the orbit camera to this distance from its target, km, as the zoom does (a scene's: following a kilonova's
+   * ejecta out). Only in orbit about a body that is not a black hole; false otherwise.
+   */
+  zoomTo(distanceKm: number): boolean {
+    if (this.mode !== 'orbit' || this.holeRs > 0 || !(distanceKm > 0)) return false;
+    this.goalLogDist = Math.log(distanceKm);
+    this.clampGoals();
+    return true;
+  }
+
+  /** The distance the orbit camera is easing to, km (NaN outside orbit mode). */
+  get orbitGoalKm(): number {
+    return this.mode === 'orbit' ? Math.exp(this.goalLogDist) : NaN;
   }
 
   /** Whether the camera is turning by itself. */

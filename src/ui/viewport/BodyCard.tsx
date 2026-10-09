@@ -53,6 +53,8 @@ import { FlowControls } from './FlowControls';
 import { DiskControls } from './DiskControls';
 import { PictureCreditLine, SourceLinks, Sources } from './Sources';
 import type { ControlMode } from '../../state/ui';
+import { TRANSIENT_SCENES, transientNow } from '../../sim/phenomena';
+import { runScene } from '../../content/scenes';
 
 /** The camera modes in which it is at a body it is centred on (a black hole's own modes included). */
 const AT_TARGET: readonly ControlMode[] = ['orbit', 'fall', 'circular', 'hold'];
@@ -124,6 +126,22 @@ export function cardModelLine(r: BodyRecord): string | null {
   // a merger's region): its own line.
   if (r.deepSky?.cardNote) return r.deepSky.cardNote;
   return null;
+}
+
+/** A supernova's or the kilonova's light at the date shown, and a button to watch it as it was seen (sim/phenomena). */
+function TransientLine({ id }: { id: string }) {
+  const text = transientNow(id);
+  const scene = TRANSIENT_SCENES[id];
+  return (
+    <div className="mt-0.5 text-[11px] leading-snug text-fg-2">
+      {text}
+      {scene && (
+        <button className="btn btn-q btn-sm ml-1 !h-5 !px-1.5 align-baseline" onClick={() => runScene(scene)} title="Set the date and watch it from Earth">
+          Watch it
+        </button>
+      )}
+    </div>
+  );
 }
 
 /** "science.nasa.gov" from a URL. */
@@ -252,6 +270,7 @@ export function BodyCard() {
             </div>
           )}
           {deepSkyDistance && <div className="mono mt-0.5 text-[10.5px] leading-[15px] text-fg-3">{deepSkyDistance}</div>}
+          {d.kind === 'transient' && <TransientLine id={id} />}
           {sight && <div className="mt-0.5 text-[11px] leading-snug text-fg-2">{sight}</div>}
           {d.exoplanet && exoplanetStatusText(d.exoplanet) && (
             <div className="mt-0.5 text-[11px] text-hazard" title={d.exoplanet.statusNote}>

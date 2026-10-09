@@ -9,6 +9,7 @@ import { loadStars } from './sim/stars';
 import { loadFeaturedExoplanets } from './sim/exoplanets';
 import { loadGalaxy } from './sim/galaxy';
 import { loadCosmos } from './sim/cosmos';
+import { registerPhenomena } from './sim/phenomena';
 
 if (import.meta.env.DEV) {
   // When the first frame begins and each of the first 30 ends, for __ls.perf.compiles() (dev/perf.ts):
@@ -63,7 +64,8 @@ if (import.meta.env.DEV) {
     import('./scene/asteroidPick'),
     import('./scene/Asteroids'),
     import('./sim/deepsky'),
-  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky]) =>
+    import('./sim/phenomena'),
+  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky, phen]) =>
     Object.assign(window, {
       __ls: {
         sim: s.sim,
@@ -104,6 +106,8 @@ if (import.meta.env.DEV) {
         surveys: { state: surveyLoad.survey, quaia: surveyLoad.quaia, frame: surveyScene.surveyFrame, budget: gpuBudget.surveyBudget, reset: surveyLoad.resetSurvey, glow: surveyLod.glowSettings },
         /** The deep-sky catalogues: the gate, and through it the runtime once loaded (sim/deepsky). */
         deepSky: deepSky.deepSkyGate,
+        /** The supernovae, the kilonova, the jets and the aurora: what is wanted and each one's state this frame (sim/phenomena). */
+        phenomena: phen.phenomena,
         /** The asteroids and comets: what has loaded, the drawn sections, picking and registering one (sim/asteroids, scene/Asteroids.tsx). */
         asteroids: { state: smallLoad.smallBodies, sections: smallPick.layerSections, pick: smallPick.pickSmallBody, ensure: smallBodies.ensureSmallBody, look: smallScene.asteroidLook, frame: smallScene.asteroidFrame },
         /** Render n frames with a fixed timestep (works while the tab is hidden). */
@@ -147,3 +151,7 @@ void loadGalaxy({ idle: true });
 // browser is idle, their shapes built in a worker; the cosmic web loads when it is first wanted
 // (sim/cosmos).
 void loadCosmos({ idle: true });
+
+// The historical supernovae and the kilonova of GW170817: six records and one, registered at once; their models load
+// when one is first near (sim/phenomena).
+registerPhenomena();

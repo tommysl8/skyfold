@@ -50,11 +50,23 @@ import { useExplainerTriggers } from './ui/useExplainerTriggers';
 import { useUI } from './state/ui';
 import { useDocRoute } from './state/route';
 import { deepSkyGate, subscribeDeepSky } from './sim/deepsky';
+import { phenomena, subscribePhenomena } from './sim/phenomena';
 
 // The reading pages (with KaTeX) load on first use.
 const DocView = lazy(() => import('./ui/docs/DocView'));
 // So do the deep-sky catalogues' markers, with their runtime, once a catalogue is first wanted (sim/deepsky).
 const DeepSky = lazy(() => import('./scene/DeepSky'));
+// And the phenomena's models (supernovae, the kilonova, the jets, the aurora), once one is first near (sim/phenomena).
+const Phenomena = lazy(() => import('./scene/Phenomena'));
+
+function PhenomenaLayer() {
+  const started = useSyncExternalStore(subscribePhenomena, () => phenomena.started);
+  return started ? (
+    <Suspense fallback={null}>
+      <Phenomena />
+    </Suspense>
+  ) : null;
+}
 
 function DeepSkyLayer() {
   const started = useSyncExternalStore(subscribeDeepSky, () => deepSkyGate.started);
@@ -136,6 +148,7 @@ export default function App() {
           <CosmicWeb />
           <Surveys />
           <DeepSkyLayer />
+          <PhenomenaLayer />
           <Constellations />
           <PlanetHosts />
           <EclipticGrid />

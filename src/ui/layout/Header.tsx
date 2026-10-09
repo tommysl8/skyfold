@@ -53,6 +53,24 @@ export function OpticsSeg() {
   );
 }
 
+/** The geomagnetic activity the aurora is drawn for (sim/phenomena/aurora.ts): Kp 1, 3, 5 or 7. */
+function KpSeg() {
+  const kp = useUI((s) => s.auroraKp);
+  return (
+    <Seg
+      label="Geomagnetic activity (Kp)"
+      value={String(kp)}
+      onChange={(v) => useUI.setState({ auroraKp: Number(v), aurora: true })}
+      options={[
+        { value: '1', label: 'Quiet', title: 'Kp 1: a quiet night; the ovals are narrow and far north and south' },
+        { value: '3', label: 'Kp 3', title: 'Kp 3: a typical moderate night (the default)' },
+        { value: '5', label: 'Kp 5', title: 'Kp 5: a minor storm; the ovals widen towards the equator' },
+        { value: '7', label: 'Kp 7', title: 'Kp 7: a strong storm; aurora overhead at 55° geomagnetic latitude' },
+      ]}
+    />
+  );
+}
+
 function ScaleSeg() {
   const sizeMode = useUI((s) => s.sizeMode);
   return (
@@ -245,6 +263,8 @@ function ViewMenu() {
       pulsars: u.pulsars,
       gwEvents: u.gwEvents,
       showCmb: u.showCmb,
+      aurora: u.aurora,
+      jets: u.jets,
       retarded: u.retarded,
       showFps: u.showFps,
       shortcuts: u.shortcuts,
@@ -426,6 +446,25 @@ function ViewMenu() {
           </Check>
           <Check checked={s.showCmb} onChange={() => t('showCmb')} hint="The cosmic microwave background over the sky: WMAP’s map, contrast enhanced about 10,000 times">
             CMB map
+          </Check>
+          <Check
+            checked={s.aurora}
+            onChange={() => t('aurora')}
+            hint="Earth’s auroral ovals on the night side: green oxygen light at 100–150 km, red above it, round the geomagnetic poles of the date. The curtains are a model; the ovals follow a published model for the activity chosen below"
+          >
+            Aurora
+          </Check>
+          {s.aurora && (
+            <div className="px-2.5 pb-1 pt-1">
+              <KpSeg />
+            </div>
+          )}
+          <Check
+            checked={s.jets}
+            onChange={() => t('jets')}
+            hint="The jets of M87 and Centaurus A, beamed by their measured speeds: the side coming towards us brightened, the other faint"
+          >
+            Relativistic jets
           </Check>
           <Check checked={s.showOverlays} onChange={() => t('showOverlays')} kbd="U" hint="Scale bar and camera readout; in flight the reticle and apex markers">
             Readouts over the view

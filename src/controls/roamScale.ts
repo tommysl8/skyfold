@@ -71,6 +71,7 @@ export function roamClassOf(kind: string, kindText?: string): RoamClass {
     case 'galaxy':
     case 'nebula':
     case 'merger':
+    case 'transient':
       return 'extended';
     case 'cluster':
       return /galaxies/i.test(kindText ?? '') ? 'group' : 'extended';

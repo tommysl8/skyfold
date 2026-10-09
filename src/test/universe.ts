@@ -18,6 +18,7 @@ import { loadLocalGalaxies, loadNamed } from './cosmos';
 import { loadFeaturedFile } from './exoplanets';
 import { gunzipFile, loadExtra, loadNames, loadStars, loadSystems } from './stars';
 import { readBytes, readJson } from './files';
+import { registerPhenomena } from '../sim/phenomena';
 
 let done = false;
 
@@ -50,4 +51,6 @@ export function registerUniverse(): void {
   galaxyState.nebulaStatus = 'ready';
 
   registerCosmos(loadLocalGalaxies(), loadNamed());
+
+  registerPhenomena();
 }
