@@ -589,6 +589,17 @@ function missingReason(id: string): string {
   return status === 'loading' ? src.loading : status === 'failed' ? src.failed : LATER;
 }
 
+/**
+ * Where the data a body would come from stand, and what to say while they load or if they did not (a saved place or a
+ * link waiting for its body, ui/places.ts). `known`: the id is one of the targets above, whose data say whether it
+ * exists; for any other id (a catalogue star, an NGC object, an id renamed since) the Solar System's are reported.
+ */
+export function targetData(id: string): { known: boolean; status: LoadStatus; loading: string; failed: string } {
+  const src = SOURCES.find((s) => s.has(id))!;
+  const known = isKnownTarget(id) || src !== SOURCES[SOURCES.length - 1];
+  return { known, status: src.status(id), loading: src.loading, failed: src.failed };
+}
+
 /** Why a scene that needs these bodies cannot run yet, or null when they are all in. */
 const needs =
   (...ids: string[]) =>
@@ -752,7 +763,7 @@ export function flightOf(spec: string): Flight | null {
  * at speed ends with the camera hovering where it is); false when a trip or a fall is under way (a
  * fall holds tripActive). The card of the last fall's end goes too: it would hide the new scene's note.
  */
-function ready(): boolean {
+export function ready(): boolean {
   const ui = useUI.getState();
   if (ui.tripActive) return false;
   if (ui.controlMode === 'free') controller.exitFreeFlight();

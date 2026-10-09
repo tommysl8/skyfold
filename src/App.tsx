@@ -50,6 +50,7 @@ import { Tour } from './ui/overlays/Tour';
 import { Journeys } from './ui/overlays/Journeys';
 import { KeysSheet } from './ui/overlays/KeysSheet';
 import { Search } from './ui/overlays/Search';
+import { PlacePrompt } from './ui/overlays/PlacePrompt';
 import { useShortcuts } from './ui/useShortcuts';
 import { useExplainerTriggers } from './ui/useExplainerTriggers';
 import { useUI } from './state/ui';
@@ -190,6 +191,7 @@ export default function App() {
         <HoleStrip />
         <RoamTouchPad />
         <CleanHint />
+        <PlacePrompt />
       </main>
       {rightOpen && <InstrumentsDock />}
       <Footer />
