@@ -28,6 +28,7 @@ import { isWithin } from '../sim/bodies';
 import { updateCosmicSky } from '../sim/cosmos/expansion';
 import { nscPointsGate } from '../sim/galaxy/nuclearCluster';
 import { updatePhenomena } from '../sim/phenomena';
+import { satellites } from '../sim/satellites';
 
 // The nuclear star cluster's points are drawn only once the lensed programs have compiled (scene/NuclearCluster.tsx):
 // until then their light stays in the glow (sim/galaxy/nuclearCluster.ts updateNuclear).
@@ -74,6 +75,14 @@ export function SimDriver() {
       const px = b ? Math.hypot(b.screen.x - x, b.screen.y - y) : Infinity;
       if (b && (px < 2 || (b.radiusPx > 2 && px < b.radiusPx))) return id;
       const small = pickSmallBody(gl, camera as PerspectiveCamera, x, y);
+      // A satellite of the swarm (scene/Satellites.tsx), when it is nearer than both.
+      const sat = satellites.pick?.(x, y);
+      if (sat && sat.px < px && (!small || sat.px < small.px) && satellites.ensure) {
+        void satellites.ensure(sat.index).then((sid) => {
+          if (sid && click === clicks) then(sid);
+        });
+        return null;
+      }
       if (!small || small.px >= px) return id;
       void ensureSmallBody(small).then((sid) => {
         if (sid && click === clicks) then(sid);

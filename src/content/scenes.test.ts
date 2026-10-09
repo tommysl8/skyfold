@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { msFromCivil } from '../lib/time';
-import { setSimTime } from '../sim/sim';
+import { setSimTime, sim } from '../sim/sim';
 import { updateEphemeris } from '../sim/ephemeris';
 import { useUI } from '../state/ui';
 import { controller } from '../controls/cameraController';
@@ -206,7 +206,7 @@ describe('journeys', () => {
       tracks: parseTracks(readJson<TracksIndex>('public/data/tracks.json'), readBytes('public/data/tracks.bin')),
     });
     updateEphemeris();
-    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'm87-jet', 'aurora']);
+    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'm87-jet', 'aurora', 'solar-eclipse', 'lunar-eclipse']);
     for (const j of JOURNEYS) {
       expect(parseScene(j.scene), j.id).not.toBeNull();
       expect(j.look.length, j.id).toBeGreaterThan(40);
@@ -220,6 +220,21 @@ describe('journeys', () => {
       else if (['famous-galaxies', 'virgo-cluster'].includes(j.id)) expect(sceneStatus(j.scene).ok).toBe(false);
       else expect(sceneStatus(j.scene).ok, j.id).toBe(true);
     }
+  });
+
+  it('go to the next total eclipses after the date shown', () => {
+    // On 9 October 2026 the next total solar eclipse is on 2 August 2027 (greatest 10:07 UT, Egypt), the next total
+    // lunar eclipse on 31 December 2028 (greatest 16:52 UT): NASA/GSFC, Espenak.
+    setSimTime(Date.UTC(2026, 9, 9));
+    updateEphemeris();
+    expect(runScene('solar-eclipse')).toBe(true);
+    expect(new Date(sim.timeMs).toISOString().slice(0, 13)).toBe('2027-08-02T09');
+    expect(useUI.getState().journeyNote).toMatch(/^The total solar eclipse of 2 August 2027, greatest at 2[56]° N, 3[23]° E\./);
+    setSimTime(Date.UTC(2026, 9, 9));
+    updateEphemeris();
+    expect(runScene('lunar-eclipse')).toBe(true);
+    expect(new Date(sim.timeMs).toISOString().slice(0, 10)).toBe('2028-12-31');
+    expect(useUI.getState().journeyNote).toMatch(/^The total lunar eclipse of 31 December 2028: totality lasts 7\d minutes\./);
   });
 
   it('keep their flights and notes', () => {

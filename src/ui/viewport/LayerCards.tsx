@@ -29,6 +29,7 @@ import { kindArticle } from '../../content/bodyArticles';
 import { Sources } from './Sources';
 import { ASTEROID_CARD, asteroidCardShown } from '../asteroidCard';
 import { smallBodies } from '../../sim/asteroids/load';
+import { SATELLITE_CARD, satelliteCardLines } from '../satelliteCard';
 
 /** The web's card shows once this much of the layer shows. */
 const WEB_CARD_SHARE = 0.3;
@@ -124,8 +125,11 @@ export function LayerCards() {
   const surveysMode = useUI((s) => s.surveys);
   const flowOn = useUI((s) => s.accretionFlow);
   const beltsOn = useUI((s) => s.showBelts);
+  const satsOn = useUI((s) => s.satellites);
   const hidden = useUI((s) => s.hiddenNotes);
   const away = (key: string) => hidden.includes(key);
+  // The satellites' note while their switch is on near Earth, saying why they are hidden when they are.
+  const sats = away('sats') ? null : satelliteCardLines(satsOn);
   const belts = !away('belts') && asteroidCardShown(beltsOn);
   // Shown whatever the readouts setting: the label and caveats belong with the layers.
   const web = !away('web') && (cosmicWebShare(webMode, sim.camera.pos.length()) >= WEB_CARD_SHARE || webMembersShown.now);
@@ -139,7 +143,7 @@ export function LayerCards() {
   const nsc = !away('nsc') && nuclear.w > 0 && nuclear.points > 0;
   // The gas while it is drawn and conspicuous: its point bright, or resolved by the lens (flowPoint: 99 when not drawn).
   const flow = !away('flow') && flowOn && flowPoint(FLOW_HOLE, flowNow).magnitude < FLOW_CARD_MAG;
-  if (!web && !surveys && !cmb && !nsc && !flow && !belts) return null;
+  if (!web && !surveys && !cmb && !nsc && !flow && !belts && !sats) return null;
   const holeArticle = kindArticle('black-hole');
   return (
     <div className="flex w-full max-w-[380px] flex-col gap-1.5">
@@ -162,6 +166,16 @@ export function LayerCards() {
           more={ASTEROID_CARD.more}
           sources={[ASTEROID_CARD.credit]}
           onClose={() => hideNote('belts')}
+        />
+      )}
+      {sats && (
+        <LayerCard
+          title={SATELLITE_CARD.title}
+          line={sats.line}
+          caveat={sats.caveat}
+          more={SATELLITE_CARD.more}
+          sources={[SATELLITE_CARD.credit]}
+          onClose={() => hideNote('sats')}
         />
       )}
       {web && (

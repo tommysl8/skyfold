@@ -138,4 +138,12 @@ export const JOURNEYS: Journey[] = [
   journey({ id: 'kilonova', title: 'Two neutron stars collide', sub: 'GW170817: the last minute of the inspiral, then the kilonova, blue then red', scene: 'kilonova-gw170817', clock: '17 August 2017: real time, then faster' }),
   journey({ id: 'm87-jet', title: 'The jet of M87', sub: 'A jet at nearly the speed of light, its far side beamed out of sight', scene: 'm87-jet' }),
   journey({ id: 'aurora', title: 'The northern lights from space', sub: 'Earth’s auroral oval on the night side', scene: 'aurora' }),
+  journey({
+    id: 'solar-eclipse',
+    title: 'The next total solar eclipse',
+    sub: 'The Moon’s shadow racing across Earth',
+    scene: 'solar-eclipse',
+    clock: '1 s here = 1 min',
+  }),
+  journey({ id: 'lunar-eclipse', title: 'A total lunar eclipse', sub: 'The Moon turning copper in Earth’s shadow', scene: 'lunar-eclipse', clock: '1 s here = 1 min' }),
 ];

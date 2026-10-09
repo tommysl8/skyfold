@@ -35,7 +35,7 @@
  * Twins: sim/lensBodies.ts holeView (the card's and the HUD's numbers, which the notes quote),
  * content/journeys.ts (the fall's journey), src/content/blackHoleScenes.test.ts.
  */
-import { SearchRelativeLongitude, Body } from 'astronomy-engine';
+import { SearchRelativeLongitude, Body, EclipseKind, NextGlobalSolarEclipse, NextLunarEclipse, SearchGlobalSolarEclipse, SearchLunarEclipse } from 'astronomy-engine';
 import { Vector3 } from 'three';
 import { AU_KM, C_KM_S, KPC_KM, LIGHT_YEAR_KM, MPC_KM, SUN_RADIUS_KM } from '../physics/constants';
 import { einsteinAngle } from '../physics/schwarzschild';
@@ -299,6 +299,8 @@ export const NAMED_SCENES = [
   'm87-jet',
   'centaurus-a-jets',
   'aurora',
+  'solar-eclipse',
+  'lunar-eclipse',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -433,6 +435,8 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'm87-jet': 'The jet of M87',
   'centaurus-a-jets': 'The jets and lobes of Centaurus A',
   'aurora': 'The northern lights from space',
+  'solar-eclipse': 'The next total solar eclipse',
+  'lunar-eclipse': 'A total lunar eclipse',
 };
 
 /** Define (or replace) a named scene. */
@@ -2041,6 +2045,80 @@ defineScene('aurora', {
       // Above the oval's midnight side: over the pole, tipped away from the Sun.
       controller.goTo('earth', { distance: 16_400, direction: pole.multiplyScalar(0.75).addScaledVector(sun, -0.65).normalize() });
     }),
+});
+
+// ─── Eclipses (sim/eclipses.ts; the shadows are drawn per pixel by the planet shader) ──────
+
+/** The next total eclipse after the date shown (after today outside 1700–2200, where the Moon is checked). */
+function eclipseSearchStart(): number {
+  const YEARS_3 = 3 * 365.25 * 86_400_000;
+  return sim.timeMs >= PRECISE_START_MS && sim.timeMs < PRECISE_END_MS - YEARS_3 ? sim.timeMs : Date.now();
+}
+
+/** "2 August 2027" */
+const longDate = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+defineScene('solar-eclipse', {
+  label: PENDING_LABELS['solar-eclipse'],
+  note: 'The Moon’s shadow on Earth at the next total solar eclipse: the small dark spot is the umbra, where the Sun is wholly hidden; the wide grey round it the penumbra, where it is partly hidden. Worked out from the app’s own Sun, Moon and Earth, which put the 2017 and 2024 eclipses within a few km of NASA’s tracks.',
+  unavailable: needs('earth', 'moon', 'sun'),
+  run: (fallbackNote) => {
+    if (!ready()) return false;
+    let e = SearchGlobalSolarEclipse(astroTimeAt(eclipseSearchStart()));
+    for (let i = 0; i < 20 && e.kind !== EclipseKind.Total; i++) e = NextGlobalSolarEclipse(e.peak);
+    if (e.kind !== EclipseKind.Total) return false;
+    const peakMs = msFromAstroTime(e.peak);
+    // Half an hour before greatest eclipse, at 60 times real time: the umbra crosses the day side in a few minutes.
+    if (!setEpoch(peakMs - 30 * 60_000)) return false;
+    updateEphemeris();
+    setWarp(1);
+    setPaused(true);
+    const lat = e.latitude ?? 0;
+    const lon = e.longitude ?? 0;
+    const where = `${Math.abs(lat).toFixed(0)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(0)}° ${lon >= 0 ? 'E' : 'W'}`;
+    const note = `The total solar eclipse of ${longDate(peakMs)}, greatest at ${where}. ${fallbackNote} Here a second is a minute.`;
+    useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'true', showLabels: true, selected: 'earth' });
+    // From the Sun's side, a little off the line so the Moon is not in the way: the day side, the shadow on it.
+    const earth = sim.bodies.earth.pos;
+    const toSun = sim.bodies.sun.pos.clone().sub(earth).normalize();
+    const toMoon = sim.bodies.moon.pos.clone().sub(earth).normalize();
+    const dir = toSun.multiplyScalar(0.85).add(toMoon.multiplyScalar(0.15)).addScaledVector(UP, 0.12).normalize();
+    controller.goTo('earth', { distance: 42_000, direction: dir });
+    afterSlew('earth', () => {
+      setWarp(60);
+      setPaused(false);
+    });
+    return true;
+  },
+});
+
+defineScene('lunar-eclipse', {
+  label: PENDING_LABELS['lunar-eclipse'],
+  note: 'The Moon passes through Earth’s shadow: first the penumbra’s faint dimming, then the umbra creeps across it, and in totality it glows copper with sunlight bent through Earth’s atmosphere, the light of every sunrise and sunset on Earth at once (drawn about a hundred times brighter than it is, so it can be seen). Contacts as NASA predicts them, to a few seconds.',
+  unavailable: needs('earth', 'moon', 'sun'),
+  run: (fallbackNote) => {
+    if (!ready()) return false;
+    let e = SearchLunarEclipse(astroTimeAt(eclipseSearchStart()));
+    for (let i = 0; i < 20 && e.kind !== EclipseKind.Total; i++) e = NextLunarEclipse(e.peak);
+    if (e.kind !== EclipseKind.Total) return false;
+    const peakMs = msFromAstroTime(e.peak);
+    // From before the umbra arrives (sd_partial minutes before the peak), at 60 times real time.
+    if (!setEpoch(peakMs - (e.sd_partial + 6) * 60_000)) return false;
+    updateEphemeris();
+    setWarp(1);
+    setPaused(true);
+    const note = `The total lunar eclipse of ${longDate(peakMs)}: totality lasts ${Math.round(2 * e.sd_total)} minutes. ${fallbackNote} Here a second is a minute.`;
+    useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'true', showLabels: true, selected: 'moon' });
+    // From Earth's side of the Moon, a little off the shadow's axis.
+    const moon = sim.bodies.moon.pos;
+    const toEarth = sim.bodies.earth.pos.clone().sub(moon).normalize();
+    controller.goTo('moon', { distance: 9_000, direction: toEarth.addScaledVector(UP, 0.25).normalize() });
+    afterSlew('moon', () => {
+      setWarp(60);
+      setPaused(false);
+    });
+    return true;
+  },
 });
 
 /** The phenomena that are views rather than bodies, for "Where to?": the aurora and the jets. */

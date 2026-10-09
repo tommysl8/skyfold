@@ -53,6 +53,7 @@ import { useUI } from './state/ui';
 import { useDocRoute } from './state/route';
 import { deepSkyGate, subscribeDeepSky } from './sim/deepsky';
 import { phenomena, subscribePhenomena } from './sim/phenomena';
+import { satellites, subscribeSatellites } from './sim/satellites';
 
 // The reading pages (with KaTeX) load on first use.
 const DocView = lazy(() => import('./ui/docs/DocView'));
@@ -60,6 +61,17 @@ const DocView = lazy(() => import('./ui/docs/DocView'));
 const DeepSky = lazy(() => import('./scene/DeepSky'));
 // And the phenomena's models (supernovae, the kilonova, the jets, the aurora), once one is first near (sim/phenomena).
 const Phenomena = lazy(() => import('./scene/Phenomena'));
+// And the satellites' (the ISS's trace, the swarm behind the View menu's switch), once the app is idle (sim/satellites).
+const Satellites = lazy(() => import('./scene/Satellites'));
+
+function SatellitesLayer() {
+  const started = useSyncExternalStore(subscribeSatellites, () => satellites.started);
+  return started ? (
+    <Suspense fallback={null}>
+      <Satellites />
+    </Suspense>
+  ) : null;
+}
 
 function PhenomenaLayer() {
   const started = useSyncExternalStore(subscribePhenomena, () => phenomena.started);
@@ -160,6 +172,7 @@ export default function App() {
           <Orbits />
           <CometTails />
           <Asteroids />
+          <SatellitesLayer />
           <Glints />
           <LensRings />
           <AccretionFlow />

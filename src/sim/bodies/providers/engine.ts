@@ -9,7 +9,7 @@
  * positions are unchanged to the last bit: they are computed in world axes as before and handed
  * to the registry in ecliptic axes, a permutation with one sign change (exact).
  */
-import { Body, GeoMoonState, HelioState, HelioVector, RotationAxis, type AstroTime } from 'astronomy-engine';
+import { Body, GeoMoonState, HelioState, HelioVector, RotationAxis, Rotation_EQD_EQJ, SiderealTime, type AstroTime } from 'astronomy-engine';
 import { Quaternion, Vector3 } from 'three';
 import { AU_KM, BODIES, DAY_S } from '../../../physics/constants';
 import { moonMeanLongitude, moonMeanState, newEclState, standishState, type MeanPlanet } from '../../../physics/meanElements';
@@ -238,6 +238,48 @@ interface FrozenAxis {
   moonL: number;
 }
 
+const earthTmp = { ra: 0, dec: 0, spin: 0 };
+
+/**
+ * Earth's pole and prime meridian, with the meridian set from Greenwich apparent sidereal time. astronomy-engine's
+ * RotationAxis gives Earth's pole of date (precession and nutation) but a spin from the Earth rotation angle as if
+ * it were measured from the node of the equator of date on the J2000 equator, which the IAU convention needs; the
+ * Earth rotation angle is measured from the celestial intermediate origin, which stays near the J2000 equinox's
+ * meridian instead. The two differ by about the pole's right ascension of date, which grows with precession: 0.9°
+ * of longitude (100 km at the equator) in 2024, so Earth's map, the eclipse shadows and the satellites' ground tracks
+ * came out that far apart. Here the prime meridian is put where astronomy-engine's own sidereal time and
+ * precession–nutation say Greenwich is (as its Observer functions do), and the spin is that meridian's angle from
+ * the node, so the IAU construction (rotation.ts orientationFromPole) reproduces it.
+ */
+function earthAxis(time: AstroTime): { ra: number; dec: number; spin: number } {
+  const a = RotationAxis(Body.Earth, time);
+  const g = (SiderealTime(time) * 15 * Math.PI) / 180;
+  const r = Rotation_EQD_EQJ(time).rot;
+  // Greenwich in J2000 equatorial axes (astronomy-engine's convention: v′ᵢ = Σⱼ rot[j][i] vⱼ).
+  const cg = Math.cos(g);
+  const sg = Math.sin(g);
+  const xx = r[0][0] * cg + r[1][0] * sg;
+  const xy = r[0][1] * cg + r[1][1] * sg;
+  const xz = r[0][2] * cg + r[1][2] * sg;
+  const ra = (a.ra * 15 * Math.PI) / 180;
+  const dec = (a.dec * Math.PI) / 180;
+  // The node Q = (−sin α, cos α, 0) and z × Q, as in orientationFromPole.
+  const qx = -Math.sin(ra);
+  const qy = Math.cos(ra);
+  const zx = Math.cos(dec) * Math.cos(ra);
+  const zy = Math.cos(dec) * Math.sin(ra);
+  const zz = Math.sin(dec);
+  const cx = -zz * qy;
+  const cy = zz * qx;
+  const cz = zx * qy - zy * qx;
+  const w = (Math.atan2(cx * xx + cy * xy + cz * xz, qx * xx + qy * xy) * 180) / Math.PI;
+  earthTmp.ra = a.ra;
+  earthTmp.dec = a.dec;
+  // Keep astronomy-engine's count of whole turns, so the spin stays continuous for the rate taken from it.
+  earthTmp.spin = a.spin + ((((w - a.spin) % 360) + 540) % 360) - 180;
+  return earthTmp;
+}
+
 /**
  * astronomy-engine's rotation elements (IAU WGCCRE 2015) inside 3000 BCE–3000 CE; beyond, the
  * pole held where it was at the nearer edge (the IAU polynomials would wander off) and the body
@@ -248,15 +290,16 @@ export function engineRotation(body: Body, lockedToMoon = false): RotationProvid
   let past: FrozenAxis | null = null;
   let future: FrozenAxis | null = null;
   const tmp = { ra: 0, dec: 0, spin: 0 };
+  const axis = (t: AstroTime) => (body === Body.Earth ? earthAxis(t) : RotationAxis(body, t));
 
   function frozen(side: 1 | -1): FrozenAxis {
     let f = side > 0 ? future : past;
     if (!f) {
       const t0 = astroTimeAt(side > 0 ? APPROX_END_MS : APPROX_START_MS);
-      const a0 = RotationAxis(body, t0);
+      const a0 = { ...axis(t0) };
       // 0.01 day is short enough that no body turns more than half a revolution in it.
       const t1 = t0.AddDays(0.01);
-      const a1 = RotationAxis(body, t1);
+      const a1 = axis(t1);
       const dSpin = ((((a1.spin - a0.spin) % 360) + 540) % 360) - 180;
       f = { ra: a0.ra, dec: a0.dec, spin: a0.spin, rate: dSpin / (t1.tt - t0.tt), tt: t0.tt, moonL: moonMeanLongitude(t0.tt / CY_D) };
       if (side > 0) future = f;
@@ -267,7 +310,7 @@ export function engineRotation(body: Body, lockedToMoon = false): RotationProvid
 
   function axisAt(time: AstroTime): { ra: number; dec: number; spin: number } {
     const side = orientationEdge(msFromAstroTime(time));
-    if (side === 0) return RotationAxis(body, time);
+    if (side === 0) return axis(time);
     const f = frozen(side);
     tmp.ra = f.ra;
     tmp.dec = f.dec;

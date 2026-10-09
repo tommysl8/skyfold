@@ -294,8 +294,9 @@ export interface BodyVisual {
    *  probe  a Voyager-like probe (dish, bus, booms), its dish towards Earth (the default)
    *  jwst   a sunshield with the telescope above it, the sunshield towards the Sun
    *  parker a heat shield on a small bus, the shield towards the Sun
+   *  iss, tiangong, hubble  the craft in Earth orbit (sim/satellites), flying their usual attitudes
    */
-  craft?: 'probe' | 'jwst' | 'parker';
+  craft?: 'probe' | 'jwst' | 'parker' | 'iss' | 'tiangong' | 'hubble';
   /** A comet: draw its coma and its dust and ion tails (scene/CometTails.tsx). */
   tails?: boolean;
   /**
