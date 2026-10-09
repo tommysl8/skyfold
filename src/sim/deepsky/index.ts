@@ -41,6 +41,10 @@ export interface DeepSkyRuntime {
   update(keep: (id: BodyId) => boolean, shown: DeepSkyShown): void;
   pick(x: number, y: number, camera: PerspectiveCamera): DeepSkyPick | null;
   ensure(set: DeepSkySetId, index: number): BodyId | null;
+  /** The body with this id in any catalogue loaded, registered if need be (null: none has it). */
+  ensureId(id: string): BodyId | null;
+  /** Every catalogue asked for has loaded or failed. */
+  settled(): boolean;
   /** The name and what it is, for the hover tag. */
   describe(set: DeepSkySetId, index: number): { name: string; sub: string };
   search(query: string, limit?: number): Destination[];

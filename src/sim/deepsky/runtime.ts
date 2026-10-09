@@ -351,6 +351,18 @@ function ensure(setId: DeepSkySetId, index: number): BodyId | null {
   return e.id;
 }
 
+/** The body with this id in any catalogue loaded, registering it if need be (a saved place's or a link's); null if none has it. */
+function ensureId(id: string): BodyId | null {
+  for (const set of deepSky.sets.values()) {
+    const i = set.indexById.get(id);
+    if (i !== undefined) return ensure(set.id, i);
+  }
+  return null;
+}
+
+/** Whether every catalogue asked for has loaded or failed (so a missing id is not merely still on its way). */
+const settled = (): boolean => [...wantedSets].every((s) => deepSky.status.get(s) === 'ready' || deepSky.status.get(s) === 'failed');
+
 /** Once a frame: hold what is looked at, selected or flown to; release the rest after a while. */
 function update(keep: (id: BodyId) => boolean, shown: DeepSkyShown): void {
   frame++;
@@ -568,5 +580,5 @@ function bodyNamed(name: string): BodyId | undefined {
 
 // ─── The runtime ────────────────────────────────────────────────────────────────────────
 
-export const deepSkyRuntime: DeepSkyRuntime = { want, update, pick, ensure, describe, search, state: deepSky };
+export const deepSkyRuntime: DeepSkyRuntime = { want, update, pick, ensure, ensureId, settled, describe, search, state: deepSky };
 
