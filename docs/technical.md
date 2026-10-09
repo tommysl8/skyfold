@@ -101,6 +101,13 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   them) and Centaurus A's jets and lobes (false colour) are beamed by their speeds as seen from the camera. Earth's
   auroral ovals glow on the night side about the date's geomagnetic poles (IGRF-14), where Starkov's model puts them for
   the activity chosen in the View menu (Kp). What is a model is said on each card; `docs/data/phenomena.md` writes it up.
+- **Magnetic fields.** View › Magnetic field lines draws the measured fields of the Sun and the planets: Earth's from
+  IGRF-14 for the date, Jupiter's from Juno (JRM33), Saturn's from Cassini's Grand Finale (Cassini 11+), Uranus's and
+  Neptune's tipped, off-centre fields from Voyager 2 (AH5, O8), Mercury's offset dipole (MESSENGER) and Ganymede's
+  dipole, traced in a worker and turned with each body, cut at published magnetopauses (Shue, Joy, Arridge) for a
+  typical solar wind; the Sun's corona as a potential field to 2.5 solar radii from SDO/HMI's map of the date's
+  Carrington rotation (2010–2026), with Parker spirals and the current sheet out to 3 au. The tails and the currents in
+  space are not modelled; `docs/data/fields.md` writes it up.
 - **Two size modes.** *True scale* shows specks, as reality does (planets still shine at their real apparent
   magnitude). *Enlarged* draws bodies at least a few pixels across while keeping every distance true.
 - **Travel.** Enter β exactly, or use a logit-scaled fader (0.00001c to 0.99999c) and presets (Voyager 1, Parker
@@ -254,6 +261,7 @@ pixel ratio, when frames take over 8.5 ms.
 | Named galaxies, clusters and young galaxies (`src/sim/cosmos/named.json`) | SIMBAD (CDS) positions; distances, redshifts, disc angles and sizes from the papers cited in each entry and RC3 | Facts quoted with citation |
 | Cosmology and the home clock (`src/physics/cosmology/`, `future.json`) | Planck 2018 parameters (Planck Collaboration 2020) and the CMB temperature of Fixsen (2009); the future of the Sun, the Milky Way, Andromeda and the universe from Schröder & Connon Smith (2008), van der Marel et al. (2012), [Sawala et al. (2025)](https://doi.org/10.1038/s41550-025-02563-1) (survival curve read from their figure 3), Cautun et al. (2019), Loeb (2002), Krauss & Scherrer (2007), Adams & Laughlin (1997) and the others cited in the file | Facts quoted with citation; the Sawala et al. figure is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | The supernovae, the kilonova, the jets and the aurora (`src/sim/phenomena/`) | Light curves, speeds and sizes from the papers cited in the code and `docs/data/phenomena.md`; the IGRF-14 dipole (IAGA, via NOAA NCEI); Starkov's auroral oval (Starkov 1994, via Sigernes et al. 2011) | Facts quoted with citation; IGRF free to use; the code MIT |
+| The Sun's field harmonics and the planets' field models (`public/data/fields/sun-hmi-pfss.bin`, `src/sim/fields/`) | Computed from SDO/HMI synoptic maps (NASA/SDO and the HMI science team); IGRF-14 (IAGA, NOAA NCEI); JRM33, Cassini 11+, AH5, O8 and the other papers in `docs/data/fields.md` | NASA data with credit; coefficients quoted with citation |
 | Typefaces | IBM Plex Sans (IBM), JetBrains Mono (JetBrains), Source Serif 4 (Adobe) | SIL OFL 1.1 |
 
 
@@ -304,6 +312,9 @@ node scripts/build-blackholes.mjs
 npm run data:nsc
 python scripts/sgra-flow/flow_tables.py
 npm run data:blackhole-fixtures
+# The Sun's magnetic field (docs/data/fields.md): HMI's synoptic maps downloaded into data-raw/hmi/ (the command is in
+# the script's header), then the harmonics (numpy)
+python scripts/build-sun-field.py
 # Checks on the GPU (a development server on port 5190): every shader compiled cold in a headless Chrome, and the
 # standard views' frame times; the lens's pictures against the references are scripts/lens-check/lens-check.js, run
 # in a tab (docs/data/blackholes.md §11)
@@ -330,6 +341,7 @@ src/sim/blackholes/ the black holes' records and the accretion flow's model; src
                lensBodies.ts: the hole's gravity each frame, falls, and bodies seen through the lens
 src/sim/cosmos/ beyond it: the Local Group and named galaxies, their particle templates, the cosmic web, the CMB map
 src/sim/phenomena/ the supernovae and their light curves, GW170817's chirp and kilonova, the jets' beaming, the aurora
+src/sim/fields/ magnetic fields: spherical harmonics, the field-line tracer, the Sun's and the planets' models
 src/lib/       number formatting (significant figures, SI grouping, units) and least-squares statistics
 src/render/    shaders, materials, the relativistic scene pass, post-processing, adaptive quality; render/lens/ the
                black hole's lens and render/flow/ the accretion flow's map

@@ -12,7 +12,7 @@ import { arridge2006, joyStandoff, MagnetopauseTest, scaledStandoff, shue1998, s
 import { traceLine } from './trace';
 import { CLOSED, OPEN, parkerSpiral, planetLines, SHEET, SOURCE_SURFACE, SPIRAL, SPIRAL_END_RSUN, SPIRAL_RAD_PER_RSUN, sunLines } from './lines';
 import { parseSunRotations, rotationAt, rotationHarmonics } from './sun';
-import { FIELD_FACTS, fieldLine } from '.';
+import { FIELD_FACTS, fieldLine, fieldSource, SUN_MAPS, sunMapHeld } from '.';
 import { IGRF_DIPOLE, IGRF_SV_2025 } from '../phenomena/aurora';
 import { engineRotation } from '../bodies/providers/engine';
 import { eqjToWorld } from '../frames';
@@ -399,6 +399,18 @@ describe('the Sun', () => {
     const d = dipole(rotationHarmonics(s, k));
     expect(d.b0).toBeCloseTo(2.373, 2);
     expect(d.tiltDeg).toBeCloseTo(78.4, 0);
+  });
+
+  it('is what the cards and scenes say of it (SUN_MAPS)', () => {
+    expect([s.rotation[0], s.startMs[0]]).toEqual([SUN_MAPS.first, SUN_MAPS.firstMs]);
+    expect([s.rotation[s.rotation.length - 1], s.startMs[s.rotation.length - 1]]).toEqual([SUN_MAPS.last, SUN_MAPS.lastMs]);
+    for (const ms of [Date.UTC(2000, 0, 1), Date.UTC(2015, 5, 1), Date.UTC(2026, 8, 1), Date.UTC(2026, 9, 9)]) {
+      const at = rotationAt(s, ms);
+      expect(sunMapHeld(ms)).toBe(at.held);
+    }
+    expect(fieldLine('sun', 2026.77)).toContain('latest map in the app (Carrington rotation 2315');
+    expect(fieldLine('sun', 2020)).toContain('for the Carrington rotation of the date');
+    expect(fieldSource('jupiter')?.url).toBe('https://doi.org/10.1029/2021JE007055');
   });
 
   it('chooses the rotation of the date, and holds the first and last beyond them', () => {

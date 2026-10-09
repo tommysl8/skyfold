@@ -24,7 +24,7 @@ import { createFieldLinesMaterial } from '../render/fieldLineMaterials';
 import { GUIDES_LAYER } from '../render/LightspeedScenePass';
 import { assetUrl } from '../render/textures';
 import { sim } from '../sim/sim';
-import { fieldLinesDebug, sunFieldShown } from '../sim/fields';
+import { fieldLinesDebug } from '../sim/fields';
 import { FIELD_MODELS, type FieldModel } from '../sim/fields/models';
 import { MagnetopauseTest, standoff } from '../sim/fields/magnetopause';
 import { CLOSED, OPEN, SHEET, SOURCE_SURFACE, SPIRAL, SPIRAL_END_RSUN, type LineSet } from '../sim/fields/lines';
@@ -300,13 +300,6 @@ function SunField() {
     if (!d) {
       mesh.visible = false;
       return;
-    }
-    const shown = Number(d.key.split(':')[1]);
-    if (sunFieldShown.rotation !== shown || sunFieldShown.held !== at.held) {
-      const i = data.rotation.indexOf(shown);
-      sunFieldShown.rotation = shown;
-      sunFieldShown.startMs = data.startMs[i];
-      sunFieldShown.held = at.held;
     }
     mesh.position.copy(toCam);
     mesh.quaternion.copy(b.apparentQuat);

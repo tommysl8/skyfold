@@ -5,7 +5,7 @@
  * it is off nothing is drawn.
  *
  * Here: each body's field in a line for its card (its dipole's field at the equator, tilt and offset, worked out from
- * the models and checked against them in fields.test.ts), and what the chunk reports of the Sun's map at the date.
+ * the models and checked against them in fields.test.ts), and which of the Sun's maps the date is drawn from.
  */
 import { dipoleAt } from '../phenomena/aurora';
 
@@ -43,8 +43,18 @@ export const FIELD_FACTS: Readonly<Record<string, FieldFacts>> = {
   },
 };
 
-/** The map the chunk last drew the Sun's lines from (scene/FieldLines.tsx writes it; rotation 0: none yet). */
-export const sunFieldShown: { rotation: number; startMs: number; held: 'before' | 'after' | null } = { rotation: 0, startMs: 0, held: null };
+/**
+ * The Sun's maps in the app (public/data/fields/sun-hmi-pfss.bin; fields.test.ts checks these against it): Carrington
+ * rotations 2097 to 2315, the first starting on 19 May 2010 and the last on 29 August 2026 (UTC). A rotation lasts
+ * about 27.3 days.
+ */
+export const SUN_MAPS = { first: 2097, firstMs: 1_274_310_690_000, last: 2315, lastMs: 1_788_027_707_000 } as const;
+const ROTATION_MS = 27.2753 * 86_400_000;
+
+/** Whether the Sun's lines at a date are drawn from a map of another time (before the first, after the last). */
+export function sunMapHeld(ms: number): 'before' | 'after' | null {
+  return ms < SUN_MAPS.firstMs ? 'before' : ms >= SUN_MAPS.lastMs + ROTATION_MS ? 'after' : null;
+}
 
 /** The chunk's meshes by body, for the development tools (import this module in the console). */
 export const fieldLinesDebug: { meshes: Record<string, unknown> } = { meshes: {} };
@@ -59,7 +69,15 @@ const km = (v: number) => `${(Math.round(v / 10) * 10).toLocaleString('en-GB')} 
 /** The body's field in a sentence for its card, or null when no model is drawn for it. */
 export function fieldLine(id: string, year: number): string | null {
   if (id === 'sun') {
-    return 'Magnetic field: the corona’s as a potential field out to 2.5 solar radii, from SDO/HMI’s map of the photosphere for the Carrington rotation of the date, and beyond as Parker spirals for a 400 km/s wind, to 3 au.';
+    const ms = (year - 1970) * 365.2425 * 86_400_000;
+    const held = sunMapHeld(ms);
+    const map =
+      held === 'before'
+        ? 'from SDO/HMI’s first map (Carrington rotation 2097, May 2010: there is none in the app for this date)'
+        : held === 'after'
+          ? 'from SDO/HMI’s latest map in the app (Carrington rotation 2315, from 29 August 2026)'
+          : 'from SDO/HMI’s map of the photosphere for the Carrington rotation of the date';
+    return `Magnetic field: the corona’s as a potential field out to 2.5 solar radii, ${map}, and beyond as Parker spirals for a 400 km/s wind, to 3 au.`;
   }
   const f = FIELD_FACTS[id];
   if (!f) return null;
@@ -81,4 +99,11 @@ export function fieldDrawnNote(id: string): string {
   if (id === 'sun') return 'The coronal field is current-free up to the source surface, as the model assumes; it changes from one rotation to the next.';
   if (id === 'ganymede') return 'Drawn to about 2 Ganymede radii upstream; beyond, its lines join Jupiter’s field, which is not drawn there.';
   return 'Drawn: the planet’s own field, cut at a model magnetopause for a typical solar wind; the stretched tail and the currents outside the planet are not modelled.';
+}
+
+/** The paper (or the archive) behind the body's field, for a link on its card. */
+export function fieldSource(id: string): { label: string; url: string } | null {
+  if (id === 'sun') return { label: 'SDO/HMI synoptic maps', url: 'http://jsoc.stanford.edu/HMI/LOS_Synoptic_charts.html' };
+  const f = FIELD_FACTS[id];
+  return f ? { label: `${f.model}: ${f.cite}`, url: f.doi } : null;
 }

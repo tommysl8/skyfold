@@ -470,7 +470,7 @@ function ViewMenu() {
           <Check
             checked={s.fieldLines}
             onChange={() => t('fieldLines')}
-            hint="Magnetic field lines from measured field models: the Sun’s and the planets’, and the Milky Way’s"
+            hint="Magnetic field lines from measured field models: the Sun’s corona and wind (SDO/HMI maps of the date), the planets’ fields from spacecraft (to their magnetopauses; the tails are not modelled), and the Milky Way’s"
           >
             Magnetic field lines
           </Check>

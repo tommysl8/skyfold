@@ -138,4 +138,7 @@ export const JOURNEYS: Journey[] = [
   journey({ id: 'kilonova', title: 'Two neutron stars collide', sub: 'GW170817: the last minute of the inspiral, then the kilonova, blue then red', scene: 'kilonova-gw170817', clock: '17 August 2017: real time, then faster' }),
   journey({ id: 'm87-jet', title: 'The jet of M87', sub: 'A jet at nearly the speed of light, its far side beamed out of sight', scene: 'm87-jet' }),
   journey({ id: 'aurora', title: 'The northern lights from space', sub: 'Earth’s auroral oval on the night side', scene: 'aurora' }),
+  journey({ id: 'magnetic-uranus', title: 'Uranus’s tipped magnetic field', sub: 'Tilted 60° and off centre, wobbling round as the planet turns', scene: 'magnetic-uranus', clock: '1 s here = 17 min' }),
+  journey({ id: 'magnetic-jupiter', title: 'Jupiter’s magnetosphere', sub: 'The largest thing any planet has, from Juno’s model of its field', scene: 'magnetic-jupiter', clock: '1 s here = 5 min' }),
+  journey({ id: 'magnetic-sun', title: 'The Sun’s magnetic field today', sub: 'Loops and open field over the corona, from the date’s HMI map', scene: 'magnetic-sun' }),
 ];

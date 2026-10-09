@@ -73,6 +73,7 @@ import { nakedEyeEndMs, shockRadiusKm } from '../sim/phenomena/supernovae';
 import { inspiralAt, kilonovaAt, MERGER_MS } from '../sim/phenomena/kilonova';
 import { startPace } from '../sim/phenomena/pace';
 import { bodyFixedDir, geomagneticPole } from '../sim/phenomena/aurora';
+import { sunMapHeld } from '../sim/fields';
 import { registerDestinations, type Destination } from './destinations';
 
 // ─── Targets ────────────────────────────────────────────────────────────────────────────
@@ -299,6 +300,12 @@ export const NAMED_SCENES = [
   'm87-jet',
   'centaurus-a-jets',
   'aurora',
+  'magnetic-earth',
+  'magnetic-jupiter',
+  'magnetic-uranus',
+  'magnetic-neptune',
+  'magnetic-sun',
+  'heliospheric-current-sheet',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -433,6 +440,12 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'm87-jet': 'The jet of M87',
   'centaurus-a-jets': 'The jets and lobes of Centaurus A',
   'aurora': 'The northern lights from space',
+  'magnetic-earth': 'Earth’s magnetic field',
+  'magnetic-jupiter': 'Jupiter’s magnetosphere',
+  'magnetic-uranus': 'Uranus’s tipped magnetic field',
+  'magnetic-neptune': 'Neptune’s magnetic field',
+  'magnetic-sun': 'The Sun’s magnetic field on the date',
+  'heliospheric-current-sheet': 'The Sun’s field in the solar wind',
 };
 
 /** Define (or replace) a named scene. */
@@ -989,7 +1002,7 @@ function start(s: Scene, note: string): boolean {
  * has changed it since), so the CMB map does not stay over Jupiter after the CMB scene, nor the
  * flow stay hidden after a lens scene.
  */
-const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur'] as const;
+const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines'] as const;
 type SceneView = (typeof SCENE_VIEWS)[number];
 type SceneViews = Partial<Pick<UIState, SceneView>>;
 
@@ -1010,6 +1023,7 @@ function currentViews(): Pick<UIState, SceneView> {
     accretionDisks: s.accretionDisks,
     accretionBand: s.accretionBand,
     ehtBlur: s.ehtBlur,
+    fieldLines: s.fieldLines,
   };
 }
 
@@ -2063,6 +2077,120 @@ const PHENOMENA_VIEWS: readonly Destination[] = (
   },
 }));
 registerDestinations(() => (isBody('m87') ? PHENOMENA_VIEWS : PHENOMENA_VIEWS.slice(0, 1)));
+
+// ─── Magnetic fields ────────────────────────────────────────────────────────────────────
+
+/**
+ * A view of a body's field (sim/fields): from a direction square to its spin axis, the Sun to one side where it can be,
+ * a little above its equator.
+ */
+function fieldViewDirection(id: BodyId, elevationDeg: number): Vector3 {
+  const b = sim.bodies[id];
+  const north = new Vector3(0, 1, 0).applyQuaternion(b.quat);
+  const sun = sim.bodies.sun.pos.clone().sub(b.pos).normalize();
+  const side = new Vector3().crossVectors(north, sun);
+  // The spin axis towards the Sun (Uranus near its solstices): any direction square to it.
+  if (side.lengthSq() < 0.04) side.crossVectors(north, Math.abs(north.y) < 0.9 ? UP : new Vector3(1, 0, 0));
+  const e = (elevationDeg * Math.PI) / 180;
+  return side.normalize().multiplyScalar(Math.cos(e)).addScaledVector(north, Math.sin(e)).normalize();
+}
+
+/** Set up a body's field: the view on, the camera, then the body's card (with its field's line) and the pace. */
+function fieldScene(note: string, id: BodyId, distanceKm: number, warp: number, elevationDeg = 15): boolean {
+  return scene(note, () => {
+    setWarp(1);
+    setPaused(false);
+    useUI.setState({ fieldLines: true });
+    controller.goTo(id, { distance: distanceKm, direction: fieldViewDirection(id, elevationDeg) });
+    afterSlew(id, () => {
+      useUI.setState({ selected: id, bodyCard: true });
+      if (warp !== 1) setWarp(warp);
+    });
+  });
+}
+
+const radiusOf = (id: BodyId) => getBody(id)?.physical.radiusKm ?? 1;
+
+defineScene('magnetic-earth', {
+  label: PENDING_LABELS['magnetic-earth'],
+  note: 'Earth’s magnetic field from 40 Earth radii: the core’s field for the date (IGRF-14), turning with Earth 1,000 times faster than real. Lines leave the southern hemisphere (warm) and come back into the northern (cool): the pole in the Arctic is a magnetic south pole. They are cut where the solar wind holds the field back, about 10 Earth radii towards the Sun (the magnetopause of Shue et al. 1998); on the night side the real field is stretched into a long tail, which is not modelled, nor are the currents in space.',
+  unavailable: needs('earth', 'sun'),
+  run: (note) => fieldScene(note, 'earth', 40 * radiusOf('earth'), 1000),
+});
+
+defineScene('magnetic-jupiter', {
+  label: PENDING_LABELS['magnetic-jupiter'],
+  note: 'Jupiter’s magnetosphere, the largest thing any planet has: Juno’s model of the field (JRM33), cut where the solar wind holds it back, about 80 Jupiter radii towards the Sun (Joy et al. 2002). It points the other way from Earth’s: lines leave the north (warm) and come back in the south (cool), and the strong patches of its northern field twist them. The Galilean moons orbit deep inside. The disc of Io’s plasma that stretches the real field outwards, and the tail, are not modelled. Time runs 300 times faster: a turn in two minutes.',
+  unavailable: needs('jupiter', 'sun'),
+  run: (note) => fieldScene(note, 'jupiter', 260 * radiusOf('jupiter'), 300, 10),
+});
+
+defineScene('magnetic-uranus', {
+  label: PENDING_LABELS['magnetic-uranus'],
+  note: 'Uranus’s field is tipped 60° from its spin axis and its centre sits a third of a radius off the planet’s (AH5, Herbert 2009, from Voyager 2’s flyby in 1986 and the aurora since). Time runs 1,000 times faster: as the planet turns, once every 62 seconds here, the field wobbles round it. How it is turned today is not known: Voyager’s rotation period is too uncertain to carry its longitude across forty years.',
+  unavailable: needs('uranus', 'sun'),
+  run: (note) => fieldScene(note, 'uranus', 70 * radiusOf('uranus'), 1000, 5),
+});
+
+defineScene('magnetic-neptune', {
+  label: PENDING_LABELS['magnetic-neptune'],
+  note: 'Neptune’s field, tipped 47° from its spin axis and its centre half a radius off the planet’s (O8, Connerney, Acuña & Ness 1991, from Voyager 2’s flyby in 1989). Time runs 1,000 times faster: a turn every 58 seconds here. As with Uranus, how it is turned today is not known.',
+  unavailable: needs('neptune', 'sun'),
+  run: (note) => fieldScene(note, 'neptune', 70 * radiusOf('neptune'), 1000, 5),
+});
+
+defineScene('magnetic-sun', {
+  label: PENDING_LABELS['magnetic-sun'],
+  get note() {
+    const held = sunMapHeld(sim.timeMs);
+    const map =
+      held === 'after'
+        ? 'from the latest map in the app (Carrington rotation 2315, from 29 August 2026; the field changes from one rotation to the next)'
+        : held === 'before'
+          ? 'from the first map in the app (May 2010; there is none for this date)'
+          : 'from SDO/HMI’s map of the photosphere for this rotation';
+    return `The Sun’s magnetic field on the date, ${map}: loops close over the active regions, and open lines leave the coronal holes. Up to 2.5 solar radii it is a potential field, as if the corona carried no currents (it does); beyond, the solar wind carries the open lines away. Warm: field leaving the Sun; cool: coming back in.`;
+  },
+  unavailable: needs('sun'),
+  run: (note) => fieldScene(note, 'sun', 7 * radiusOf('sun'), 1, 20),
+});
+
+defineScene('heliospheric-current-sheet', {
+  label: PENDING_LABELS['heliospheric-current-sheet'],
+  note: 'The Sun’s field carried out by the solar wind, from 9 au above the planets: each open line winds into a Parker spiral as the Sun turns under the outflowing wind (400 km/s here), 47° from the radial at Earth’s distance. Warm lines point away from the Sun, cool ones towards it; the white lines lie in the heliospheric current sheet between them, warped by the Sun’s tilted, uneven field. Drawn out to 3 au.',
+  unavailable: needs('sun'),
+  run: (note) =>
+    scene(note, () => {
+      setWarp(1);
+      setPaused(false);
+      useUI.setState({ fieldLines: true, showOrbits: true });
+      controller.goTo('sun', { distance: 9 * AU_KM, direction: new Vector3(0.18, 1, 0.32) });
+    }),
+});
+
+/** The fields as views, for "Where to?". */
+const FIELD_VIEWS: readonly Destination[] = (
+  [
+    ['magnetic-field-view', 'Magnetic fields', ['magnetic field', 'magnetic field lines', 'field lines', 'magnetosphere', 'magnetic poles', 'geomagnetic field', 'IGRF'], 'Earth’s magnetic field', 'magnetic-earth', ['earth']],
+    ['jupiter-magnetosphere-view', 'Jupiter’s magnetosphere', ['Jupiter magnetic field', 'jovian magnetosphere', 'JRM33'], 'Jupiter’s magnetic field', 'magnetic-jupiter', ['jupiter']],
+    ['uranus-field-view', 'Uranus’s tipped magnetic field', ['Uranus magnetic field', 'Uranus magnetosphere'], 'Uranus’s magnetic field', 'magnetic-uranus', ['uranus']],
+    ['neptune-field-view', 'Neptune’s magnetic field', ['Neptune magnetosphere'], 'Neptune’s magnetic field', 'magnetic-neptune', ['neptune']],
+    ['sun-field-view', 'The Sun’s magnetic field', ['solar magnetic field', 'coronal magnetic field', 'coronal loops', 'PFSS', 'potential field source surface'], 'The corona’s field on the date', 'magnetic-sun', ['sun']],
+    ['heliospheric-current-sheet-view', 'Heliospheric current sheet', ['heliospheric current sheet', 'Parker spiral', 'interplanetary magnetic field', 'IMF', 'solar wind'], 'The Sun’s field in the solar wind', 'heliospheric-current-sheet', ['sun']],
+  ] as const
+).map(([id, name, aliases, kind, spec, bodies]) => ({
+  id,
+  name,
+  aliases,
+  kind,
+  group: 'sun-planets',
+  distanceKm: () => NaN,
+  unavailable: () => (bodies.every((b) => isBody(b)) ? null : 'Loading…'),
+  go: () => {
+    runScene(spec);
+  },
+}));
+registerDestinations(() => FIELD_VIEWS);
 
 // ─── Cygnus X-1's disc ──────────────────────────────────────────────────────────────────
 
