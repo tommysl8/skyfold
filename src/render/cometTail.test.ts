@@ -1,28 +1,71 @@
 import { describe, expect, it } from 'vitest';
 import { AU_KM, GM_SUN_KM3_S2 } from '../physics/constants';
 import { propagateTwoBody } from '../physics/kepler';
-import { cometActivity, dustOffset, ionTailDirection, keplerPosition, SOLAR_WIND_KM_S, tailBrightness, type V3 } from './cometTail';
+import {
+  cometActivity,
+  dustAgeS,
+  dustOffset,
+  heliocentricMagnitude,
+  ionTailDirection,
+  ionTailKm,
+  ION_TAIL_RANGE_KM,
+  keplerPosition,
+  SOLAR_WIND_KM_S,
+  tailBrightness,
+  type V3,
+} from './cometTail';
 
 const v3 = (x = 0, y = 0, z = 0): V3 => ({ x, y, z });
 const norm = (a: V3) => Math.hypot(a.x, a.y, a.z);
 const dot = (a: V3, b: V3) => a.x * b.x + a.y * b.y + a.z * b.z;
 
 describe('comet activity', () => {
-  it('follows sunlight inside 3 au and stops by 5 au', () => {
-    expect(cometActivity(1)).toBeCloseTo(1, 12);
-    expect(cometActivity(2)).toBeCloseTo(0.25, 12);
-    expect(cometActivity(3)).toBeCloseTo(1 / 9, 12);
-    expect(cometActivity(4)).toBeLessThan(1 / 16);
-    expect(cometActivity(4)).toBeGreaterThan(0);
+  it('switches on inside 5 au and is full inside 3 au', () => {
+    expect(cometActivity(1)).toBe(1);
+    expect(cometActivity(3)).toBe(1);
+    expect(cometActivity(4)).toBeCloseTo(0.5, 12);
     expect(cometActivity(5)).toBe(0);
     expect(cometActivity(30)).toBe(0);
     expect(cometActivity(0)).toBe(0);
   });
 
-  it('draws bigger comets brighter, up to a limit', () => {
-    expect(tailBrightness(1, 30)).toBeGreaterThan(0.99);
-    expect(tailBrightness(1, 1.65)).toBeLessThan(tailBrightness(1, 4.6));
-    expect(tailBrightness(6, 30)).toBe(0);
+  // JPL SBDB magnitude laws (M1, K1): Halley 5.5, 8.0; Hale–Bopp 4.8, 4.0; Encke 15.7, 4.5; 2I/Borisov 13.8, 4.5.
+  it('reads each comet’s own magnitude law', () => {
+    expect(heliocentricMagnitude(5.5, 8, 1)).toBe(5.5);
+    expect(heliocentricMagnitude(5.5, 8, 0.587)).toBeCloseTo(5.5 + 8 * Math.log10(0.587), 12);
+    // No law in the data: JPL's usual defaults, as the layer draws them.
+    expect(heliocentricMagnitude(NaN, NaN, 2)).toBeCloseTo(15 + 10 * Math.log10(2), 12);
+  });
+
+  it('draws the tails stronger nearer the Sun, and the great comets strongest', () => {
+    for (const [m1, k1] of [
+      [5.5, 8],
+      [4.8, 4],
+      [15.7, 4.5],
+    ])
+      for (let r = 0.3; r < 6; r += 0.1) expect(tailBrightness(r, m1, k1)).toBeGreaterThanOrEqual(tailBrightness(r + 0.1, m1, k1));
+    // Halley at its 1986 perihelion (0.587 au) and Hale–Bopp at its 1997 one (0.914 au): nearly full strength.
+    expect(tailBrightness(0.587, 5.5, 8)).toBeGreaterThan(0.9);
+    expect(tailBrightness(0.914, 4.8, 4)).toBeGreaterThan(0.8);
+    // Encke and Borisov: faint, but there.
+    expect(tailBrightness(0.34, 15.7, 4.5)).toBeGreaterThan(0.1);
+    expect(tailBrightness(0.34, 15.7, 4.5)).toBeLessThan(0.4);
+    expect(tailBrightness(2.01, 13.8, 4.5)).toBeGreaterThan(0.05);
+    expect(tailBrightness(2.01, 13.8, 4.5)).toBeLessThan(0.3);
+    // Gone far out, whatever the comet.
+    expect(tailBrightness(5.5, 4.8, 4)).toBe(0);
+    expect(tailBrightness(4.5, 5.5, 8)).toBeLessThan(0.2 * tailBrightness(3, 5.5, 8));
+  });
+
+  it('lengthens the tails as the comet brightens, within what is seen', () => {
+    expect(ionTailKm(0.587, 5.5, 8)).toBeGreaterThan(ionTailKm(1.5, 5.5, 8));
+    expect(ionTailKm(1.5, 5.5, 8)).toBeGreaterThan(ionTailKm(1.5, 15.7, 4.5));
+    expect(dustAgeS(0.587, 5.5, 8)).toBeGreaterThan(dustAgeS(2, 5.5, 8));
+    // Halley 1986: tens of millions of km.
+    expect(ionTailKm(0.587, 5.5, 8)).toBeGreaterThan(5e7);
+    expect(ionTailKm(0.587, 5.5, 8)).toBeLessThan(1.5e8);
+    expect(ionTailKm(0.34, 15.7, 4.5)).toBe(ION_TAIL_RANGE_KM[0]);
+    expect(ionTailKm(0.05, 0, 15)).toBe(ION_TAIL_RANGE_KM[1]);
   });
 });
 
@@ -69,6 +112,27 @@ describe('the tails', () => {
     expect(Math.hypot(d.y, d.z) / norm(d)).toBeLessThan(0.05);
     // No radiation pressure: the grain stays with the nucleus.
     expect(norm(dustOffset(r, v, 0, 10 * 86_400, v3()))).toBeLessThan(1);
+  });
+
+  it('points the ion tail away from the Sun', () => {
+    const d = ionTailDirection(r, v, v3());
+    expect(dot(d, r) / norm(r)).toBeGreaterThan(0.99);
+    // At rest, exactly anti-sunward.
+    const still = ionTailDirection(r, v3(), v3());
+    expect(dot(still, r) / norm(r)).toBeCloseTo(1, 12);
+  });
+
+  it('keeps the dust tail in the orbit’s plane, behind the comet', () => {
+    const h = { x: r.y * v.z - r.z * v.y, y: r.z * v.x - r.x * v.z, z: r.x * v.y - r.y * v.x };
+    for (const beta of [0.06, 0.35, 1])
+      for (const days of [2, 10, 30]) {
+        const d = dustOffset(r, v, beta, days * 86_400, v3());
+        // Out of the plane by under a thousandth of its length: the grains share the comet's plane.
+        expect(Math.abs(dot(d, h)) / (norm(h) * norm(d))).toBeLessThan(1e-3);
+        // Behind the comet along its motion, and away from the Sun.
+        expect(dot(d, v)).toBeLessThan(0);
+        expect(dot(d, r)).toBeGreaterThan(0);
+      }
   });
 
   it('bends older dust back along the orbit, finer dust further out', () => {

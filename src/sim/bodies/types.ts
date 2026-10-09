@@ -206,6 +206,11 @@ export interface BodyPhysical {
      * each frame (sim/phenomena), and the point of light takes the new colour (scene/Glints.tsx).
      */
     variable?: boolean;
+    /**
+     * The radiance of its disc against its system's brightest star (≤ 1), so that the stars of a close pair are exposed
+     * together and the dim one shows dark against the bright one in an eclipse (Algol: sim/stars/records.ts). Absent: 1.
+     */
+    discRadiance?: number;
   };
 }
 
@@ -299,6 +304,11 @@ export interface BodyVisual {
   craft?: 'probe' | 'jwst' | 'parker' | 'iss' | 'tiangong' | 'hubble';
   /** A comet: draw its coma and its dust and ion tails (scene/CometTails.tsx). */
   tails?: boolean;
+  /**
+   * The comet's magnitude law, total magnitude M1 + 5 log10 Δ + K1 log10 r (JPL SBDB), which sets how strong and
+   * long its tails are drawn at each distance from the Sun (render/cometTail.ts). Missing: JPL's defaults, 15 and 10.
+   */
+  tailMagnitudes?: { m1: number; k1: number };
   /**
    * A plain sphere in the body's colour, with no procedural surface: a body no image shows (the
    * planets of other stars).
@@ -605,6 +615,8 @@ export interface StarInfo {
   constellation?: string;
   /** References of the physical values, as citations. */
   refs?: readonly string[];
+  /** A variable star: how it varies, in a line for the card (sim/stars/variables.ts). */
+  variable?: string;
 }
 
 /**

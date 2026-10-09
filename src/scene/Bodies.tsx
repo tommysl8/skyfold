@@ -61,6 +61,9 @@ import { useUI } from '../state/ui';
 import { createOrbitMaterial, createPlanetMaterial, createRingMaterial, createStarSurfaceMaterial, createSunMaterial, SUN_CENTRE_RADIANCE } from '../render/materials';
 import { roundStarGeometry, starShapeGeometry } from '../render/starShape';
 import { StarCells } from '../render/starCells';
+import { sunFuture } from '../sim/stars/sunFuture';
+import { starSurface, type StarSurface } from '../sim/stars/closeup';
+import type { SunState } from '../sim/stars/evolution';
 import { bandsExtent, bandsTexture, extentFactor } from '../render/rings';
 import { loadShape } from '../render/shapes';
 import { acquireTexture, pumpTextureUploads, releaseTexture, setPinnedTextures, type TextureOptions } from '../render/textures';
@@ -427,13 +430,38 @@ function Rings({ id, spec, planetMaterial }: { id: BodyId; spec: RingSpec; plane
 
 // ─── The Sun and other stars ─────────────────────────────────────────────────────────────
 
+/**
+ * The Sun's surface at another age (sim/stars/sunFuture.ts), for the star-surface material: limb darkening and granules
+ * for its temperature and gravity (closeup.ts), worked out again only when its temperature or radius has changed by a
+ * per cent or two.
+ */
+function agedSunSurface(st: SunState, last: { key: string; surface: StarSurface | null }): StarSurface {
+  const key = `${Math.round(Math.log(st.teffK) * 100)}|${Math.round(Math.log(st.rsun) * 50)}`;
+  if (last.key !== key || !last.surface) {
+    last.key = key;
+    last.surface = starSurface({ teffK: st.teffK, radiusRsun: st.rsun, massMsun: st.massMsun });
+  }
+  return last.surface;
+}
+
 export function Sun() {
   const mesh = useRef<Mesh>(null!);
   const material = useMemo(createSunMaterial, []);
+  // The Sun at another age: the material every other star's disc has, its cells baked while it is large.
+  const aged = useMemo(() => createStarSurfaceMaterial(), []);
+  const agedCells = useRef<StarCells | null>(null);
+  const agedLast = useRef<{ key: string; surface: StarSurface | null }>({ key: '', surface: null });
+  useEffect(
+    () => () => {
+      aged.dispose();
+      agedCells.current?.dispose();
+    },
+    [aged],
+  );
   const requested = useRef(false);
   const hold = useHeldTextures();
   const map = getBody('sun')?.visual?.map;
-  useFrame(() => {
+  useFrame(({ gl }) => {
     const b = sim.bodies.sun;
     if (!b) return;
     const m = mesh.current;
@@ -442,8 +470,51 @@ export function Sun() {
     m.position.copy(b.apparentPos).sub(sim.camera.pos);
     m.quaternion.copy(b.apparentQuat);
     m.scale.setScalar(b.displayRadius);
-    const geometry = b.radiusPx < LOD_PX ? SPHERE_LO : SPHERE_HI;
+    const st = sunFuture.state;
+    // (The star-surface material reads each vertex's temperature share, aTemp: the round star meshes have it.)
+    const geometry = st ? (b.radiusPx < LOD_PX ? STAR_SPHERE_LO : STAR_SPHERE_HI) : b.radiusPx < LOD_PX ? SPHERE_LO : SPHERE_HI;
     if (m.geometry !== geometry) m.geometry = geometry;
+    m.material = st ? aged : material;
+    if (st) {
+      const s = agedSunSurface(st, agedLast.current);
+      const u = aged.uniforms;
+      u.uColor.value.setRGB(...blackbodyRgb(st.teffK));
+      u.uTeff.value = st.teffK;
+      u.uTPole.value = st.teffK;
+      u.uLimbU.value.set(...s.limbU);
+      const freq = Math.sqrt(s.granules / (4 * Math.PI));
+      u.uGranContrast.value = StarCells.holds(freq) ? s.granuleContrast : 0;
+      // As StarBody: full radiance while small, stopped down and its contrast stretched up close.
+      const t = Math.min(1, Math.max(0, (b.radiusPx - 30) / 170));
+      const k = t * t * (3 - 2 * t);
+      u.uIntensity.value = 6 - 5.2 * k;
+      u.uContrast.value = 1 + 1.4 * k;
+      // Cells baked while the disc is large; made again when the granules' size has changed by a tenth.
+      const cells = agedCells.current;
+      const want = u.uGranContrast.value > 0 && b.radiusPx > 40;
+      if (cells && (!want || Math.abs(Math.log(u.uGranFreq.value / freq)) > 0.1)) {
+        cells.dispose();
+        agedCells.current = null;
+      }
+      if (want && !agedCells.current) {
+        u.uGranFreq.value = freq;
+        agedCells.current = new StarCells(freq, 0);
+      }
+      if (agedCells.current) {
+        const shownS = (performance.now() / 1000) * s.speedup;
+        agedCells.current.update(gl, (shownS / s.turnoverS) % 1000);
+        u.uCells.value = agedCells.current.target.texture;
+        u.uHasCells.value = agedCells.current.ready ? 1 : 0;
+      } else {
+        u.uHasCells.value = 0;
+        u.uGranFreq.value = freq;
+      }
+      return;
+    }
+    if (agedCells.current) {
+      agedCells.current.dispose();
+      agedCells.current = null;
+    }
     // Simple auto-exposure: at its true radiance when small (the disc then averages a 5,772 K
     // surface, as the stars and the CMB assume), and dimmer up close so limb darkening and
     // granulation show.
@@ -547,6 +618,13 @@ export function StarBody({ id }: { id: BodyId }) {
     const b = sim.bodies[id];
     if (!b) return;
     const m = mesh.current;
+    // A variable star (sim/stars/variability.ts): its colour follows its temperature.
+    const lum = rec?.physical.luminous;
+    if (lum?.variable && lum.teffK !== material.uniforms.uTeff.value) {
+      material.uniforms.uTeff.value = lum.teffK;
+      material.uniforms.uTPole.value = lum.teffK * (surface?.poleTeffRatio ?? 1);
+      material.uniforms.uColor.value.setRGB(...blackbodyRgb(lum.teffK));
+    }
     // Hidden while the lens draws it exactly (lens.spheres).
     m.visible = b.present && b.radiusPx >= MESH_MIN_PX && !(lens.spheres.length > 0 && lens.spheres.includes(id));
     if (!m.visible) return;
@@ -566,7 +644,7 @@ export function StarBody({ id }: { id: BodyId }) {
     const t = Math.min(1, Math.max(0, (b.radiusPx - 30) / 170));
     const k = t * t * (3 - 2 * t);
     // Up close, its hottest part (a fast rotator’s pole) at the same level as any other star’s centre.
-    u.uIntensity.value = (6 - 5.2 * k) / Math.pow(hottest, 1.4 * k);
+    u.uIntensity.value = ((6 - 5.2 * k) / Math.pow(hottest, 1.4 * k)) * (lum?.discRadiance ?? 1);
     // AgX tone mapping compresses a stop to a few per cent of the screen’s range: up close the disc’s contrast is
     // stretched to 2.4 stops a stop (the card says so), from afar it is exact.
     u.uContrast.value = 1 + 1.4 * k;

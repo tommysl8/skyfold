@@ -236,6 +236,14 @@ M87\* from 6,400 au: its shadow is 5.9° across and its Einstein ring 24.6°, th
 Hovering 1,000 au from M87\*, 7.8 horizon radii out. The shadow is 36.3° across, your clock runs at 0.9336 of home's, the tides are far too weak to feel, and hovering takes only 4.2 g.
 :::
 
+::: note Magnetic fields
+The Event Horizon Telescope also measured how the rings' light is polarised. Both patterns spiral, Sgr A\*'s strongly ordered: the mark of a magnetic field threading the hole, strong enough to hold back the gas falling in (a "magnetically arrested" disc).[^ehtm87pol][^ehtsgrapol] View › Magnetic field lines draws such a field, a model consistent with that polarisation rather than a measured one: lines through the horizon, wound into helices as the spinning hole turns them, opening into the funnel a jet comes out of.
+:::
+
+::: see-it m87-star-field
+M87\*'s field as a model, from 3,850 au out: helices along its axis, cyan where the field leaves the hole, amber where it returns, and their images bent round the shadow's edge.
+:::
+
 ## Falling in
 
 What pulls a falling body apart is not gravity itself but the difference between its pull on your head and on your feet, and at the horizon that difference is smaller the bigger the black hole. Across 2 m at the horizon of a black hole of ten solar masses it is about 200 million m/s², 20 million times the Earth's gravity. At Sgr A\*'s horizon it is $1.1 \times 10^{-3}$ m/s², a ten-thousandth of it. Jeremy Schnittman, who made NASA's 2024 films of a fall into a black hole like Sgr A\*, advises: given the choice, fall into a supermassive one.[^nasa2024]
@@ -435,6 +443,8 @@ Some things are models, and the app says so where they show:
 [^genzel2010]: R. Genzel, F. Eisenhauer and S. Gillessen, "The Galactic Center massive black hole and nuclear star cluster", Reviews of Modern Physics 82, 3121-3195 (2010). https://doi.org/10.1103/RevModPhys.82.3121
 [^gravity2020]: GRAVITY Collaboration, "Detection of the Schwarzschild precession in the orbit of the star S2 near the Galactic centre massive black hole", Astronomy & Astrophysics 636, L5 (2020). https://doi.org/10.1051/0004-6361/202037813
 [^eso1907]: ESO, "Astronomers capture first image of a black hole", press release eso1907 (10 April 2019). https://www.eso.org/public/news/eso1907/
+[^ehtm87pol]: Event Horizon Telescope Collaboration, "First M87 Event Horizon Telescope Results. VIII. Magnetic Field Structure near The Event Horizon", Astrophysical Journal Letters 910, L13 (2021). https://doi.org/10.3847/2041-8213/abe4de
+[^ehtsgrapol]: Event Horizon Telescope Collaboration, "First Sagittarius A* Event Horizon Telescope Results. VIII. Physical Interpretation of the Polarized Ring", Astrophysical Journal Letters 964, L26 (2024). https://doi.org/10.3847/2041-8213/ad2df1
 [^eht2024]: Event Horizon Telescope Collaboration, "The persistent shadow of the supermassive black hole of M 87. I. Observations, calibration, imaging, and analysis", Astronomy & Astrophysics 681, A79 (2024). https://doi.org/10.1051/0004-6361/202347932
 [^eht2025]: Event Horizon Telescope Collaboration, "Horizon-scale variability of M87\* from 2017-2021 EHT observations", Astronomy & Astrophysics 704, A91 (2025): a ring 43.9 ± 0.6 microarcseconds across in 2017, 2018 and 2021. https://doi.org/10.1051/0004-6361/202555855
 [^mpifr2025]: Max Planck Institute for Radio Astronomy, "New EHT images reveal unexpected polarization flips at M87\*" (16 September 2025). https://www.mpifr-bonn.mpg.de/pressreleases/2025/6

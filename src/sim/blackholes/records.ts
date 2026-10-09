@@ -38,6 +38,7 @@ import { SUN_RADIUS_KM, SUN_TEFF_K } from '../stars/constants';
 import { bolometricCorrection, SUN_M_BOL } from '../stars/photometry';
 import { barycentreId, linearStarProvider, orbitStarProvider, starColour, starKindText, starLabelRank, type SystemMotion } from '../stars/records';
 import blackHolesJson from './blackholes.json';
+import { fieldFact } from './holeField';
 import type { BlackHolesFile, CatalogueGalaxyJson, CompanionJson, DiskJson, HoleJson, HoleOrbitJson, HoleSystemJson, Sourced } from './types';
 
 /** The data file as shipped. */
@@ -91,6 +92,12 @@ const round = (x: number, digits: number) => Number(x.toPrecision(digits));
 export const gmOf = (massMsun: number): number => massMsun * GM_SUN_KM3_S2;
 /** The horizon radius 2GM/c² of a non-spinning hole, km. */
 export const horizonRadiusKm = (massMsun: number): number => (2 * gmOf(massMsun)) / (C_KM_S * C_KM_S);
+
+/** A hole's card lines: its file's, and its field's where one is drawn (holeField.ts fieldFact). */
+const factsOf = (h: HoleJson): HoleJson['facts'] => {
+  const f = fieldFact(h.id);
+  return f ? [...h.facts, f] : h.facts;
+};
 
 /** A reference key's citation: the part of the file's text before " — ". */
 export function citation(file: BlackHolesFile, key: string): string {
@@ -355,9 +362,9 @@ export function holeSystemRecords(file: BlackHolesFile, sys: HoleSystemJson, sta
       ],
       refs: citations(file, [...hole.refs, ...b.refs]),
     },
-    facts: hole.facts.map((f) => f.text),
-    factSources: hole.facts.map((f) => f.source),
-    factSourceLabels: hole.facts.map((f) => f.label),
+    facts: factsOf(hole).map((f) => f.text),
+    factSources: factsOf(hole).map((f) => f.source),
+    factSourceLabels: factsOf(hole).map((f) => f.label),
     dataSource: `${citation(file, hole.mass.ref)} (mass); ${orbitRefs} (orbit)`,
     positionNote: `Position: ${place}`,
     modelNotes: hole.modelNotes.slice(0, 3),
@@ -497,9 +504,9 @@ export function isolatedHoleRecord(json: HoleJson, file: BlackHolesFile = BLACK_
       rows: holeRows(file, json, d.value),
       refs: citations(file, json.refs),
     },
-    facts: json.facts.map((f) => f.text),
-    factSources: json.facts.map((f) => f.source),
-    factSourceLabels: json.facts.map((f) => f.label),
+    facts: factsOf(json).map((f) => f.text),
+    factSources: factsOf(json).map((f) => f.source),
+    factSourceLabels: factsOf(json).map((f) => f.label),
     dataSource: citations(file, json.refs).join('; '),
     positionNote: `Position: ${a.positionNote ?? 'its measured place'}, at ${distanceText(d)} (${citation(file, d.ref)}), held fixed: its motion of about 51 km/s past the stars round it is not followed.`,
     modelNotes: json.modelNotes.slice(0, 3),
@@ -549,9 +556,9 @@ export function m87StarRecord(json: HoleJson, m87: BodyRecord, file: BlackHolesF
       ],
       refs: citations(file, json.refs),
     },
-    facts: json.facts.map((f) => f.text),
-    factSources: json.facts.map((f) => f.source),
-    factSourceLabels: json.facts.map((f) => f.label),
+    facts: factsOf(json).map((f) => f.text),
+    factSources: factsOf(json).map((f) => f.source),
+    factSourceLabels: factsOf(json).map((f) => f.label),
     dataSource: citations(file, json.refs).join('; '),
     positionNote: `Position: at the centre of ${m87.name}, where the galaxy is placed (its radio core, ICRF3); it moves with its galaxy and cluster as the universe expands.`,
     modelNotes: json.modelNotes.slice(0, 3),
@@ -599,9 +606,9 @@ export function galaxyHoleRecord(json: HoleJson, host: BodyRecord, file: BlackHo
       rows: holeRows(file, json, distancePc),
       refs: citations(file, json.refs),
     },
-    facts: json.facts.map((f) => f.text),
-    factSources: json.facts.map((f) => f.source),
-    factSourceLabels: json.facts.map((f) => f.label),
+    facts: factsOf(json).map((f) => f.text),
+    factSources: factsOf(json).map((f) => f.source),
+    factSourceLabels: factsOf(json).map((f) => f.label),
     dataSource: citations(file, json.refs).join('; '),
     positionNote: `Position: at the centre of ${hostName}, where the galaxy is placed; it moves with its galaxy.`,
     modelNotes: json.modelNotes.slice(0, 3),
@@ -688,9 +695,9 @@ export function catalogueGalaxyHoleRecord(json: HoleJson, file: BlackHolesFile =
       rows: holeRows(file, json, distancePc),
       refs: citations(file, json.refs),
     },
-    facts: json.facts.map((f) => f.text),
-    factSources: json.facts.map((f) => f.source),
-    factSourceLabels: json.facts.map((f) => f.label),
+    facts: factsOf(json).map((f) => f.text),
+    factSources: factsOf(json).map((f) => f.source),
+    factSourceLabels: factsOf(json).map((f) => f.label),
     dataSource: `${citations(file, json.refs).join('; ')}; place: OpenNGC and Cosmicflows-4 (Tully et al. 2023), as the deep-sky layer has its galaxy`,
     positionNote: `Position: at the centre of ${hostName} (${g.designation}), at its galaxy’s place as OpenNGC and Cosmicflows-4 give it, held there in the expanding universe (its own motion, a few hundred km/s, is not followed).`,
     modelNotes: json.modelNotes.slice(0, 3),

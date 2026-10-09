@@ -5,6 +5,7 @@
  * Quaia loads only from far out, its downloads sharing the surveys' limit.
  */
 import { afterEach, describe, expect, it } from 'vitest';
+import { DoubleSide } from 'three';
 import { MPC_KM } from '../../physics/constants';
 import { cosmology } from '../cosmos/cosmology';
 import { QUAIA_FULL_KM, QUAIA_LOAD_KM, quaiaLoadWanted, quaiaShare, SURVEY_LOAD_KM, surveyShare } from '../../ui/cosmicLayers';
@@ -33,6 +34,10 @@ import { selectNodes, selectNodesOf, type LodView } from './lod';
 import { FETCHES, quaia, QUAIA_BASE_URL, resetSurvey, survey, SURVEY_BASE_URL } from './load';
 import {
   cutGaussianIntegral,
+  GAIA_GALAXY_SOURCE,
+  gaiaLogL,
+  gaiaRedshiftKept,
+  gaiaSigmaZ,
   matchQuaia,
   QUAIA_FADE_MIN,
   QUAIA_FADE_MPC,
@@ -188,18 +193,27 @@ describe('a Quaia node file', () => {
 describe('Quaia’s tiles as shipped (public/data/survey-quaia/)', () => {
   const DIR = 'public/data/survey-quaia/';
   const has = fileExists(DIR + HIERARCHY_FILE) && fileExists('public/data/survey/' + HIERARCHY_FILE);
-  it.skipIf(!has)('hold Quaia’s 866,298 quasars that the surveys do not have, each with its error, in files under 1 MB', () => {
+  it.skipIf(!has)('hold Quaia’s 866,298 quasars and Gaia’s 810,059 galaxies that the surveys do not have, each with its error', () => {
     const h = decodeHierarchy(zlib.gunzipSync(readBytes(DIR + HIERARCHY_FILE)));
-    expect(h.total).toBe(866_298);
-    expect(h.perSource[QUAIA_SOURCE.code]).toBe(h.total);
+    expect(h.perSource[QUAIA_SOURCE.code]).toBe(866_298);
+    expect(h.perSource[GAIA_GALAXY_SOURCE.code]).toBe(810_059);
+    expect(h.total).toBe(866_298 + 810_059);
     const root = decodeNode(zlib.gunzipSync(readBytes(DIR + nodeFile(''))), h.nodes[0].side);
     expect(root.count).toBe(h.nodes[0].points);
     expect(root.extraPer).toBe(1);
     const sig = [...root.extra].map(sigmaOfByte).sort((a, b) => a - b);
-    // The median error about 200 Mpc, as the build measured.
-    expect(sig[sig.length >> 1]).toBeGreaterThan(150);
+    // The median error between the galaxies' (about 120 Mpc) and the quasars' (about 200), as the build measured.
+    expect(sig[sig.length >> 1]).toBeGreaterThan(110);
     expect(sig[sig.length >> 1]).toBeLessThan(260);
-    for (let j = 0; j < root.count; j += 101) expect(root.attrs[2 * j]).toBe(packKind(SURVEY_CLASS.quasar, QUAIA_SOURCE.code));
+    const kinds = new Set([packKind(SURVEY_CLASS.quasar, QUAIA_SOURCE.code), packKind(SURVEY_CLASS.other, GAIA_GALAXY_SOURCE.code)]);
+    let galaxies = 0;
+    for (let j = 0; j < root.count; j++) {
+      expect(kinds.has(root.attrs[2 * j])).toBe(true);
+      if (kindSource(root.attrs[2 * j]) === GAIA_GALAXY_SOURCE.code) galaxies++;
+    }
+    // The root is a fair sample of all of them: about half galaxies.
+    expect(galaxies / root.count).toBeGreaterThan(0.4);
+    expect(galaxies / root.count).toBeLessThan(0.6);
   });
 
   it.skipIf(!has)('leave the surveys’ own files as they were: no extra bytes', () => {
@@ -236,6 +250,35 @@ describe('a quasar’s distance error', () => {
       expect(f).toBeLessThanOrEqual(prev);
       prev = f;
     }
+  });
+});
+
+describe('Gaia’s galaxies', () => {
+  it('keep the redshifts the classifier gets right: 0.02 to 0.58, less 0.070–0.071 and 0.28–0.30', () => {
+    for (const z of [0.02, 0.05, 0.069, 0.071, 0.15, 0.279, 0.3, 0.45, 0.58]) expect(gaiaRedshiftKept(z), String(z)).toBe(true);
+    for (const z of [0, 0.019, 0.07, 0.0705, 0.28, 0.29, 0.581, 0.6, NaN]) expect(gaiaRedshiftKept(z), String(z)).toBe(false);
+  });
+
+  it('take half the quoted prediction interval as the redshift’s 1σ error', () => {
+    expect(gaiaSigmaZ(0.093, 0.149)).toBeCloseTo(0.028, 12);
+  });
+
+  it('take a luminosity from G as the survey takes one from r: an L* galaxy at z = 0.1 is G = 17.0', () => {
+    const c = cosmology();
+    const chi = c.comovingDistanceMpc(0.1);
+    // DM = 5 log10((1 + z) χ / 10 pc); M = G − DM + 2.5 log10(1 + z) = −21.2 for log L/L* = 0.
+    const g = -21.2 + 5 * Math.log10((1.1 * chi * 1e6) / 10) - 2.5 * Math.log10(1.1);
+    expect(g).toBeGreaterThan(16.8);
+    expect(g).toBeLessThan(17.2);
+    expect(gaiaLogL(g, 0.1, chi)).toBeCloseTo(0, 9);
+    // A magnitude brighter is 0.4 dex more.
+    expect(gaiaLogL(g - 1, 0.1, chi)).toBeCloseTo(0.4, 9);
+  });
+
+  it('have a code of their own beyond Quaia’s, which the kind byte holds', () => {
+    expect(GAIA_GALAXY_SOURCE.code).toBe(QUAIA_SOURCE.code + 1);
+    expect(kindSource(packKind(SURVEY_CLASS.other, GAIA_GALAXY_SOURCE.code))).toBe(GAIA_GALAXY_SOURCE.code);
+    expect(kindClass(packKind(SURVEY_CLASS.other, GAIA_GALAXY_SOURCE.code))).toBe(SURVEY_CLASS.other);
   });
 });
 
@@ -303,6 +346,9 @@ describe('a streak', () => {
     // The shader's error function is quaia.ts erf's (the same coefficients).
     const glsl = readText('src/render/shaders/quaiaStreak.vert.glsl');
     for (const c of ['0.3275911', '1.061405429', '1.453152027', '1.421413741', '0.284496736', '0.254829592']) expect(glsl).toContain(c);
+    // Both faces: a node's model matrix holds its numbers, and where its determinant is negative three.js flips the
+    // winding (with the front side only, every streak of such a node was culled).
+    expect(m.side).toBe(DoubleSide);
     m.dispose();
   });
 

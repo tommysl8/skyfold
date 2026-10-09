@@ -50,6 +50,7 @@ import type { BodyIndex, Tracks } from '../tracks';
 import { barycentreFromSun } from '../voyager';
 import { Vector3 } from 'three';
 import type { BodiesFile, DataBody, DataRing, DataRotation, RingSystem, RingsFile } from './data';
+import { visitorFact, VISITORS } from './interstellar';
 
 export interface SolarSystemData {
   bodies: BodiesFile;
@@ -143,8 +144,20 @@ const POINT_CRAFT = new Set(['juno', 'europa-clipper', 'soho']);
 /** Spacecraft with no orbit line: a heliocentric conic would repeat Earth's (Webb, SOHO) or mean nothing at Jupiter (Juno). */
 const NO_ORBIT_LINE = new Set(['jwst', 'soho', 'juno']);
 
-/** Comets whose coma and tails are drawn (the interstellar comets had them too; ʻOumuamua showed none). */
-const TAILS = new Set(['halley', 'encke', 'churyumov-gerasimenko', 'hale-bopp', 'borisov', 'atlas-3i']);
+/**
+ * Comets whose coma and tails are drawn (the interstellar comets had them too; ʻOumuamua showed none), with the
+ * magnitude law that sets how strong and long they are: total magnitude M1 + 5 log10 Δ + K1 log10 r, from JPL's
+ * Small-Body Database (retrieved 2026-10-09; Halley's from the ICQ Comet Handbook 2005, the others fitted with JPL's
+ * orbit solutions: Encke K273/21, 67P K284/1, Hale–Bopp 226, Borisov 54, 3I/ATLAS 54).
+ */
+const TAILS: Record<string, { m1: number; k1: number }> = {
+  halley: { m1: 5.5, k1: 8 },
+  encke: { m1: 15.7, k1: 4.5 },
+  'churyumov-gerasimenko': { m1: 12.9, k1: 7.5 },
+  'hale-bopp': { m1: 4.8, k1: 4 },
+  borisov: { m1: 13.8, k1: 4.5 },
+  'atlas-3i': { m1: 12.5, k1: 4.5 },
+};
 
 /** Shorter names for labels. */
 const SHORT: Record<string, string> = {
@@ -209,6 +222,9 @@ function kindOf(b: DataBody): { kind: BodyKind; kindText?: string } {
  */
 const TUMBLES: Record<string, { periodH: number; precessionH: number; coneDeg: number }> = {
   halley: { periodH: 7.1 * 24, precessionH: 3.7 * 24, coneDeg: 60 },
+  // ʻOumuamua: its long axis turning end over end every 8.67 h, the light curve's main period, and wobbling every
+  // 54.48 h, its likeliest second period (Belton et al. 2018, ApJL 856, L21); the cone is illustrative.
+  oumuamua: { periodH: 8.67, precessionH: 54.48, coneDeg: 25 },
   hyperion: { periodH: 5 * 24, precessionH: 21 * 24, coneDeg: 30 },
 };
 
@@ -359,7 +375,10 @@ function visualOf(b: DataBody, rings: RingsFile): BodyVisual {
     v.atmoStrength = 0.55;
     v.mapMix = 0.3;
   }
-  if (TAILS.has(b.id)) v.tails = true;
+  if (TAILS[b.id]) {
+    v.tails = true;
+    v.tailMagnitudes = TAILS[b.id];
+  }
   const ringRef = b.assets.rings?.split('#')[1];
   const sys = ringRef ? rings.systems.find((s) => s.parent === ringRef) : undefined;
   if (sys) v.rings = ringSpec(sys).spec;
@@ -740,6 +759,33 @@ function trackRecord(b: DataBody, data: SolarSystemData): BodyRecord {
   };
 }
 
+/**
+ * ʻOumuamua's shape, a model: never resolved, but its light varied tenfold as it turned, so it is long or flat. Drawn
+ * as the cigar of Meech et al. (2017, Nature 552, 378) for an albedo of 0.04, about 230 × 35 m, its long axis the
+ * body's x axis, square to the axis the tumble spins it about.
+ */
+const OUMUAMUA_RADII_KM: readonly [number, number, number] = [0.115, 0.0175, 0.0175];
+const OUMUAMUA_NOTE =
+  'Shape a model: a cigar about 230 × 35 m (Meech et al. 2017, for a dark surface). It was never resolved; a flat disc about 115 × 111 × 19 m fits the light curve as well (Mashchenko 2019). Its tumble is drawn with the light curve’s periods, end over end every 8.67 hours and wobbling every 54.5 hours (Belton et al. 2018), at an illustrative phase.';
+
+/** An interstellar visitor's own parts: where it came from and how fast on the card, and ʻOumuamua's shape. */
+function visitorRecord(r: BodyRecord): BodyRecord {
+  const v = VISITORS[r.id as keyof typeof VISITORS];
+  if (!v) return r;
+  const out: BodyRecord = {
+    ...r,
+    facts: [...(r.facts ?? []), visitorFact(v)],
+    factSources: r.factSources ? [...r.factSources, `https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=${r.id === 'oumuamua' ? '1I' : r.id === 'borisov' ? '2I' : '3I'}`] : r.factSources,
+    // Its path through the Solar System is drawn by scene/VisitorPaths.tsx, from its track.
+    orbitLine: false,
+  };
+  if (r.id === 'oumuamua') {
+    out.physical = { ...r.physical, triaxialRadiiKm: OUMUAMUA_RADII_KM, maxRadiusKm: OUMUAMUA_RADII_KM[0] };
+    out.modelNotes = [OUMUAMUA_NOTE, ...(r.modelNotes ?? []).filter((n) => !n.startsWith('Rotation illustrative'))];
+  }
+  return out;
+}
+
 /** Rings for a built-in planet, with the note they need. */
 function planetWithRings(core: BodyRecord, sys: RingSystem | undefined): BodyRecord {
   if (!sys) return core;
@@ -771,7 +817,7 @@ export function solarSystemRecords(data: SolarSystemData, core: CoreRecords): { 
       if (!data.tracks.has(b.id)) throw new Error(`solar system: no track for '${b.id}'`);
       const r = trackRecord(b, data);
       if (b.id === 'voyager1') voyager1 = r;
-      else add.push(r);
+      else add.push(b.kind === 'interstellar' ? visitorRecord(r) : r);
     }
   }
 

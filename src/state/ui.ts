@@ -79,6 +79,8 @@ export interface UIState {
    */
   satellites: boolean;
   satelliteDebris: boolean;
+  /** Magnetic field lines: the Sun's and the planets' measured fields, and the Milky Way's (sim/fields). */
+  fieldLines: boolean;
   /** The map of the cosmic microwave background over the sky (contrast enhanced). */
   showCmb: boolean;
   /** First-visit welcome screen. */
@@ -199,7 +201,8 @@ export interface UIState {
       | 'aurora'
       | 'jets'
       | 'satellites'
-      | 'satelliteDebris',
+      | 'satelliteDebris'
+      | 'fieldLines',
   ) => void;
   setSizeMode: (m: SizeMode) => void;
 }
@@ -246,6 +249,8 @@ export const savedPrefs = (s: UIState) => ({
   // New in this version with their defaults (off): no migration.
   satellites: s.satellites,
   satelliteDebris: s.satelliteDebris,
+  // New in this version with its default (off): a saved state without it keeps it, so no migration.
+  fieldLines: s.fieldLines,
   showFps: s.showFps,
   // Not leftOpen: the physics reference opens only when asked for, never on a reload.
   rightOpen: s.rightOpen,
@@ -294,6 +299,7 @@ export const useUI = create<UIState>()(
       jets: true,
       satellites: false,
       satelliteDebris: false,
+      fieldLines: false,
       showCmb: false,
       welcomeOpen: !welcomed(),
       tourStep: null,

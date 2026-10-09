@@ -224,8 +224,10 @@ describe('what the records say', () => {
   it('gives every new body its facts, sources, discovery or mission, and a note on its position', () => {
     for (const b of bodies.bodies) {
       const r = rec(b.id);
-      expect(r.facts, b.id).toHaveLength(3);
-      expect(r.factSources, b.id).toHaveLength(3);
+      // The visitors from other stars have one more: where they came from, and how fast (interstellar.ts).
+      const n = b.kind === 'interstellar' ? 4 : 3;
+      expect(r.facts, b.id).toHaveLength(n);
+      expect(r.factSources, b.id).toHaveLength(n);
       if (b.kind === 'spacecraft') expect(r.mission?.launch, b.id).toMatch(/^\d{4}-\d{2}-\d{2}/);
       else expect(r.discovery?.by, b.id).toBeTruthy();
       expect(r.positionNote, b.id).toMatch(/^Position: fitted to JPL Horizons/);

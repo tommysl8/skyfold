@@ -26,6 +26,20 @@ let walkStamp = 0;
 let walkMs = 0;
 
 /**
+ * The Sun shown at another age (sim/stars/sunFuture.ts): the orbits about it widened by `scale` (a ∝ 1/M as it loses mass
+ * slowly; speeds fall by the same factor), and the bodies it has swallowed (by light-time group: a planet with its
+ * moons) absent. Scale 1 and none today.
+ */
+export const solarAge = { scale: 1, gone: new Set<BodyId>() };
+
+/** Widen the Sun's orbits: a body placed straight about the Sun (a planet, not its moons), while the Sun is shown older. */
+function widen(e: Entry, pos: Vector3, vel: Vector3 | null): void {
+  if (solarAge.scale === 1 || e.group !== e || e.root === e || e.root.id !== 'sun') return;
+  pos.multiplyScalar(solarAge.scale);
+  vel?.multiplyScalar(1 / solarAge.scale);
+}
+
+/**
  * Place every registered body at `time`: availability, position and velocity (world axes, km
  * and km/s, heliocentric), and orientation. Fills sim.bodies.
  */
@@ -39,12 +53,13 @@ export function updateWorld(time: AstroTime): void {
     const s = e.state;
     const p = e.record.provider;
     const a = p.availability(walkMs);
-    s.present = a.available;
+    s.present = a.available && !(solarAge.gone.size > 0 && solarAge.gone.has(e.group.id));
     s.regime = a.regime;
     p.positionAt(time, eclP, eclV);
     // J2000 ecliptic → world: (x, z, −y)
     e.rel.pos.set(eclP.x, eclP.z, -eclP.y);
     e.rel.vel.set(eclV.x, eclV.z, -eclV.y);
+    widen(e, e.rel.pos, e.rel.vel);
     const c = e.centre;
     if (c) {
       s.pos.copy(c.state.pos).add(e.rel.pos);
@@ -114,6 +129,7 @@ function stateAt(e: Entry, time: AstroTime, pos: Vector3, vel: Vector3 | null): 
       chain[i].record.provider.positionAt(time, L.p, vel ? L.v : null);
       L.t.set(L.p.x, L.p.z, -L.p.y);
       if (vel) L.tv.set(L.v.x, L.v.z, -L.v.y);
+      widen(chain[i], L.t, vel ? L.tv : null);
       if (i === chain.length - 1 && !base) {
         pos.copy(L.t);
         vel?.copy(L.tv);
@@ -226,6 +242,7 @@ export function evalGroupAt(g: Group, time: AstroTime, rotate: boolean, headAt?:
     m.record.provider.positionAt(time, eclP, eclV);
     t.rel.pos.set(eclP.x, eclP.z, -eclP.y);
     t.rel.vel.set(eclV.x, eclV.z, -eclV.y);
+    widen(m, t.rel.pos, t.rel.vel);
     const c = m.centre;
     if (!c) {
       t.pos.copy(t.rel.pos);

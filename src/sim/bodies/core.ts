@@ -213,7 +213,8 @@ export function coreBodyRecords(): BodyRecord[] {
     core('sun', sunProvider, engine(Body.Sun), {
       parent: null,
       kindText: 'Our star',
-      physical: { ...physical(BODIES.sun), luminous: { vmag: SUN_VMAG_AT_1AU, atKm: AU_KM, teffK: SUN_TEFF_K } },
+      // Variable: shown at another age, its light and colour change (sim/stars/sunFuture.ts).
+      physical: { ...physical(BODIES.sun), luminous: { vmag: SUN_VMAG_AT_1AU, atKm: AU_KM, teffK: SUN_TEFF_K, variable: true } },
       framing: { radii: 5 },
       orbitLine: false,
       detector: true,
