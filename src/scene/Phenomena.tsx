@@ -219,7 +219,7 @@ function placeRing(slot: SnSlot, st: SupernovaState, centre: Vector3, opacity: n
     const t = major.clone().multiplyScalar(-Math.sin(a)).addScaledVector(minor, Math.cos(a));
     ring.pos[i].copy(p);
     ring.axis[i].copy(t.normalize());
-    ring.sig[i].set(0.13, 0.05);
+    ring.sig[i].set(spots > 0.5 ? 0.07 : 0.12, 0.04);
     const l = (L * w[i]) / total / (unit * unit);
     ring.lum[i].set(col[0] * l, col[1] * l, col[2] * l);
   }
@@ -227,7 +227,10 @@ function placeRing(slot: SnSlot, st: SupernovaState, centre: Vector3, opacity: n
   ring.unitKm = unit;
   ring.centre.copy(centre).divideScalar(unit);
   ring.sync();
-  applyLaw(ring.material, opacity);
+  // The brightest knot's centre, S: the view is stopped down to it when it would blind (applyLaw).
+  let peak = 0;
+  for (let i = 0; i < RING_BLOBS; i++) peak = Math.max(peak, (0.2126 * ring.lum[i].x + 0.7152 * ring.lum[i].y + 0.0722 * ring.lum[i].z) / (2 * Math.PI * ring.sig[i].x * ring.sig[i].y));
+  applyLaw(ring.material, opacity, peak);
   ring.mesh.visible = true;
 }
 
