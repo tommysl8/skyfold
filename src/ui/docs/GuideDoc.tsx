@@ -348,6 +348,16 @@ function Screen() {
         over the view, one at a time, and get out of the way when you plan a flight.
       </p>
 
+      <H3>Coming back, saving and sharing</H3>
+      <p>
+        Skyfold remembers where you were in this browser. Next time it offers to pick up where you left off, at the same
+        place, date and pace of time: <b>Resume</b> goes there, <b>Start fresh</b> forgets it, and the offer goes away by
+        itself once you do something else. The bookmark button in the header keeps <b>Saved places</b>: save the view under a
+        name (the body and the date, which you can change), go back to one, rename or delete it, or copy a link to it.{' '}
+        <b>Copy link to this view</b> makes a link that opens anyone’s Skyfold at the same view, date and pace; on a phone it
+        opens the share sheet. There are no accounts: saved places stay in this browser, and a link carries only the view.
+      </p>
+
       <H3>Status lamps</H3>
       <p>Lamps along the top of the view light up when something changes what you see.</p>
       <KeyTable
@@ -1644,7 +1654,7 @@ function Troubleshooting() {
       ))}
       <H3>Starting again</H3>
       <p>
-        The button below resets the layout, the display settings and the welcome screen, and reloads the page.
+        The button below resets the layout, the display settings and the welcome screen, forgets the place you were last at and your saved places, and reloads the page.
       </p>
       <TryRow>
         <button

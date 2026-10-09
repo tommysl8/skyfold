@@ -34,6 +34,9 @@ It started as a way to see what relativity actually looks like, and grew from th
 - **Visit a black hole.** Forty real ones, from Sagittarius A\* and M87\* to Gaia BH1, LMC X-1 and M31\*. The lensing is exact general
   relativity. Hover just above the horizon and watch your clock slow, or fall in.
 - **Just look.** `Shift+F` hides everything but the view.
+- **Come back to it.** Skyfold offers to pick up where you left off, keeps the views you save (the bookmark in the
+  header), and makes a link to any view, its date and its pace of time included. No account: it all stays in your
+  browser, and the link carries only the view.
 - **Read about it.** Learn has longer reads on the science behind what you're seeing, with their sources.
 
 ## Controls
