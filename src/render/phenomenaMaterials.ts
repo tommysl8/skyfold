@@ -8,13 +8,30 @@
  *  - Blobs (the jets and their lobes, SN 1987A's ring, the kilonova's debris, the neutron stars): up to MAX_BLOBS
  *    elongated Gaussian clouds of light, each normalised to its luminosity, integrated exactly along each pixel's ray
  *    from the camera (a Gaussian's line integral is closed form; erfc for the half behind the camera). No noise, no
- *    marching: about 30 operations a blob a pixel.
+ *    marching: one instanced draw, each blob on the pixels of its own 3.5σ ellipsoid, about 30 operations a pixel.
  *  - A supernova (sim/phenomena/supernovae.ts): its fireball, an opaque sphere of the photosphere's radius as bright as
  *    its light curve; and its debris, a shell behind the forward shock and the ejecta inside it, their light integrated
  *    exactly along the ray (chords through spheres), mottled by noise at the shell.
  *  - The aurora: shaders/aurora.frag.glsl.
  */
-import { AdditiveBlending, BackSide, Color, DataTexture, FloatType, LinearFilter, RepeatWrapping, RGBAFormat, ShaderMaterial, Vector2, Vector3 } from 'three';
+import {
+  AdditiveBlending,
+  BackSide,
+  type BufferGeometry,
+  Color,
+  DataTexture,
+  DynamicDrawUsage,
+  FloatType,
+  InstancedBufferAttribute,
+  InstancedBufferGeometry,
+  LinearFilter,
+  Mesh,
+  RepeatWrapping,
+  RGBAFormat,
+  ShaderMaterial,
+  Vector2,
+  Vector3,
+} from 'three';
 import auroraFrag from './shaders/aurora.frag.glsl?raw';
 
 /** The most blobs one material draws. */
@@ -44,19 +61,44 @@ vec3 display(vec3 colour, float S) {
 }
 `;
 
+const BLOB_VERT = /* glsl */ `
+#include <common>
+#include <logdepthbuf_pars_vertex>
+attribute vec3 aCentre; // the blob's centre from the camera, units (uUnitKm km)
+attribute vec3 aAxis;   // its long axis (unit)
+attribute vec2 aSig;    // σ along the axis, σ across, units
+attribute vec3 aLum;    // its colour (luminance 1) × its luminosity, as flux × units² (V = 0 stars)
+uniform float uUnitKm;
+varying vec3 vWorld;
+varying vec3 vCentre;
+varying vec3 vAxis;
+varying vec2 vSig;
+varying vec3 vLum;
+void main() {
+  // The unit sphere stretched to the blob's 3.5σ ellipsoid along its axis.
+  vec3 k = aAxis;
+  vec3 a = normalize(cross(k, abs(k.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
+  vec3 b = cross(k, a);
+  vec3 p = aCentre + 3.5 * (k * position.y * aSig.x + a * position.x * aSig.y + b * position.z * aSig.y);
+  vWorld = p * uUnitKm;
+  vCentre = aCentre;
+  vAxis = aAxis;
+  vSig = aSig;
+  vLum = aLum;
+  gl_Position = projectionMatrix * viewMatrix * vec4(vWorld, 1.0);
+  #include <logdepthbuf_vertex>
+}
+`;
+
 const BLOB_FRAG = /* glsl */ `
 #include <common>
 #include <logdepthbuf_pars_fragment>
-#define MAX_BLOBS ${MAX_BLOBS}
-uniform vec3 uCentre;            // the blobs' origin from the camera, in units (uUnitKm km)
-uniform float uUnitKm;
-uniform int uCount;
-uniform vec3 uPos[MAX_BLOBS];    // each blob's centre from the origin, units
-uniform vec3 uAxis[MAX_BLOBS];   // its long axis (unit)
-uniform vec2 uSig[MAX_BLOBS];    // σ along the axis, σ across, units
-uniform vec3 uLum[MAX_BLOBS];    // its colour (luminance 1) × its luminosity, as flux × units² (V = 0 stars)
 ${FADE_GLSL}
 varying vec3 vWorld;
+varying vec3 vCentre;
+varying vec3 vAxis;
+varying vec2 vSig;
+varying vec3 vLum;
 
 // erfc(x), Abramowitz & Stegun 7.1.26 (|error| < 1.5e-7), for any x.
 float erfcA(float x) {
@@ -69,30 +111,25 @@ float erfcA(float x) {
 void main() {
   #include <logdepthbuf_fragment>
   vec3 rd = normalize(vWorld);
-  vec3 ro = -uCentre;
-  vec3 sum = vec3(0.0);
-  for (int i = 0; i < MAX_BLOBS; i++) {
-    if (i >= uCount) break;
-    vec3 o = ro - uPos[i];
-    vec3 k = uAxis[i];
-    float ia = 1.0 / (uSig[i].x * uSig[i].x);
-    float ip = 1.0 / (uSig[i].y * uSig[i].y);
-    float dk = dot(rd, k);
-    float ok = dot(o, k);
-    // The quadratic form xᵀAx along the ray o + t d, A = ip I + (ia − ip) k kᵀ.
-    float a = ip + (ia - ip) * dk * dk;
-    float b = ip * dot(o, rd) + (ia - ip) * ok * dk;
-    float c = ip * dot(o, o) + (ia - ip) * ok * ok;
-    float e = c - b * b / a;
-    if (e > 60.0) continue;
-    // ∫₀^∞ exp(−½(a t² + 2 b t + c)) dt over the normalisation (2π)^(3/2) σa σp².
-    float line = sqrt(1.5707963 / a) * exp(-0.5 * e) * erfcA(b / sqrt(2.0 * a));
-    float norm = 0.0634936359 * sqrt(ia) * ip; // (2π)^(−3/2) / (σa σp²)
-    sum += uLum[i] * (line * norm);
-  }
-  float S = dot(sum, vec3(0.2126, 0.7152, 0.0722));
+  vec3 o = -vCentre;
+  vec3 k = vAxis;
+  float ia = 1.0 / (vSig.x * vSig.x);
+  float ip = 1.0 / (vSig.y * vSig.y);
+  float dk = dot(rd, k);
+  float ok = dot(o, k);
+  // The quadratic form xᵀAx along the ray o + t d, A = ip I + (ia − ip) k kᵀ.
+  float qa = ip + (ia - ip) * dk * dk;
+  float qb = ip * dot(o, rd) + (ia - ip) * ok * dk;
+  float qc = ip * dot(o, o) + (ia - ip) * ok * ok;
+  float e = qc - qb * qb / qa;
+  if (e > 30.0) discard;
+  // ∫₀^∞ exp(−½(a t² + 2 b t + c)) dt over the normalisation (2π)^(3/2) σa σp².
+  float line = sqrt(1.5707963 / qa) * exp(-0.5 * e) * erfcA(qb / sqrt(2.0 * qa));
+  float norm = 0.0634936359 * sqrt(ia) * ip; // (2π)^(−3/2) / (σa σp²)
+  vec3 c = vLum * (line * norm);
+  float S = dot(c, vec3(0.2126, 0.7152, 0.0722));
   if (S <= 0.0) discard;
-  gl_FragColor = vec4(display(sum / S, S), 1.0);
+  gl_FragColor = vec4(display(c / S, S), 1.0);
 }
 `;
 
@@ -216,20 +253,83 @@ function additive(uniforms: Record<string, { value: unknown }>, fragmentShader: 
   });
 }
 
-export function createBlobMaterial(): ShaderMaterial {
-  return additive(
-    {
-      ...fadeUniforms(),
-      uCentre: { value: new Vector3() },
-      uUnitKm: { value: 1 },
-      uCount: { value: 0 },
-      uPos: { value: Array.from({ length: MAX_BLOBS }, () => new Vector3()) },
-      uAxis: { value: Array.from({ length: MAX_BLOBS }, () => new Vector3(0, 1, 0)) },
-      uSig: { value: Array.from({ length: MAX_BLOBS }, () => new Vector2(1, 1)) },
-      uLum: { value: Array.from({ length: MAX_BLOBS }, () => new Vector3()) },
-    },
-    BLOB_FRAG,
-  );
+/**
+ * A set of blobs: one instanced draw of ellipsoids, each its blob's 3.5σ, so each pixel works out only the blobs whose
+ * light reaches it. The display law is applied per blob (where two overlap, their luminances add after the square root,
+ * up to √2 brighter than one cloud of their summed light would be: only where knots overlap). Fill `pos` (from the
+ * origin, units), `axis`, `sig`, `lum` and `count`, set `unitKm` and `centre` (the origin from the camera, units), then
+ * sync(). The material's uniforms are the law's (uScale, uFadeS, uOpacity, uExposure).
+ */
+export class BlobSet {
+  readonly pos = Array.from({ length: MAX_BLOBS }, () => new Vector3());
+  readonly axis = Array.from({ length: MAX_BLOBS }, () => new Vector3(0, 1, 0));
+  readonly sig = Array.from({ length: MAX_BLOBS }, () => new Vector2(1, 1));
+  readonly lum = Array.from({ length: MAX_BLOBS }, () => new Vector3());
+  count = 0;
+  unitKm = 1;
+  readonly centre = new Vector3();
+  readonly material: ShaderMaterial;
+  readonly mesh: Mesh;
+  private readonly geometry: InstancedBufferGeometry;
+  private readonly aCentre = new InstancedBufferAttribute(new Float32Array(3 * MAX_BLOBS), 3).setUsage(DynamicDrawUsage);
+  private readonly aAxis = new InstancedBufferAttribute(new Float32Array(3 * MAX_BLOBS), 3).setUsage(DynamicDrawUsage);
+  private readonly aSig = new InstancedBufferAttribute(new Float32Array(2 * MAX_BLOBS), 2).setUsage(DynamicDrawUsage);
+  private readonly aLum = new InstancedBufferAttribute(new Float32Array(3 * MAX_BLOBS), 3).setUsage(DynamicDrawUsage);
+
+  constructor(sphere: BufferGeometry) {
+    this.geometry = new InstancedBufferGeometry();
+    this.geometry.index = sphere.index;
+    this.geometry.setAttribute('position', sphere.getAttribute('position'));
+    this.geometry.setAttribute('aCentre', this.aCentre);
+    this.geometry.setAttribute('aAxis', this.aAxis);
+    this.geometry.setAttribute('aSig', this.aSig);
+    this.geometry.setAttribute('aLum', this.aLum);
+    this.geometry.instanceCount = 0;
+    this.material = new ShaderMaterial({
+      uniforms: { ...fadeUniforms(), uUnitKm: { value: 1 } },
+      vertexShader: BLOB_VERT,
+      fragmentShader: BLOB_FRAG,
+      side: BackSide,
+      blending: AdditiveBlending,
+      depthTest: false,
+      depthWrite: false,
+      transparent: true,
+    });
+    this.mesh = new Mesh(this.geometry, this.material);
+    this.mesh.frustumCulled = false;
+    this.mesh.renderOrder = 4;
+    this.mesh.visible = false;
+  }
+
+  /** Upload this frame's blobs. */
+  sync(): void {
+    const n = Math.min(this.count, MAX_BLOBS);
+    const C = this.aCentre.array as Float32Array;
+    const A = this.aAxis.array as Float32Array;
+    const S = this.aSig.array as Float32Array;
+    const L = this.aLum.array as Float32Array;
+    for (let i = 0; i < n; i++) {
+      C[3 * i] = this.centre.x + this.pos[i].x;
+      C[3 * i + 1] = this.centre.y + this.pos[i].y;
+      C[3 * i + 2] = this.centre.z + this.pos[i].z;
+      A[3 * i] = this.axis[i].x;
+      A[3 * i + 1] = this.axis[i].y;
+      A[3 * i + 2] = this.axis[i].z;
+      S[2 * i] = this.sig[i].x;
+      S[2 * i + 1] = this.sig[i].y;
+      L[3 * i] = this.lum[i].x;
+      L[3 * i + 1] = this.lum[i].y;
+      L[3 * i + 2] = this.lum[i].z;
+    }
+    this.geometry.instanceCount = n;
+    this.material.uniforms.uUnitKm.value = this.unitKm;
+    this.aCentre.needsUpdate = this.aAxis.needsUpdate = this.aSig.needsUpdate = this.aLum.needsUpdate = true;
+  }
+
+  dispose(): void {
+    this.geometry.dispose();
+    this.material.dispose();
+  }
 }
 
 export function createShellMaterial(): ShaderMaterial {

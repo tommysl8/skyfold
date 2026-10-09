@@ -16,7 +16,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Mesh, SphereGeometry, Vector3, type PerspectiveCamera, type ShaderMaterial } from 'three';
 import { blackbodyRgb, bvToTemperature } from '../physics/blackbody';
 import { KPC_KM, PARSEC_KM } from '../physics/constants';
-import { createAuroraMaterial, createBlobMaterial, createOvalTexture, createShellMaterial, MAX_BLOBS } from '../render/phenomenaMaterials';
+import { BlobSet, createAuroraMaterial, createOvalTexture, createShellMaterial, MAX_BLOBS } from '../render/phenomenaMaterials';
 import { psfUniforms } from '../render/materials';
 import { MW_MU_FADE, psfSolidAngle } from '../sim/galaxy/background';
 import { eqjToWorld } from '../sim/frames';
@@ -159,8 +159,7 @@ interface SnSlot {
   sn: Supernova;
   mesh: Mesh;
   material: ShaderMaterial;
-  ring: Mesh | null;
-  ringMat: ShaderMaterial | null;
+  ring: BlobSet | null;
 }
 
 /** SN 1987A's ring's V magnitude from Earth against days (a model of its light: lit by the flash, fading, then by the blast). */
@@ -183,12 +182,12 @@ function ring1987aMag(days: number): number {
 const RING_BLOBS = 28;
 
 function placeRing(slot: SnSlot, st: SupernovaState, centre: Vector3, opacity: number): void {
-  const { ring, ringMat } = slot;
-  if (!ring || !ringMat) return;
+  const { ring } = slot;
+  if (!ring) return;
   const days = st.days;
   const mag = ring1987aMag(days);
   if (mag >= NONE || opacity <= 0) {
-    ring.visible = false;
+    ring.mesh.visible = false;
     return;
   }
   const sn = slot.sn;
@@ -206,7 +205,6 @@ function placeRing(slot: SnSlot, st: SupernovaState, centre: Vector3, opacity: n
   const L = 10 ** (-0.4 * (mag - 3.1 * EBV[sn.id])) * (sn.distancePc * PARSEC_KM) ** 2;
   // Hot spots: from 1995 the blast lit the ring in knots; before, the flash lit it evenly.
   const spots = smooth(2900, 6000, days);
-  const u = ringMat.uniforms;
   const col = blackbodyRgb(9000);
   let total = 0;
   const w: number[] = [];
@@ -219,19 +217,18 @@ function placeRing(slot: SnSlot, st: SupernovaState, centre: Vector3, opacity: n
     const a = (2 * Math.PI * i) / RING_BLOBS;
     const p = major.clone().multiplyScalar(Math.cos(a)).addScaledVector(minor, Math.sin(a));
     const t = major.clone().multiplyScalar(-Math.sin(a)).addScaledVector(minor, Math.cos(a));
-    u.uPos.value[i].copy(p);
-    u.uAxis.value[i].copy(t.normalize());
-    u.uSig.value[i].set(0.13, 0.05);
+    ring.pos[i].copy(p);
+    ring.axis[i].copy(t.normalize());
+    ring.sig[i].set(0.13, 0.05);
     const l = (L * w[i]) / total / (unit * unit);
-    u.uLum.value[i].set(col[0] * l, col[1] * l, col[2] * l);
+    ring.lum[i].set(col[0] * l, col[1] * l, col[2] * l);
   }
-  u.uCount.value = RING_BLOBS;
-  u.uUnitKm.value = unit;
-  u.uCentre.value.copy(centre).divideScalar(unit);
-  ring.position.copy(centre);
-  ring.scale.setScalar(1.6 * unit);
-  applyLaw(ringMat, opacity);
-  ring.visible = true;
+  ring.count = RING_BLOBS;
+  ring.unitKm = unit;
+  ring.centre.copy(centre).divideScalar(unit);
+  ring.sync();
+  applyLaw(ring.material, opacity);
+  ring.mesh.visible = true;
 }
 
 function Supernovae() {
@@ -242,7 +239,7 @@ function Supernovae() {
     () => () => {
       for (const s of slots.current.values()) {
         s.material.dispose();
-        s.ringMat?.dispose();
+        s.ring?.dispose();
       }
       slots.current.clear();
       remnantShown.ids = [];
@@ -262,7 +259,7 @@ function Supernovae() {
       let slot = slots.current.get(sn.id);
       if (!near) {
         if (slot) slot.mesh.visible = false;
-        if (slot?.ring) slot.ring.visible = false;
+        if (slot?.ring) slot.ring.mesh.visible = false;
         continue;
       }
       if (!slot) {
@@ -272,16 +269,12 @@ function Supernovae() {
         mesh.frustumCulled = false;
         mesh.renderOrder = 4;
         g.add(mesh);
-        let ring: Mesh | null = null;
-        let ringMat: ShaderMaterial | null = null;
+        let ring: BlobSet | null = null;
         if (sn.id === 'supernova-1987a') {
-          ringMat = createBlobMaterial();
-          ring = new Mesh(SPHERE, ringMat);
-          ring.frustumCulled = false;
-          ring.renderOrder = 4;
-          g.add(ring);
+          ring = new BlobSet(SPHERE);
+          g.add(ring.mesh);
         }
-        slot = { sn, mesh, material, ring, ringMat };
+        slot = { sn, mesh, material, ring };
         slots.current.set(sn.id, slot);
       }
       drawSupernova(slot, st!, b!.apparentPos, b!.distCamera, size);
@@ -350,15 +343,14 @@ export const ORBIT_SLOWDOWN = 100;
 
 function Kilonova() {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
-  const material = useMemo(createBlobMaterial, []);
+  const set = useMemo(() => new BlobSet(SPHERE), []);
+  const material = set.material;
   phenomena.materials.kilonova = material;
-  useEffect(() => () => material.dispose(), [material]);
-  const mesh = useRef<Mesh>(null);
+  useEffect(() => () => set.dispose(), [set]);
   const insp = useRef<Inspiral | null>(null);
   const frame = useMemo(() => ({ n: new Vector3(), e1: new Vector3(), e2: new Vector3(), east: new Vector3(), north: new Vector3(), toEarth: new Vector3() }), []);
   useFrame(() => {
-    const m = mesh.current;
-    if (!m) return;
+    const m = set.mesh;
     const b = sim.bodies[KILONOVA_ID];
     const kn = phenomena.kilonova;
     if (!phenomena.want.kilonova || !b || !kn) {
@@ -373,14 +365,13 @@ function Kilonova() {
     frame.n.copy(frame.toEarth).multiplyScalar(Math.cos(th)).addScaledVector(frame.north, Math.sin(th)).normalize();
     frame.e1.copy(frame.east);
     frame.e2.crossVectors(frame.n, frame.e1).normalize();
-    const u = material.uniforms;
     let count = 0;
     const add = (p: Vector3, axis: Vector3, sa: number, sp: number, lum: number, col: readonly number[]) => {
       if (count >= MAX_BLOBS || !(lum > 0)) return;
-      u.uPos.value[count].copy(p);
-      u.uAxis.value[count].copy(axis);
-      u.uSig.value[count].set(sa, sp);
-      u.uLum.value[count].set(col[0] * lum, col[1] * lum, col[2] * lum);
+      set.pos[count].copy(p);
+      set.axis[count].copy(axis);
+      set.sig[count].set(sa, sp);
+      set.lum[count].set(col[0] * lum, col[1] * lum, col[2] * lum);
       count++;
     };
     // Its centre from the camera: exactly from the orbit when the camera orbits it (a world coordinate 40 Mpc out is
@@ -422,22 +413,21 @@ function Kilonova() {
         add(p, tang, 0.36 * rr, 0.24 * rr, (L * (1 - blueShare)) / 10, tr);
       }
     }
-    u.uCount.value = count;
-    u.uUnitKm.value = unit;
-    u.uCentre.value.copy(centre).divideScalar(unit);
-    m.position.copy(centre);
-    m.scale.setScalar(2.4 * unit);
+    set.count = count;
+    set.unitKm = unit;
+    set.centre.copy(centre).divideScalar(unit);
+    set.sync();
     m.visible = count > 0;
-    // The brightest blob's centre, S (its luminosity over 2π σ_a σ_p, units cancel: uLum is per unit²).
+    // The brightest blob's centre, S (its luminosity over 2π σ_a σ_p, units cancel: lum is per unit²).
     let peak = 0;
     for (let i = 0; i < count; i++) {
-      const l = u.uLum.value[i] as Vector3;
-      const sig = u.uSig.value[i];
+      const l = set.lum[i];
+      const sig = set.sig[i];
       peak = Math.max(peak, (0.2126 * l.x + 0.7152 * l.y + 0.0722 * l.z) / (2 * Math.PI * sig.x * sig.y));
     }
     applyLaw(material, 1, peak);
   });
-  return <mesh ref={mesh} geometry={SPHERE} material={material} frustumCulled={false} renderOrder={4} visible={false} />;
+  return <primitive object={set.mesh} />;
 }
 
 // ─── Jets ─────────────────────────────────────────────────────────────────────────────
@@ -458,13 +448,11 @@ interface JetSystem {
 
 function JetMesh({ sys }: { sys: JetSystem }) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
-  const material = useMemo(createBlobMaterial, []);
-  useEffect(() => () => material.dispose(), [material]);
-  const mesh = useRef<Mesh>(null);
+  const set = useMemo(() => new BlobSet(SPHERE), []);
+  useEffect(() => () => set.dispose(), [set]);
   const f = useMemo(() => ({ east: new Vector3(), north: new Vector3(), toEarth: new Vector3(), cam: new Vector3() }), []);
   useFrame(() => {
-    const m = mesh.current;
-    if (!m) return;
+    const m = set.mesh;
     const c = sim.bodies[sys.centre] ?? sim.bodies[sys.galaxy];
     const gal = sim.bodies[sys.galaxy];
     if (!phenomena.want.jets || !c?.present || !gal) {
@@ -482,7 +470,6 @@ function JetMesh({ sys }: { sys: JetSystem }) {
     }
     updateLaw(camera);
     skyFrame(c.pos, f.east, f.north, f.toEarth);
-    const u = material.uniforms;
     // The camera in the jet's frame, kpc: each blob beamed towards it.
     const camW = f.cam.copy(centre).negate().divideScalar(KPC_KM);
     const cx = camW.dot(f.east);
@@ -491,10 +478,9 @@ function JetMesh({ sys }: { sys: JetSystem }) {
     const kpc2 = KPC_KM * KPC_KM;
     const dirn = [0, 0, 0];
     sys.blobs.forEach((bl, i) => {
-      const p = u.uPos.value[i] as Vector3;
-      p.copy(f.east).multiplyScalar(bl.pos[0]).addScaledVector(f.north, bl.pos[1]).addScaledVector(f.toEarth, bl.pos[2]);
-      (u.uAxis.value[i] as Vector3).copy(f.east).multiplyScalar(bl.axis[0]).addScaledVector(f.north, bl.axis[1]).addScaledVector(f.toEarth, bl.axis[2]);
-      u.uSig.value[i].set(bl.sigAlong, bl.sigAcross);
+      set.pos[i].copy(f.east).multiplyScalar(bl.pos[0]).addScaledVector(f.north, bl.pos[1]).addScaledVector(f.toEarth, bl.pos[2]);
+      set.axis[i].copy(f.east).multiplyScalar(bl.axis[0]).addScaledVector(f.north, bl.axis[1]).addScaledVector(f.toEarth, bl.axis[2]);
+      set.sig[i].set(bl.sigAlong, bl.sigAcross);
       dirn[0] = cx - bl.pos[0];
       dirn[1] = cy - bl.pos[1];
       dirn[2] = cz - bl.pos[2];
@@ -503,17 +489,16 @@ function JetMesh({ sys }: { sys: JetSystem }) {
       dirn[1] /= l;
       dirn[2] /= l;
       const lum = (bl.lumEarth * beamingFrom(bl, dirn)) / kpc2;
-      u.uLum.value[i].set(bl.colour[0] * lum, bl.colour[1] * lum, bl.colour[2] * lum);
+      set.lum[i].set(bl.colour[0] * lum, bl.colour[1] * lum, bl.colour[2] * lum);
     });
-    u.uCount.value = sys.blobs.length;
-    u.uUnitKm.value = KPC_KM;
-    u.uCentre.value.copy(centre).divideScalar(KPC_KM);
-    m.position.copy(centre);
-    m.scale.setScalar(sys.reachKpc * KPC_KM);
+    set.count = sys.blobs.length;
+    set.unitKm = KPC_KM;
+    set.centre.copy(centre).divideScalar(KPC_KM);
+    set.sync();
     m.visible = true;
-    applyLaw(material, opacity);
+    applyLaw(set.material, opacity);
   });
-  return <mesh ref={mesh} geometry={SPHERE} material={material} frustumCulled={false} renderOrder={4} visible={false} />;
+  return <primitive object={set.mesh} />;
 }
 
 function Jets() {

@@ -1820,14 +1820,14 @@ defineScene('m87-jet', {
   label: PENDING_LABELS['m87-jet'],
   note: 'M87’s jet in its own light, 5,000 light-years long on our sky and nearly 20,000 along the jet, leaving the black hole M87* at almost the speed of light. Its knots (HST-1, D, E, F, I, A, B, C) sit where Hubble sees them, as bright as measured from Earth; seen from here, 40° off our line, the jet coming towards us is dimmer than from Earth and the counter-jet still hundreds of times fainter: relativistic beaming. Its width and the light between the knots are a model.',
   unavailable: needs('m87'),
-  run: (note) => jetView('m87', note, 25 * KPC_KM, 40, 290),
+  run: (note) => jetView('m87', note, 10 * KPC_KM, 40, 290),
 });
 
 defineScene('centaurus-a-jets', {
   label: PENDING_LABELS['centaurus-a-jets'],
   note: 'Centaurus A, the nearest radio galaxy: its jet runs out north-east at about half the speed of light into the inner lobe, a fainter counter-jet the other way, and the giant lobes reach about 600 kiloparsecs from end to end, 16 full Moons across our sky. All of it is radio and X-ray light, shown in false colour at a brightness chosen to be seen; how the lobes lie along our line of sight is not known.',
   unavailable: needs('centaurus-a'),
-  run: (note) => jetView('centaurus-a', note, 1.4e3 * KPC_KM, 25, 55),
+  run: (note) => jetView('centaurus-a', note, 1.1e3 * KPC_KM, 25, 55),
 });
 
 defineScene('aurora', {
