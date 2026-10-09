@@ -12,6 +12,7 @@ import { CmbMap } from './scene/CmbMap';
 import { Constellations } from './scene/Constellations';
 import { PlanetHosts } from './scene/PlanetHosts';
 import { Bodies } from './scene/Bodies';
+import { StellarNebulae } from './scene/StellarNebulae';
 import { Orbits } from './scene/Orbits';
 import { Asteroids } from './scene/Asteroids';
 import { CometTails } from './scene/CometTails';
@@ -140,6 +141,7 @@ export default function App() {
           <PlanetHosts />
           <EclipticGrid />
           <Bodies />
+          <StellarNebulae />
           <Orbits />
           <CometTails />
           <Asteroids />

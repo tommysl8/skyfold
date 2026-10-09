@@ -265,6 +265,7 @@ export const NAMED_SCENES = [
   'm87-star-close',
   'cyg-x-1-disk',
   'cyg-x-1-from-above',
+  'monsters-among-the-stars',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -380,6 +381,7 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'm87-star-close': 'M87* from 1,000 au',
   'cyg-x-1-disk': 'The disc of Cygnus X-1',
   'cyg-x-1-from-above': 'Cygnus X-1 from above',
+  'monsters-among-the-stars': 'Monsters among the stars',
 };
 
 /** Define (or replace) a named scene. */
@@ -430,6 +432,15 @@ const STAR_TARGETS: ReadonlySet<string> = new Set([
   'arcturus',
   'hr-8799',
   '51-pegasi',
+  // The extreme stars (sim/stars/extremeStars.ts).
+  'mu-cephei',
+  'vy-canis-majoris',
+  'uy-scuti',
+  'stephenson-2-18',
+  'eta-carinae',
+  'achernar',
+  'wr-104',
+  'regulus',
 ]);
 /**
  * Hosts of the featured exoplanet systems that the star catalogue lacks, and a planet the scenes
@@ -1172,6 +1183,123 @@ defineScene('milky-way-outside', {
     scene(note, () => {
       useUI.setState({ showLabels: true });
       frameMilkyWay();
+    }),
+});
+
+// ─── The extreme stars (sim/stars/extremeStars.ts) ──────────────────────────────────────
+
+/** Solar radii per au. */
+const RSUN_PER_AU = AU_KM / 695_700;
+
+/**
+ * One stop of the extreme stars' tour: a star, how close (in its radii; or km), how long to stay (s), and what to say
+ * (worked out when the stop starts, from the records, so the sizes are the cards').
+ */
+interface MonsterStop {
+  id: BodyId;
+  radii?: number;
+  km?: number;
+  holdS: number;
+  /** Time runs this many times faster once there. */
+  warp?: number;
+  note: () => string;
+}
+
+/** A star's radius, R☉, from its record. */
+const rsunOf = (id: BodyId): number => getBody(id)?.star?.radiusRsun ?? 0;
+/** "1,420 times the Sun’s radius (6.6 au)". */
+const sizeWords = (id: BodyId): string => {
+  const r = rsunOf(id);
+  return `${Math.round(r).toLocaleString('en-GB')} times the Sun’s radius (${(r / RSUN_PER_AU).toFixed(1)} au)`;
+};
+
+const MONSTER_STOPS: readonly MonsterStop[] = [
+  {
+    id: 'betelgeuse',
+    radii: 2.6,
+    holdS: 14,
+    note: () =>
+      `Betelgeuse, ${sizeWords('betelgeuse')}: in the Sun’s place its surface would lie past the asteroid belt. Its surface boils with a few giant convection cells, as interferometers see it; they live about a year and are shown a million times faster. The Sun beside it would be a dot a 760th of its width.`,
+  },
+  {
+    id: 'stephenson-2-18',
+    radii: 2.6,
+    holdS: 14,
+    note: () =>
+      `Stephenson 2-18, often called the largest known star: ${sizeWords('stephenson-2-18')}, nearly three Betelgeuses across; in the Sun’s place it would swallow Saturn’s orbit. But the figure is disputed: it rests on a temperature from a dust model and the distance of a cluster it may not belong to.`,
+  },
+  {
+    id: 'uy-scuti',
+    radii: 2.6,
+    holdS: 10,
+    note: () =>
+      `UY Scuti was billed the largest star at 1,708 solar radii; at the distance Gaia measured, its measured angular size makes it ${sizeWords('uy-scuti')}.`,
+  },
+  {
+    id: 'vy-canis-majoris',
+    radii: 2.6,
+    holdS: 10,
+    note: () => `VY Canis Majoris, ${sizeWords('vy-canis-majoris')}, wrapped in the dust it is shedding (not drawn).`,
+  },
+  {
+    id: 'altair',
+    radii: 3.2,
+    holdS: 10,
+    note: () =>
+      'Altair spins once in under nine hours, at 92% of the speed that would tear it apart: it is a quarter wider at the equator than pole to pole, and its poles are 1,600 K hotter and brighter than its equator, as CHARA imaged it in 2007.',
+  },
+  {
+    id: 'achernar',
+    radii: 3.2,
+    holdS: 10,
+    note: () => 'Achernar, the flattest star measured: 35% wider at the equator than from pole to pole.',
+  },
+  {
+    id: 'eta-carinae',
+    km: 90_000 * AU_KM,
+    holdS: 16,
+    note: () =>
+      'Eta Carinae and the Homunculus, the two lobes it threw off in the 1840s, still flying apart at up to 650 km/s; their shape is measured, and grows with the date. The star itself is hidden in its own wind.',
+  },
+  {
+    id: 'wr-104',
+    km: 1800 * AU_KM,
+    holdS: 18,
+    warp: 1_000_000,
+    note: () =>
+      'WR 104: as its two stars orbit every 241.5 days, the dust their colliding winds make streams out in a spiral, like water from a garden sprinkler. Time runs a million times faster: a turn every 21 seconds. The dust glows in the infrared, shown in false colour.',
+  },
+];
+
+/** Run the tour from stop i; each stop waits for the camera's slew, then for its hold. */
+function monsterStop(i: number): void {
+  const s = MONSTER_STOPS[i];
+  if (!s || !isBody(s.id)) return;
+  setWarp(1);
+  useUI.setState({ journeyNote: `${i + 1} of ${MONSTER_STOPS.length}. ${s.note()}`, selected: s.id, showLabels: true });
+  const b = sim.bodies[s.id];
+  // From the Sun's side, a little above.
+  const dir = b ? b.pos.clone().negate().normalize().addScaledVector(UP, 0.25).normalize() : ABOVE.clone().normalize();
+  const distance = s.km ?? (s.radii ?? 3) * displayRadiusKm(getBody(s.id)!);
+  controller.goTo(s.id, { distance, direction: dir });
+  afterSlew(s.id, () => {
+    if (s.warp) setWarp(s.warp);
+    if (i + 1 >= MONSTER_STOPS.length) return;
+    const timer = setTimeout(() => {
+      pendingStep = null;
+      monsterStop(i + 1);
+    }, s.holdS * 1000);
+    pendingStep = () => clearTimeout(timer);
+  });
+}
+
+defineScene('monsters-among-the-stars', {
+  label: 'Monsters among the stars',
+  note: 'A tour of the extreme stars: the largest, the most flattened and the most violent, each drawn as it is measured up close.',
+  unavailable: needs(...MONSTER_STOPS.map((s) => s.id)),
+  run: (note) =>
+    scene(note, () => {
+      monsterStop(0);
     }),
 });
 

@@ -14,7 +14,7 @@
  */
 
 /** Marker styles (the shader's aStyle). */
-export const STYLE = { openCluster: 0, globular: 1, nebula: 2, planetary: 3, remnant: 4, pulsar: 5, galaxy: 6 } as const;
+export const STYLE = { openCluster: 0, globular: 1, nebula: 2, planetary: 3, remnant: 4, pulsar: 5, galaxy: 6, magnetar: 7 } as const;
 export type MarkerStyle = (typeof STYLE)[keyof typeof STYLE];
 
 /** The smallest ring drawn round an extended object, CSS px (radius). */
@@ -34,9 +34,11 @@ export const COMPACT_FADE_PC: Record<number, readonly [number, number]> = {
   [STYLE.planetary]: [600, 2000],
   [STYLE.remnant]: [1500, 4000],
   [STYLE.pulsar]: [400, 1200],
+  // Magnetars: thirty in the whole Galaxy, all kiloparsecs away; they show from farther.
+  [STYLE.magnetar]: [1500, 6000],
 };
 /** A compact mark's radius, CSS px. */
-export const COMPACT_PX: Record<number, number> = { [STYLE.planetary]: 3.5, [STYLE.remnant]: 5, [STYLE.pulsar]: 2.5 };
+export const COMPACT_PX: Record<number, number> = { [STYLE.planetary]: 3.5, [STYLE.remnant]: 5, [STYLE.pulsar]: 2.5, [STYLE.magnetar]: 3.5 };
 
 /** A galaxy shows from this apparent radius (px), fully from the next. */
 export const GALAXY_FROM_PX = 1;

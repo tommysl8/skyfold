@@ -24,7 +24,10 @@ import { controller } from '../../controls/cameraController';
 import { deepSkyChanged, type DeepSkyPick, type DeepSkyRuntime, type DeepSkySetId, type DeepSkyShown } from './index';
 import {
   DEEP_SKY_FILES,
+  MAGNETARS_FILE,
+  mergeMagnetars,
   NGC_EXISTING_FILE,
+  parseMagnetars,
   parseGwEvents,
   parseNgcExisting,
   parseNgcGalactic,
@@ -178,7 +181,7 @@ function buildSnrs(file: SnrFile): LoadedSet {
 function buildPulsars(list: Pulsar[], shown: (p0: number) => number): LoadedSet {
   const entries = list.map(pulsarEntry);
   return withNames('pulsars', entries, {
-    galactic: galacticArrays(list, () => 0, () => STYLE.pulsar, (i) => shown(list[i].p0)),
+    galactic: galacticArrays(list, () => 0, (i) => (list[i].magnetar ? STYLE.magnetar : STYLE.pulsar), (i) => shown(list[i].p0)),
     record: (i, e) => pulsarRecord(list[i], e),
     group: () => 'pulsars',
   });
@@ -215,15 +218,17 @@ function addExisting(designation: string, body: string): void {
   deepSky.existing.set(tight(n), body);
 }
 
-/** Read a catalogue's file into its set (the tests call this with the file from disk). */
-export function buildSet(id: DeepSkySetId, file: ColumnFile): LoadedSet {
+/** Read a catalogue's file into its set (the tests call this with the file from disk); the pulsars take the magnetars' file too. */
+export function buildSet(id: DeepSkySetId, file: ColumnFile, magnetars?: ColumnFile | null): LoadedSet {
   switch (id) {
     case 'ngc-galactic':
       return buildGalacticNgc(parseNgcGalactic(file));
     case 'snrs':
       return buildSnrs(parseSnrs(file));
-    case 'pulsars':
-      return buildPulsars(parsePulsars(file), (p0) => shownPulse(p0).periodS);
+    case 'pulsars': {
+      const list = parsePulsars(file);
+      return buildPulsars(magnetars ? mergeMagnetars(list, parseMagnetars(magnetars)) : list, (p0) => shownPulse(p0).periodS);
+    }
     case 'ngc-galaxies':
       return buildGalaxies(parseNgcGalaxies(file));
     case 'gw-events':
@@ -265,7 +270,9 @@ async function load(id: DeepSkySetId): Promise<void> {
   deepSkyChanged();
   try {
     if (id === 'ngc-galactic' || id === 'ngc-galaxies') void loadExisting();
-    const set = buildSet(id, await readJson(DEEP_SKY_FILES[id]));
+    // The magnetars come with the pulsars (a small file); without it the pulsars still load.
+    const extra = id === 'pulsars' ? readJson(MAGNETARS_FILE).catch((err) => (console.warn(`[lightspeed] the magnetars did not load (${err})`), null)) : null;
+    const set = buildSet(id, await readJson(DEEP_SKY_FILES[id]), await extra);
     deepSky.failures.delete(id);
     adoptSet(set);
   } catch (err) {

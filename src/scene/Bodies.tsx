@@ -56,7 +56,8 @@ import { bodyEntries } from '../sim/bodies/registry';
 import { eqjToWorld, raDecToWorld } from '../sim/frames';
 import { sim } from '../sim/sim';
 import { useUI } from '../state/ui';
-import { createOrbitMaterial, createPlanetMaterial, createRingMaterial, createSunMaterial, SUN_CENTRE_RADIANCE } from '../render/materials';
+import { createOrbitMaterial, createPlanetMaterial, createRingMaterial, createStarSurfaceMaterial, createSunMaterial, SUN_CENTRE_RADIANCE } from '../render/materials';
+import { roundStarGeometry, starShapeGeometry } from '../render/starShape';
 import { bandsExtent, bandsTexture, extentFactor } from '../render/rings';
 import { loadShape } from '../render/shapes';
 import { acquireTexture, pumpTextureUploads, releaseTexture, setPinnedTextures, type TextureOptions } from '../render/textures';
@@ -416,15 +417,83 @@ export function Sun() {
   return <mesh ref={mesh} geometry={SPHERE_LO} material={material} visible={false} />;
 }
 
+/** Shared round star meshes (aTemp = 1), never disposed. */
+const STAR_SPHERE_HI = roundStarGeometry(128, 64);
+const STAR_SPHERE_LO = roundStarGeometry(32, 16);
+const qPole = new Quaternion();
+const qSpin = new Quaternion();
+const poleVec = new Vector3();
+
+/** Numbers in [0, 1) from a string and a counter, the same every time (a star's spots and flares). */
+function hash01(s: string, n: number): number {
+  let h = 2166136261 ^ n;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  h = Math.imul(h ^ (h >>> 15), 2246822507);
+  h = Math.imul(h ^ (h >>> 13), 3266489909);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/** A unit vector from two numbers in [0, 1), within ±maxLat of the equator (+Y the pole). */
+function unitAt(u: number, v: number, maxLatRad = Math.PI / 2, out = new Vector3()): Vector3 {
+  const lat = (2 * v - 1) * maxLatRad;
+  const lon = 2 * Math.PI * u;
+  return out.set(Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon));
+}
+
 /**
- * A star other than the Sun (Proxima Centauri): a limb-darkened blackbody disc at its effective
- * temperature. The Sun's granulation map is not used.
+ * A star other than the Sun: its close-up (sim/stars/closeup.ts) drawn by the star-surface material: its shape
+ * (a Roche surface for a fast rotator, its pole where interferometry puts it), limb darkening for its type,
+ * gravity darkening, convection cells, starspots and flares. Cells fade out below a couple of pixels, so from
+ * afar it is the plain limb-darkened disc it always was.
  */
 export function StarBody({ id }: { id: BodyId }) {
   const mesh = useRef<Mesh>(null!);
-  const teff = getBody(id)?.physical.luminous?.teffK ?? SUN_TEFF_K;
-  const material = useMemo(() => createSunMaterial(new Color(...blackbodyRgb(teff))), [teff]);
-  useEffect(() => () => material.dispose(), [material]);
+  const rec = getBody(id);
+  const teff = rec?.physical.luminous?.teffK ?? SUN_TEFF_K;
+  const surface = rec?.starSurface;
+  const material = useMemo(() => {
+    const m = createStarSurfaceMaterial(new Color(...blackbodyRgb(teff)), teff);
+    const u = m.uniforms;
+    if (surface) {
+      u.uTPole.value = teff * surface.poleTeffRatio;
+      u.uLimbU.value.set(...surface.limbU);
+      u.uGranFreq.value = Math.sqrt(surface.granules / (4 * Math.PI));
+      u.uGranContrast.value = surface.granuleContrast;
+      u.uGiantFreq.value = Math.sqrt(surface.giantCells / (4 * Math.PI));
+      u.uGiantContrast.value = surface.giantContrast;
+      const spots = surface.spots;
+      if (spots) {
+        u.uSpotCount.value = Math.min(6, spots.count);
+        u.uSpotDT.value = spots.deltaTK;
+        for (let i = 0; i < u.uSpotCount.value; i++) {
+          const d = unitAt(hash01(id, 2 * i), hash01(id, 2 * i + 1), (60 * Math.PI) / 180);
+          u.uSpots.value[i].set(d.x, d.y, d.z, spots.radiusRad * (0.6 + 0.8 * hash01(id, 100 + i)));
+        }
+      }
+    }
+    return m;
+  }, [id, teff, surface]);
+  // How much brighter than its mean surface its hottest part is at 550 nm (Planck): a fast rotator’s pole.
+  const hottest = useMemo(() => {
+    const t = teff * (surface?.poleTeffRatio ?? 1);
+    const x = (T: number) => 14388 / (0.55 * T);
+    return t > teff ? (Math.exp(x(teff)) - 1) / (Math.exp(x(t)) - 1) : 1;
+  }, [teff, surface]);
+  const shapes = useMemo(() => {
+    const hi = surface ? starShapeGeometry(surface, 128, 64) : null;
+    const lo = surface ? starShapeGeometry(surface, 48, 24) : null;
+    return { hi: hi ?? STAR_SPHERE_HI, lo: lo ?? STAR_SPHERE_LO, own: !!hi };
+  }, [surface]);
+  useEffect(
+    () => () => {
+      material.dispose();
+      if (shapes.own) {
+        shapes.hi.dispose();
+        shapes.lo.dispose();
+      }
+    },
+    [material, shapes],
+  );
   useFrame(() => {
     const b = sim.bodies[id];
     if (!b) return;
@@ -433,14 +502,44 @@ export function StarBody({ id }: { id: BodyId }) {
     m.visible = b.present && b.radiusPx >= MESH_MIN_PX && !(lens.spheres.length > 0 && lens.spheres.includes(id));
     if (!m.visible) return;
     m.position.copy(b.apparentPos).sub(sim.camera.pos);
-    m.quaternion.copy(b.apparentQuat);
+    if (surface) {
+      // +Y is the pole; a star with a rotation period turns about it on the simulation's clock.
+      qPole.setFromUnitVectors(UP, poleVec.set(...surface.pole));
+      const turn = surface.rotationDays > 0 ? ((sim.timeMs / 86_400_000 / surface.rotationDays) % 1) * 2 * Math.PI : 0;
+      m.quaternion.copy(qPole).multiply(qSpin.setFromAxisAngle(UP, turn));
+    } else m.quaternion.copy(b.apparentQuat);
     m.scale.setScalar(b.displayRadius);
-    const geometry = b.radiusPx < LOD_PX ? SPHERE_LO : SPHERE_HI;
+    const geometry = b.radiusPx < LOD_PX ? shapes.lo : shapes.hi;
     if (m.geometry !== geometry) m.geometry = geometry;
+    const u = material.uniforms;
+    // Auto-exposure: at full radiance while small (the disc then averages the point's light), stopped down up close
+    // so the surface's colour, limb darkening and cells show rather than burning out to white.
     const t = Math.min(1, Math.max(0, (b.radiusPx - 30) / 170));
-    material.uniforms.uIntensity.value = 6 - 3.6 * t * t * (3 - 2 * t);
+    const k = t * t * (3 - 2 * t);
+    // Up close, its hottest part (a fast rotator’s pole) at the same level as any other star’s centre.
+    u.uIntensity.value = (6 - 5.2 * k) / Math.pow(hottest, 1.4 * k);
+    // AgX tone mapping compresses a stop to a few per cent of the screen’s range: up close the disc’s contrast is
+    // stretched to 2.4 stops a stop (the card says so), from afar it is exact.
+    u.uContrast.value = 1 + 1.4 * k;
+    if (!surface) return;
+    // The surface's own clock: the wall clock sped up (closeup.ts surfaceSpeedup), in turnovers.
+    const shownS = (performance.now() / 1000) * surface.speedup;
+    u.uTime.value = (shownS / surface.turnoverS) % 1000;
+    const flares = surface.flares;
+    if (flares) {
+      // One flare in each slot of a day's share; it rises in a twentieth of its length and decays over the rest.
+      const slotS = 86_400 / flares.perDay;
+      const slot = Math.floor(shownS / slotS);
+      const start = (slot + 0.6 * hash01(id, 1000 + (slot % 100_000))) * slotS;
+      const dt = shownS - start;
+      const d = flares.durationS;
+      const rise = 0.05 * d;
+      const k = dt < 0 ? 0 : dt < rise ? dt / rise : Math.exp(-(dt - rise) / (0.25 * d));
+      const dir = unitAt(hash01(id, 2000 + (slot % 100_000)), hash01(id, 3000 + (slot % 100_000)), (70 * Math.PI) / 180, poleVec);
+      u.uFlare.value.set(dir.x, dir.y, dir.z, k > 0.01 ? k : 0);
+    }
   });
-  return <mesh ref={mesh} geometry={SPHERE_LO} material={material} visible={false} />;
+  return <mesh ref={mesh} geometry={STAR_SPHERE_LO} material={material} visible={false} />;
 }
 
 // ─── Spacecraft ──────────────────────────────────────────────────────────────────────────
@@ -611,7 +710,7 @@ export function Spacecraft({ id }: { id: BodyId }) {
  */
 function ShaderKeeper() {
   const materials = useMemo(
-    () => [createPlanetMaterial({ baseColor: new Color('#808080') }), createRingMaterial(), createSunMaterial(), createOrbitMaterial(new Color('#808080'))],
+    () => [createPlanetMaterial({ baseColor: new Color('#808080') }), createRingMaterial(), createSunMaterial(), createStarSurfaceMaterial(), createOrbitMaterial(new Color('#808080'))],
     [],
   );
   return (

@@ -12,6 +12,7 @@
  *    astronomy-engine providers and the date policy (ephemerisPolicy.ts) need.
  */
 import type { PulsarModel } from '../deepsky/pulsarModel';
+import type { StarSurface } from '../stars/closeup';
 import type { AstroTime } from 'astronomy-engine';
 import type { Quaternion, Vector3 } from 'three';
 
@@ -420,6 +421,8 @@ export interface BodyRecord {
   blackHole?: BlackHoleInfo;
   /** A pulsar's model up close: its spin, beams and field, and a neutron-star companion (sim/deepsky/pulsarModel.ts). */
   pulsar?: PulsarModel;
+  /** A star's close-up: its shape, limb darkening, cells, spots and flares (sim/stars/closeup.ts). */
+  starSurface?: StarSurface;
 }
 
 /** A picture of a deep-sky object, with what its licence asks to be shown with it (CC BY 4.0). */
