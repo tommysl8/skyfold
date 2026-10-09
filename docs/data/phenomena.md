@@ -144,9 +144,10 @@ October 2026:
 | --- | --- | --- |
 | Tycho's remnant (1750) filling a quarter of the view | 12.6 ms | 0.95 ms |
 | The aurora scene (Earth 680 px across) | 29 ms | about 1.8 ms (0.3–3.1) |
-| M87's jet from 8 kpc, single-pass draw (before the instanced blobs) | 23.4 ms | 8 ms |
+| M87's jet from 10 kpc, instanced blobs | 12.9 ms | under the noise (−2.9 to +0.3 ms) |
+| (the same, the first single-pass draw) | 23.4 ms | 8 ms |
 
 The first jet draw evaluated every blob on every pixel of one sphere round the system and cost 8 ms; the blobs are now one
-instanced draw, each on its own ellipsoid's pixels (see the report for the measurement after the change). The first
+instanced draw, each on its own ellipsoid's pixels, and cost nothing measurable. The first
 aurora shader computed the oval, its noise and the magnetic local time at every sample and cost about 4.5 ms; it now
 does so at three points of each ray.
