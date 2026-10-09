@@ -154,6 +154,16 @@ Hubble called ellipticals "early" and spirals "late", but warned in 1926 that he
 M104, the Sombrero Galaxy, is a spiral 31 million light-years away, seen nearly edge-on.[^mcquinn2016m104] The dark band across it is dust, the kind of lane Curtis said would hide any spirals behind our own galaxy.[^hoskin1976]
 :::
 
+In Skyfold about twenty-five of the best-known galaxies are drawn with photographs from ESA/Hubble, ESO and NOIRLab, laid on each galaxy as we see it and as bright as its measured light. A photograph shows a galaxy only from about where it was taken, so as you move away from our line of sight, or come close, each one gives way to a model built from the galaxy's measured size, tilt and brightness, whose arms and dust are typical of its type rather than a map.
+
+::: see-it famous-galaxies
+The Whirlpool Galaxy from our side of it, drawn with a photograph. Turn the view, and the photograph fades into the model.
+:::
+
+::: see-it virgo-cluster-close
+The Virgo Cluster, the nearest big cluster of galaxies, about 54 million light-years away: Hubble's sequence all in one place, from the giant ellipticals at its heart to the spirals around them, each drawn at its measured distance where that is known.
+:::
+
 ## Too much gravity
 
 Galaxies weigh more than they look. Knut Lundmark had found hints of this in 1930, from the spectra of five galaxies, but the claim that stuck came from Fritz Zwicky, a Swiss astronomer at Caltech, in 1933.[^bertone2018] The Coma Cluster holds about 800 galaxies whose speeds along our line of sight differ by at least 1,500 km/s. A cluster stays together only if its gravity can hold galaxies moving that fast, and Zwicky found it would need a density at least 400 times higher than its starlight implied. If that were confirmed, he wrote, "dark matter exists in much greater density than luminous matter".[^zwicky1933]

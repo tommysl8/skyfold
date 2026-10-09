@@ -48,8 +48,8 @@ describe('Cygnus X-1’s disc as drawn', () => {
     expect(disk.normalWorld[2]).toBeCloseTo(-n[1] / Math.hypot(...n), 12);
   });
 
-  it('only Cygnus X-1 has one', () => {
-    expect(BLACK_HOLES.holes.filter((h) => h.disk).map((h) => h.id)).toEqual(['cyg-x-1']);
+  it('only Cygnus X-1 and the four persistent or long-bright binaries of the second table have one', () => {
+    expect(BLACK_HOLES.holes.filter((h) => h.disk).map((h) => h.id)).toEqual(['cyg-x-1', 'grs-1915', 'lmc-x-1', 'lmc-x-3', 'm33-x-7']);
   });
 });
 

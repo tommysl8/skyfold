@@ -104,15 +104,15 @@ function blackTexture(): DataTexture {
 
 export class GalaxyLayer {
   /**
-   * Who has something to draw this frame: the model of the Milky Way (scene/GalaxyModel.tsx) and
-   * the galaxies beyond it (scene/Galaxies.tsx).
+   * Who has something to draw this frame: the model of the Milky Way (scene/GalaxyModel.tsx), the
+   * galaxies beyond it (scene/Galaxies.tsx) and their photographs (scene/GalaxyPictures.tsx).
    */
-  readonly wants = { milkyWay: false, galaxies: false };
+  readonly wants = { milkyWay: false, galaxies: false, pictures: false };
   /** The Milky Way model's share of the view near the Sun (scene/GalaxyModel.tsx; see COMPOSITE_FRAG). */
   modelShare = 1;
   /** Whether there is anything to draw this frame. */
   get active(): boolean {
-    return this.wants.milkyWay || this.wants.galaxies;
+    return this.wants.milkyWay || this.wants.galaxies || this.wants.pictures;
   }
   /** Target pixels per device pixel. */
   resScale = 0.25;

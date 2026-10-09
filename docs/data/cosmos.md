@@ -12,6 +12,8 @@ the independent verification" describe the data; the last section, "In the app",
 | --- | --- | --- |
 | `public/data/local-galaxies.json.gz` | 30,810 gz / 142,211 raw | 169 galaxies within 3 Mpc: every confirmed dwarf in the Local Volume Database v1.1.1 (CC0) + M31 and M33 |
 | `src/sim/cosmos/named.json` | 31,417 (7,711 gz) | 15 named galaxies, clusters and redshift-record galaxies, with sources |
+| `public/data/more-galaxies.json.gz` | 10,257 gz | 108 famous galaxies and the Virgo and Coma clusters' brightest ("More galaxies" below) |
+| `public/images/galaxies/*.jpg`, `src/sim/cosmos/pictures.json` | 1.01 MB in all | 25 photographs of famous galaxies ("Pictures of the galaxies" below) |
 | `public/data/cosmic-web.bin.gz` | 867,446 gz / 1,285,235 raw | 55,877 Cosmicflows-4 galaxies: position, velocity, measured distance, Ks |
 | `public/textures/cmb.png` | 874,361 | CMB anisotropy, colour, 2048 x 1024 palette PNG, galactic equirectangular |
 | `public/textures/cmb-data.png` | 289,676 | same map as a linear temperature code, 1024 x 512 greyscale PNG |
@@ -23,6 +25,8 @@ missing):
 node scripts/build-cosmic-web.mjs      # writes cosmic-web.bin.gz and data-raw/cosmos/cosmic-web-index.json
 node scripts/build-local-galaxies.mjs  # needs the index above; writes local-galaxies.json.gz and named.json
 node scripts/build-cmb.mjs             # writes cmb.png and cmb-data.png
+node scripts/build-more-galaxies.mjs   # needs data-raw/galaxies/ (OpenNGC, Mei et al. 2007; fetched if missing)
+python scripts/build-galaxy-pictures.py  # numpy, Pillow, scipy; needs more-galaxies.json.gz
 ```
 
 All three are deterministic: a rerun from the cache reproduces the files byte for byte. Suggested
@@ -353,6 +357,9 @@ put it back, or add the much larger effect of the ship's own velocity.
 | RC3 | de Vaucouleurs et al. 1991, Third Reference Catalogue of Bright Galaxies, via VizieR VII/155 | individual catalogue values quoted with citation | D25, R25, PA, B_T, A_g and types of the 9 named galaxies |
 | SIMBAD positions | Wenger et al. 2000, A&AS 143, 9, via CDS Sesame | free use with acknowledgement | positions of the named objects |
 | Literature values | the papers listed in the tables above | facts quoted with citation | distances, redshifts, disc angles |
+| OpenNGC | Mattia Verga, https://github.com/mattiaverga/OpenNGC (from HyperLEDA, NED and SIMBAD) | CC BY-SA 4.0 (more-galaxies.json.gz is released under it too) | names, positions, types, sizes, magnitudes and velocities of the more galaxies |
+| Mei et al. 2007 | ApJ 655, 144 (ACS Virgo Cluster Survey XIII), VizieR J/ApJ/655/144 | distances quoted with citation | SBF distances of 25 Virgo galaxies |
+| Galaxy photographs | ESA/Hubble, ESO, NSF NOIRLab (credit lines in CREDITS.md) | CC BY 4.0 | the 25 pictures |
 | NED | NASA/IPAC Extragalactic Database, preferred redshifts of M87 and Centaurus A | NASA/IPAC data, free with the NED acknowledgement | two redshifts |
 | Colour map | Moreland 2009 | algorithm from the paper, implemented here | CMB palette |
 
@@ -663,6 +670,118 @@ under their galaxy.
 - Flights: the planner resolves every galaxy (the flights through the expanding universe are the flight planner's:
   `docs/data/cosmology.md`).
 
+### More galaxies: famous ones, and the Virgo and Coma clusters up close
+
+`scripts/build-more-galaxies.mjs` → `public/data/more-galaxies.json.gz` (10 kB) and `src/sim/cosmos/moreGalaxyNames.json`;
+`src/sim/cosmos/moreGalaxies.ts` (the format and its rules), `records.ts` (`moreGalaxy`). Built 9 October 2026. 108
+galaxies, each a body drawn with its template like the named ones, loaded with the Local Group's file:
+
+| Set | Galaxies | Distance |
+| --- | --- | --- |
+| Famous | 13: M82, M64, M63, M65, M66, NGC 3628, NGC 1300, NGC 4038 and NGC 4039 (the Antennae), M83, NGC 253, M101, NGC 4565 | where the cosmic web places their Cosmicflows-4 row (its group distance within 30 Mpc), exactly as the deep-sky layer did; NGC 4039 shares NGC 4038's row and distance |
+| Virgo Cluster | 61: its Messier galaxies (M49, M58, M59, M60, M61, M84, M85, M86, M88, M89, M90, M91, M98, M99, M100; M87 is in named.json), Markarian's Chain, the Eyes, the Siamese Twins, and every member of its Cosmicflows-4 run or of Mei et al. (2007) brighter than B or V = 11.6 | 25 from Mei et al. 2007 (ApJ 655, 144: surface brightness fluctuations, ±0.05–0.1 mag), 16 from Cosmicflows-4 where the method is precise (SBF, Cepheids, TRGB, SN Ia, masers; error ≤ 0.15 mag), brought to Mei's scale by the median ratio of the 74 galaxies both measured (1.0028), 20 at the cluster's distance (16.5 Mpc, Mei et al. 2007) |
+| Coma Cluster | 34: NGC 4889, NGC 4874, the spirals NGC 4911 and NGC 4921, and the members of its Cosmicflows-4 run with NGC or IC names and Ks ≤ 10.8 | all at the cluster's distance (98.5 Mpc, Scolnic et al. 2025), each in its own direction: at 100 Mpc even a 0.1 mag distance is ±5 Mpc, more than the cluster's depth |
+
+As named.json places the clusters (their measured distance divided by 1 + z_cmb), each member is placed at the same
+fraction of its measured distance. Names, positions, Hubble types, sizes (D25 major and minor axes, position angle),
+B and V magnitudes and heliocentric velocities are OpenNGC's (CC BY-SA 4.0, from HyperLEDA, NED and SIMBAD).
+
+- **Template** by HyperLEDA type (`templateForHubble`): E, E-S0 and cD the elliptical; S0 and S0/a the lenticular,
+  without the Sombrero's ring of dust; SB spirals the barred one; other spirals by stage (a–ab early, b–bc, c and
+  later late); Magellanic types, irregulars and "S?" (M82) the irregular.
+- **Tilt**: a disc's inclination from its axis ratio with an intrinsic thickness q0 = 0.2 (cos² i = (q² − q0²)/(1 −
+  q0²), Hubble 1926), its position angle OpenNGC's, the near side assumed; ellipticals and irregulars are their sky
+  ellipse with a depth equal to their width. The cards say so.
+- **Brightness**: OpenNGC's V where its B − V is a galaxy's (0.2–1.2), else B less the type's typical B − V; not
+  corrected for the Milky Way's dust (0.05–0.4 mag), which the card says. Size: R25 from the D25 major axis.
+- **Place in the expanding universe**: the famous ones keep their place in their Cosmicflows-4 group, whose anchor
+  (the deep-sky file's) is carried by the expansion (`x + (a − 1) c`); the clusters' members are held in their
+  cluster, relative to its place, as M87 is in Virgo.
+- **No duplicates**: their Cosmicflows-4 rows are left out of the cosmic web's points (63 rows) and their rows' anchors
+  are the bodies'; the deep-sky layer leaves their NGC/IC entries out and leads their designations to the bodies
+  ("M 82", "NGC 3034", "NGC 4874" → the galaxy). Three of them (M100 and the Siamese Twins) are also single points of
+  the SDSS survey layer, at their redshift distance (28–38 Mpc): left as they are.
+- Cosmicflows-4 has no row for M86, M90, M98, M99, M61, M100 or NGC 4216 (nor NGC 1232 or the Cartwheel, which the app
+  does not have): their places come from OpenNGC and Mei et al. (M86) or the cluster's distance.
+
+Scenes: `virgo-cluster-close` (the cluster from 2.5 Mpc, 25° off our line of sight, labels on, the cosmic web off for
+the scene) and `coma-cluster-close` (6 Mpc out along our line of sight; seen from the side its members would lie in a
+sheet); Journeys has "The Virgo Cluster". At their true brightness most members are faint smudges from there; that is
+what they would look like.
+
+### Pictures of the galaxies
+
+`scripts/build-galaxy-pictures.py` → `public/images/galaxies/<id>.jpg` (25 pictures, 1.01 MB in all, 11–160 kB each)
+and `src/sim/cosmos/pictures.json`; `src/sim/cosmos/pictures.ts` (geometry and weights, tested),
+`scene/GalaxyPictures.tsx`, `render/shaders/galaxyPicture.vert.glsl` and `.frag.glsl`.
+
+| Galaxy | Image | Field (′) | Galaxy | Image | Field (′) |
+| --- | --- | --- | --- | --- | --- |
+| Andromeda (with M32, M110) | ESA/Hubble heic1502b (DSS2), cropped | 230 × 160 | M66 | ESO eso1126a (VST), cropped | 14 × 14 |
+| Triangulum | ESO eso1424a | 68 × 57 | NGC 3628 | ESO eso1126a (VST), cropped | 18 × 18 |
+| Whirlpool (with NGC 5195) | NOIRLab noao-noao-m51-kpno-09m-2 | 14.7 × 9.8 | NGC 1300 | NOIRLab noao-ngc1300 | 9.1 × 9.1 |
+| Pinwheel (M101) | NOIRLab noao-m101ubviha | 31.7 × 31.8 | Antennae (NGC 4038/4039) | NOIRLab noao-n4038twardy | 17.6 × 11.8 |
+| Sombrero | ESA/Hubble heic2506a | 9.5 × 5.7 | M87 | NOIRLab noao-m87block | 12.4 × 8.4 |
+| Bode's Galaxy (M81) | NOIRLab noao-m81m82, cropped | 31 × 31 | Southern Pinwheel (M83) | NOIRLab noirlab2429a (DECam), cropped | 19 × 19 |
+| Cigar (M82) | NOIRLab noao-m82final | 18.9 × 18.5 | Sculptor (NGC 253) | ESO eso1152a (VST), cropped | 33 × 32 |
+| Centaurus A | ESO eso1221a | 33.9 × 33.1 | Needle (NGC 4565) | NOIRLab noao-02286 | 18.8 × 14.9 |
+| Black Eye (M64) | NOIRLab noao-m64 | 14.5 × 14.5 | M100, M60 (with NGC 4647), M90, M61, M88 | NOIRLab noao-m100, -m60, -m90, -m61, -m88quinn | 8.3–14.2 |
+| Sunflower (M63) | NOIRLab noao-m63 | 20.4 × 15.5 | NGC 4921 (Coma) | ESA/Hubble heic0901a | 3.2 × 3.3 |
+| M65 | ESO eso1126a (VST), cropped | 13 × 13 | | | |
+
+All CC BY 4.0, each credit line in `CREDITS.md` ("Galaxy images"), on the galaxy's card and in the view's Credits list
+whenever the picture is drawn. The Magellanic Clouds have none: they span 10° and more of the Milky Way's star fields,
+and from the Sun they are part of the sky map already.
+
+- **Placing.** Each archive page gives the field of view and "North is X° left/right of vertical". Its "Position",
+  though, is the WorldWide Telescope reference pixel, which on many NOIRLab pages is not the image's centre (12′ off on
+  noao-m101ubviha): the centre used is worked out from that page's WorldWide Telescope link (reference pixel, scale and
+  rotation), checked against the thumbnails. (`build-nebulae.py` takes the page's Position as the centre; for its
+  NOIRLab images that may be worth checking.)
+- **Processing** (all in linear light): cropped to the galaxy where the frame holds more; resized to at most 1,024 px;
+  the sky's level (the median outside the galaxy's D25 ellipse) subtracted; compact, nearly white sources 6σ above a
+  median-filtered copy, outside the cores, replaced by that copy (foreground stars; the galaxy's coloured H II regions
+  stay; not in Hubble's narrow fields of the Sombrero and NGC 4921, whose smooth haloes it would blotch); everything beyond 1.15–1.45 times the D25 ellipse (plus circles round the companions in the frame) faded to
+  black; then stored as a light map, the photograph's colours times its luminance, so that the display law
+  (luminance ∝ √light) shows the photograph's own tones. `meanLight`, the map's mean luminance as decoded from the
+  JPEG, lets the app give the picture exactly its galaxy's light.
+- **Where it lies.** The photograph's rectangle on the sky is carried along the lines of sight from the Sun onto the
+  galaxy's plane through its centre (`picturePoint`; a 9 × 9 grid, so a large picture keeps its perspective): from the
+  Solar System it covers the sky exactly as the photograph does, and from a little off our line of sight the disc is
+  foreshortened as the model's is. A disc tilted more than 70°, an elliptical or an irregular has no plane that would
+  help: its picture is a card across our line of sight. Andromeda's disc (77.7°) is therefore a card too.
+- **How much of the light.** The picture draws a share w of its galaxy's light and the model (scene/Galaxies.tsx) the
+  rest, 1 − w (the companions in its frame, M32 and M110 in Andromeda's, NGC 4039 in the Antennae's and NGC 4647 in
+  M60's, likewise): w is 1 within 6° of our line of sight (seen from the galaxy) and 0 beyond 20°, 1 until one of its
+  pixels covers 1.5 CSS px on screen and 0 from 4 (close in, where its resolution runs out and the model's fine
+  template shows more), and 0 below a half-width of 6 CSS px, 1 from 16 (`pictureWeights`). The two crossfade, and
+  nothing jumps: the picture's light is the galaxy's V luminosity times the share of the model's light its own dust
+  lets through towards the Sun (`dustTransmission`, the shader's thin dust layer evaluated over the template's
+  particles: 0.82 for the Whirlpool), spread over the picture as its map's luminance is, as a surface brightness in the
+  Galaxy layer's unit (the flux in V = 0 stars within a faint star's image area). It goes into the Galaxy layer's fine
+  target with the particles, so the same display law, saturation and eye threshold (22–24 mag/arcsec²) show both. A
+  thin sheet seen at a slant shows its light over 1/|cos| less sky, and each pixel off the view's axis is weighted
+  cos³θ as the particles' are.
+- **In flight** each vertex is aberrated and the light Doppler shifted (a black body of the galaxy's typical colour) and
+  redshifted by the expansion, as the particles are. **Near a black hole** the pictures are not drawn (the model is,
+  lensed with the layer).
+- **Loading.** A picture loads when it would be drawn in the view (or its galaxy is selected) and is let go 8 s after.
+- **Honest labels.** The cards say what the picture is: a photograph from Earth, right only from near our line of
+  sight, laid on the disc; its light is the galaxy's measured light spread as the photograph spreads it (the tones of a
+  stretched photograph, squared, are not a measurement of its surface brightness).
+
+Scene: `famous-galaxies` (the Whirlpool from 90 kpc along our line of sight, with its picture); Journeys has "Famous
+galaxies, as photographed". Search finds every galaxy by its common name, Messier number and NGC designation.
+
+GPU cost (Intel integrated GPU, Chrome, 3,200 × 1,584 px at pixel ratio 2, `perf.ab` of the pictures on against off,
+other work sharing the GPU, so every number is high and noisy, 9 October 2026): Andromeda from 110 kpc along our
+line of sight, its picture 360 CSS px across, the Galaxy layer's pass (`perf.passes`, four interleaved rounds of 20
+frames) 3.0–6.2 ms with the pictures on and 4.2–7.3 off (medians 4.8 and 5.6): the picture's cost is below what
+the shared GPU resolves (one 81-vertex grid and one texture read a pixel over about 0.5 million pixels); the whole
+frame 12.4 ms best, 13.1 median. Inside the Virgo Cluster, 400 kpc from M49 (M87*'s lens drawn, as it is anywhere
+there): the Galaxy layer's pass 2.85 ms with its sixty galaxies' models, the whole frame 11.7 ms best, 18.1 median.
+Where no picture is wanted nothing is loaded and nothing drawn.
+
 ### Honest labels
 
 - Every galaxy's shape is a model built from its measured size, orientation and brightness and the light profile
@@ -674,6 +793,8 @@ under their galaxy.
   followed), groups and clusters keep their size, and their light's redshift is drawn as a black body's; the
   cosmology is Planck 2018's.
 - The CMB map is the pattern seen from the Solar System at the present.
+- The galaxies' photographs are the view from Earth: right only within a few degrees of our line of sight, where they are drawn; their light is the galaxy's measured light spread as the (stretched) photograph spreads it.
+- The more galaxies' tilts come from their shapes on the sky; members of the clusters without a precise distance of their own are at their cluster's distance.
 - The cosmic web is a survey, not a census, drawn as a map; its distances are Cosmicflows-4's.
 - The CMB map is contrast enhanced about 10,000 times.
 - The Bullet Cluster's galaxies are illustrative.

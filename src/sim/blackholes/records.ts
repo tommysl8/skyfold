@@ -1,8 +1,10 @@
 /**
- * The black holes' body records, from blackholes.json: M87* at the centre of M87, the eight binaries (each a
- * barycentre in straight-line motion, the hole and its companion star on their published orbit about it) and
- * OGLE-2011-BLG-0462 alone; and the black-hole block of Sagittarius A*'s record (sim/galaxy/records.ts keeps
- * its mass and place, from sstars.json).
+ * The black holes' body records, from blackholes.json: M87* at the centre of M87 and the other supermassive holes at
+ * the centres of nearby galaxies (those the app registers with the galaxies, and those of the NGC catalogue, which
+ * the app registers only on demand: such a hole carries its galaxy's place), the binaries (each a barycentre in
+ * straight-line motion, the hole and its companion star on their published orbit about it; three of them in the
+ * Magellanic Clouds and M33) and OGLE-2011-BLG-0462 alone; and the black-hole block of Sagittarius A*'s record
+ * (sim/galaxy/records.ts keeps its mass and place, from sstars.json).
  *
  * How: pure functions of the files (the tests call them with the files read from disk). The binaries use the
  * stars' own providers (sim/stars/records.ts: linearStarProvider for the barycentre, orbitStarProvider for the
@@ -22,17 +24,21 @@
  * Twins: scripts/build-blackholes.mjs (the data and how the orbits were made); src/sim/stars/records.ts (the
  * providers and the star records this mirrors); docs/data/blackholes.md §5.
  */
-import { AU_KM, C_KM_S, GM_SUN_KM3_S2, PARSEC_KM } from '../../physics/constants';
+import type { AstroTime } from 'astronomy-engine';
+import { AU_KM, C_KM_S, GM_SUN_KM3_S2, MPC_KM, PARSEC_KM } from '../../physics/constants';
+import { msFromAstroTime } from '../../lib/time';
 import { sig } from '../../lib/sci';
-import { atCentreProvider, fixedStarProvider } from '../bodies/providers/simple';
-import type { BlackHoleDisk, BlackHoleInfo, BodyId, BodyRecord, DeepSkyInfo, StarInfo } from '../bodies/types';
+import { ALWAYS, atCentreProvider, fixedStarProvider } from '../bodies/providers/simple';
+import type { Availability, BlackHoleDisk, BlackHoleInfo, BodyId, BodyRecord, DeepSkyInfo, PositionProvider, StarInfo, Vec3Like } from '../bodies/types';
+import { cosmicAtMemo } from '../cosmicTime';
+import { EARLIEST_GALAXIES_GYR } from '../cosmos/expansion';
 import { ISCO_M, mdotFromEddington, NT_PEAK_M, ntLnTemperature, ntLnTStar } from '../../physics/thinDisk';
 import type { Stars3D } from '../stars/catalogue';
 import { SUN_RADIUS_KM, SUN_TEFF_K } from '../stars/constants';
 import { bolometricCorrection, SUN_M_BOL } from '../stars/photometry';
 import { barycentreId, linearStarProvider, orbitStarProvider, starColour, starKindText, starLabelRank, type SystemMotion } from '../stars/records';
 import blackHolesJson from './blackholes.json';
-import type { BlackHolesFile, CompanionJson, DiskJson, HoleJson, HoleOrbitJson, HoleSystemJson, Sourced } from './types';
+import type { BlackHolesFile, CatalogueGalaxyJson, CompanionJson, DiskJson, HoleJson, HoleOrbitJson, HoleSystemJson, Sourced } from './types';
 
 /** The data file as shipped. */
 export const BLACK_HOLES = blackHolesJson as unknown as BlackHolesFile;
@@ -48,6 +54,12 @@ export const M87_FRAMING_RS = 50;
 /** Label priorities: a stellar hole ranks with the stars (12), M87* just ahead of its galaxy (13.3). */
 export const STELLAR_LABEL_RANK = 12;
 export const M87_LABEL_RANK = 13.2;
+/**
+ * The other supermassive holes at galaxies' centres are framed and ranked as M87* is: from 50 r_s (2.5 au at M32's,
+ * 1.4 × 10⁵ au at NGC 4889's), just ahead of their galaxy's label.
+ */
+export const GALAXY_HOLE_FRAMING_RS = M87_FRAMING_RS;
+export const GALAXY_HOLE_LABEL_RANK = M87_LABEL_RANK;
 /** How long an isolated hole's fixed place is trusted either side of J2000: at 51 km/s it moves 10 au a year. */
 const ISOLATED_GOOD_YEARS = 100;
 /**
@@ -168,6 +180,9 @@ export function blackHoleInfoFrom(json: HoleJson, file: BlackHolesFile = BLACK_H
   };
   if (pair) info.massUncMsun = [pair[0], pair[1]];
   if (json.massNote) info.massNote = json.massNote;
+  if (json.massMethod) info.massMethod = json.massMethod;
+  const host = hostGalaxyOf(json);
+  if (host) info.hostGalaxy = host;
   if (json.flow) info.flow = json.flow;
   if (json.disk) {
     if (!orbit) throw new Error(`${json.id}: a disc is drawn in its binary's orbital plane, and it has no orbit`);
@@ -179,6 +194,28 @@ export function blackHoleInfoFrom(json: HoleJson, file: BlackHolesFile = BLACK_H
   if (json.sheetNotes?.length) info.sheetNotes = json.sheetNotes;
   return info;
 }
+
+/**
+ * The galaxy a hole lies in when that is not the Milky Way and not its record's parent: a binary's host (LMC X-1's Large
+ * Magellanic Cloud), or a catalogue galaxy (its deep-sky body's id, as src/sim/deepsky/records.ts makes it).
+ */
+function hostGalaxyOf(json: HoleJson): { id: BodyId; name: string } | undefined {
+  if (json.placement === 'binary' && json.host) return { id: json.host, name: json.hostName ?? json.host };
+  // A galaxy's hole is its galaxy's child too (M87*, which names no hostName, keeps its record as it was).
+  if (json.placement === 'galaxy-centre' && json.host && json.hostName) return { id: json.host, name: json.hostName };
+  if (json.placement === 'catalogue-galaxy' && json.galaxy) return { id: catalogueGalaxyId(json.galaxy.designation), name: json.galaxy.name };
+  return undefined;
+}
+
+/** A designation's body id as the deep-sky layer makes it (src/sim/deepsky/records.ts slug): "NGC 4258" → "ngc-4258". */
+export const catalogueGalaxyId = (designation: string): BodyId =>
+  designation
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+/** "the Large Magellanic Cloud", "the Triangulum Galaxy", but "M84": a galaxy's name as a sentence uses it. */
+export const galaxyInWords = (name: string): string => (/\b(Galaxy|Cloud)$/.test(name) ? `the ${name}` : name);
 
 /** Sgr A*'s block, with the mass its record already has (sstars.json). */
 export const sgrABlackHole = (massMsun: number, massStatMsun: number, massSysMsun: number): BlackHoleInfo => ({
@@ -215,6 +252,7 @@ function holeRows(file: BlackHolesFile, json: HoleJson, distancePc: number): Non
       u: 'µas',
       title: `Diameter of the shadow seen from far away, 2√27 GM/c² (${sig(2 * shadow, 3)} km across): nearer, the lens makes it larger`,
     },
+    ...(json.massMethod ? [{ l: 'Weighed by', v: json.massMethod, title: citation(file, json.mass.ref) }] : []),
   ];
 }
 
@@ -266,11 +304,13 @@ export function holeSystemRecords(file: BlackHolesFile, sys: HoleSystemJson, sta
   const howFar = `${b.distance.note ? `${b.distance.note}; ` : ''}${citation(file, b.distance.ref)}`;
   const phase = phaseUncertaintyOrbits(sys);
   const lightYears = Math.round((distancePc * PARSEC_KM) / C_KM_S / (365.25 * 86_400) / 10) * 10;
-  const phaseNote =
-    phase >= PHASE_ILLUSTRATIVE_ORBITS
+  const phaseNote = sys.phaseAssumed
+    ? ` ${ASSUMED_PHASE_NOTE}`
+    : phase >= PHASE_ILLUSTRATIVE_ORBITS
       ? ` Where the two are on their orbit now is illustrative: over the ${lightYears.toLocaleString('en-GB')} years their light takes to reach us, the period’s uncertainty adds up to ${phase >= 1 ? `${sig(phase, 2)} orbits` : `${sig(phase, 2)} of an orbit`} (with light-delayed positions on, the place shown is the one we see).`
       : '';
-  const place = `the system’s centre of mass in straight-line motion (${astroRefs}) at ${distanceText(b.distance)} (${howFar}), and the orbit about it (${orbitRefs})${assumed ? ', its orientation on the sky assumed' : ''}. Good for a million years either side of 2000.${phaseNote}`;
+  const inGalaxy = hole.hostName ? ` in ${galaxyInWords(hole.hostName)}` : '';
+  const place = `the system’s centre of mass${inGalaxy} in straight-line motion (${astroRefs}) at ${distanceText(b.distance)} (${howFar}), and the orbit about it (${orbitRefs})${assumed ? `, its orientation on the sky${sys.phaseAssumed ? ' and its phase' : ''} assumed` : ''}. Good for a million years either side of 2000.${phaseNote}`;
 
   const barycentre: BodyRecord = {
     id: rootId,
@@ -302,6 +342,7 @@ export function holeSystemRecords(file: BlackHolesFile, sys: HoleSystemJson, sta
     detector: false,
     deepSky: {
       type: 'Stellar-mass black hole in a binary',
+      ...(hole.hostName ? { hostGalaxy: hole.hostName } : {}),
       distancePc,
       distanceLoPc: range.lo,
       distanceHiPc: range.hi,
@@ -326,6 +367,9 @@ export function holeSystemRecords(file: BlackHolesFile, sys: HoleSystemJson, sta
 
   return [barycentre, holeRecord, companionRecord(file, sys, comp, hole, motion, place, stars)];
 }
+
+/** The position note's end for an X-ray binary with no ephemeris used for its phase (HoleSystemJson.phaseAssumed). */
+export const ASSUMED_PHASE_NOTE = 'Where the two are on their orbit is illustrative: no ephemeris is used for its phase, and the companion is put nearest to us at the start of 2000.';
 
 /** The reference keys an orbit's published elements cite. */
 function orbitRefKeys(orbit: HoleOrbitJson): string[] {
@@ -513,5 +557,144 @@ export function m87StarRecord(json: HoleJson, m87: BodyRecord, file: BlackHolesF
     modelNotes: json.modelNotes.slice(0, 3),
     blackHole: blackHoleInfoFrom(json, file),
     provider: atCentreProvider(undefined, `At the centre of ${m87.name}`),
+  };
+}
+
+/**
+ * A supermassive black hole at the centre of a galaxy the app registers with the others (M31* in the Andromeda Galaxy,
+ * M81*, the holes of M32, Centaurus A, the Sombrero Galaxy, NGC 404, M84, M60, M49 and NGC 4889): a child of its
+ * galaxy's record at its place, as M87*
+ * is (sim/blackholes/load.ts gives it its galaxy's anchor in the expanding universe). No starlight of its galaxy is
+ * drawn round it (M87's alone has a model), so no fall is offered.
+ */
+export function galaxyHoleRecord(json: HoleJson, host: BodyRecord, file: BlackHolesFile = BLACK_HOLES): BodyRecord {
+  const m = json.mass.value;
+  const rs = horizonRadiusKm(m);
+  const g = host.deepSky;
+  const distancePc = g?.distancePc ?? 1e6;
+  const hostName = galaxyInWords(host.name);
+  return {
+    id: json.id,
+    name: json.name,
+    shortName: json.shortName,
+    aliases: json.aliases,
+    kind: 'black-hole',
+    kindText: 'Supermassive black hole',
+    parent: host.id,
+    physical: { radiusKm: rs, gmKm3S2: gmOf(m), colour: '#000000' },
+    visual: { renderer: 'lens' },
+    framing: { radii: GALAXY_HOLE_FRAMING_RS, minKm: rs * HOVER_FLOOR_RADIUS_RS },
+    orbitLine: false,
+    labelRank: GALAXY_HOLE_LABEL_RANK,
+    detector: false,
+    destination: true,
+    deepSky: {
+      type: `Supermassive black hole at the centre of ${hostName}`,
+      distancePc,
+      distanceLoPc: g?.distanceLoPc,
+      distanceHiPc: g?.distanceHiPc,
+      distanceSource: g?.distanceSource ? `its galaxy’s, the ${/^[A-Z][a-z]/.test(g.distanceSource) ? g.distanceSource[0].toLowerCase() + g.distanceSource.slice(1) : g.distanceSource}` : 'its galaxy’s',
+      distanceNow: g?.distanceNow,
+      hostGalaxy: host.name,
+      rows: holeRows(file, json, distancePc),
+      refs: citations(file, json.refs),
+    },
+    facts: json.facts.map((f) => f.text),
+    factSources: json.facts.map((f) => f.source),
+    factSourceLabels: json.facts.map((f) => f.label),
+    dataSource: citations(file, json.refs).join('; '),
+    positionNote: `Position: at the centre of ${hostName}, where the galaxy is placed; it moves with its galaxy.`,
+    modelNotes: json.modelNotes.slice(0, 3),
+    blackHole: blackHoleInfoFrom(json, file),
+    provider: atCentreProvider(undefined, `At the centre of ${host.name}`),
+  };
+}
+
+const J2000_MS = Date.UTC(2000, 0, 1, 12);
+const YEAR_MS = 365.25 * 86_400_000;
+/** Galaxies move a few hundred km/s: under a kiloparsec in a million years (as sim/cosmos/records.ts). */
+const GALAXY_YEARS = 1e6;
+const TOO_EARLY: Availability = {
+  available: false,
+  reason: 'Too early: the earliest galaxies seen shine 283 million years after the Big Bang, and where galaxies were before that is not modelled',
+  regime: 'unknown',
+};
+
+/**
+ * A place in the expanding universe: comoving place x with anchor c (world axes, Mpc) is at x + (a − 1) c at the
+ * clock's time, so a galaxy keeps its place in its group while the space between groups grows. Positions are J2000
+ * ecliptic km: world (x, y, z) is ecliptic (x, −z, y). The twin of src/sim/deepsky/records.ts expandingPlaceProvider,
+ * which places the catalogue's galaxies (that module is the deep-sky layer's own chunk).
+ */
+export function expandingPlace(posMpc: Readonly<[number, number, number]>, anchorMpc: Readonly<[number, number, number]>, label: string): PositionProvider {
+  const x = [posMpc[0] * MPC_KM, -posMpc[2] * MPC_KM, posMpc[1] * MPC_KM];
+  const c = [anchorMpc[0] * MPC_KM, -anchorMpc[2] * MPC_KM, anchorMpc[1] * MPC_KM];
+  return {
+    label,
+    availability: (ms) => {
+      if (Math.abs(ms - J2000_MS) <= GALAXY_YEARS * YEAR_MS) return ALWAYS.approximate;
+      return cosmicAtMemo(ms).ageGyr < EARLIEST_GALAXIES_GYR ? TOO_EARLY : ALWAYS.illustrative;
+    },
+    positionAt(t: AstroTime, pos: Vec3Like, vel?: Vec3Like | null) {
+      const am1 = cosmicAtMemo(msFromAstroTime(t)).am1;
+      pos.x = x[0] + am1 * c[0];
+      pos.y = x[1] + am1 * c[1];
+      pos.z = x[2] + am1 * c[2];
+      if (vel) vel.x = vel.y = vel.z = 0;
+    },
+  };
+}
+
+/** "Cosmicflows-4 (Tully et al. 2023): …, distance modulus ±0.03 mag", as the deep-sky galaxies' cards say it. */
+function catalogueDistanceSource(g: CatalogueGalaxyJson): string {
+  return `Cosmicflows-4 (Tully et al. 2023, ApJ 944, 94)${Number.isFinite(g.edm) ? `, distance modulus ±${g.edm.toFixed(2)} mag` : ''}; placed as the cosmic web places it (its group’s distance)`;
+}
+
+/**
+ * A supermassive black hole at the centre of a galaxy that is only in the NGC catalogue (M106, M105, the Spindle
+ * Galaxy), which the app registers only on demand: a body of its own at its galaxy's place in the expanding
+ * universe (the deep-sky layer's, copied into the data file), with its galaxy's anchor (sim/blackholes/load.ts), so
+ * its light-time and redshift are its galaxy's. No parent: its galaxy comes and goes.
+ */
+export function catalogueGalaxyHoleRecord(json: HoleJson, file: BlackHolesFile = BLACK_HOLES): BodyRecord {
+  const g = json.galaxy;
+  if (!g) throw new Error(`blackholes: ${json.id} has no galaxy`);
+  const m = json.mass.value;
+  const rs = horizonRadiusKm(m);
+  const distancePc = g.distMpc * 1e6;
+  const hostName = galaxyInWords(g.name);
+  return {
+    id: json.id,
+    name: json.name,
+    shortName: json.shortName,
+    aliases: json.aliases,
+    kind: 'black-hole',
+    kindText: 'Supermassive black hole',
+    parent: null,
+    physical: { radiusKm: rs, gmKm3S2: gmOf(m), colour: '#000000' },
+    visual: { renderer: 'lens' },
+    framing: { radii: GALAXY_HOLE_FRAMING_RS, minKm: rs * HOVER_FLOOR_RADIUS_RS },
+    orbitLine: false,
+    labelRank: GALAXY_HOLE_LABEL_RANK,
+    detector: false,
+    destination: true,
+    deepSky: {
+      type: `Supermassive black hole at the centre of ${hostName}`,
+      distancePc,
+      ...(g.distLoMpc > 0 && g.distHiMpc > g.distLoMpc ? { distanceLoPc: g.distLoMpc * 1e6, distanceHiPc: g.distHiMpc * 1e6 } : {}),
+      distanceSource: `its galaxy’s, ${catalogueDistanceSource(g)}`,
+      distanceNow: true,
+      hostGalaxy: g.name,
+      rows: holeRows(file, json, distancePc),
+      refs: citations(file, json.refs),
+    },
+    facts: json.facts.map((f) => f.text),
+    factSources: json.facts.map((f) => f.source),
+    factSourceLabels: json.facts.map((f) => f.label),
+    dataSource: `${citations(file, json.refs).join('; ')}; place: OpenNGC and Cosmicflows-4 (Tully et al. 2023), as the deep-sky layer has its galaxy`,
+    positionNote: `Position: at the centre of ${hostName} (${g.designation}), at its galaxy’s place as OpenNGC and Cosmicflows-4 give it, held there in the expanding universe (its own motion, a few hundred km/s, is not followed).`,
+    modelNotes: json.modelNotes.slice(0, 3),
+    blackHole: blackHoleInfoFrom(json, file),
+    provider: expandingPlace(g.posMpc, g.anchorMpc, `At the centre of ${g.name}: its measured place, carried by the expansion of the universe`),
   };
 }

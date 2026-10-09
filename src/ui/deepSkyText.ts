@@ -53,7 +53,7 @@ export function deepSkyDistanceWords(x: DeepSkyInfo): string | null {
   const hi = x.distanceHiPc !== undefined ? ly(x.distanceHiPc) : '';
   const range = lo && hi && x.distanceHiPc! > x.distanceLoPc! && lo !== hi ? ` (${lo} to ${hi})` : '';
   // "in the Large Magellanic Cloud", but "in Messier 87 (Virgo A)": a galaxy's own name takes no article.
-  const where = x.hostGalaxy ? `, in ${/^(Large|Small) /.test(x.hostGalaxy) ? 'the ' : ''}${x.hostGalaxy}` : '';
+  const where = x.hostGalaxy ? `, in ${/^(Large|Small) |(Galaxy|Cloud)$/.test(x.hostGalaxy) ? 'the ' : ''}${x.hostGalaxy}` : '';
   const now = x.distanceNow ? ' now' : '';
   return `${ly(x.distancePc)} light-years${range} from the Sun${now}${where}`;
 }

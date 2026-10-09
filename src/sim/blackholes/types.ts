@@ -33,10 +33,21 @@ export interface HoleJson {
   shortName?: string;
   aliases: string[];
   class: 'supermassive' | 'stellar';
-  /** 'sgr-a-star' keeps sstars.json as its source (no position here). */
-  placement: 'sstars' | 'galaxy-centre' | 'binary' | 'isolated';
-  /** placement 'galaxy-centre': the galaxy's id (M87*: 'm87'). */
+  /**
+   * 'sgr-a-star' keeps sstars.json as its source (no position here). 'galaxy-centre': at the centre of a galaxy the
+   * app registers with the others (M87*, M31*); 'catalogue-galaxy': at the centre of a galaxy of the NGC catalogue,
+   * which the app registers only on demand, so the hole carries its galaxy's place (`galaxy`).
+   */
+  placement: 'sstars' | 'galaxy-centre' | 'catalogue-galaxy' | 'binary' | 'isolated';
+  /**
+   * placement 'galaxy-centre': the galaxy's id (M87*: 'm87'). placement 'binary': the galaxy the binary lies in when it
+   * is not the Milky Way (LMC X-1: 'lmc').
+   */
   host?: BodyId;
+  /** The host galaxy's name, for a binary in another galaxy or a hole in a catalogue galaxy ("Large Magellanic Cloud"). */
+  hostName?: string;
+  /** placement 'catalogue-galaxy': its galaxy as the NGC catalogue places it (public/data/deepsky/ngc-galaxies.json.gz). */
+  galaxy?: CatalogueGalaxyJson;
   /** The IAU constellation it lies in, as seen from the Sun. */
   constellation?: string;
   /** placement 'isolated': ICRS position, distance, proper motion, radial velocity. */
@@ -52,6 +63,14 @@ export interface HoleJson {
   };
   mass: Sourced;
   massNote?: string;
+  /**
+   * A supermassive hole's mass as published, at the distance the paper assumed (Mpc). A mass from motions seen on the
+   * sky grows in proportion to the distance assumed, so `mass` is this scaled to the distance the app places its galaxy
+   * at (scripts/build-blackholes.mjs).
+   */
+  massPublished?: Sourced & { distMpc: number };
+  /** How the mass was measured, in a few plain words ("the motions of its stars"); the card's line under the mass. */
+  massMethod?: string;
   spin: { value: number | null; status: 'unknown' | 'estimated'; note: string; ref?: string };
   facts: { text: string; source: string; label: string }[];
   /** At most three one-line notes reach the card; the rest go to the data sheet and the Guide. */
@@ -87,6 +106,27 @@ export interface DiskJson {
   /** How many times slower than real its gas is drawn turning. */
   slowdown: number;
   refs: string[];
+}
+
+/**
+ * A galaxy of the NGC catalogue as the deep-sky layer places it (src/sim/deepsky/format.ts parseNgcGalaxies; copied by
+ * scripts/build-blackholes.mjs from public/data/deepsky/ngc-galaxies.json.gz): its comoving place and the anchor of its
+ * group, world axes (x_ecl, z_ecl, −y_ecl), Mpc, and its distance with its source.
+ */
+export interface CatalogueGalaxyJson {
+  designation: string;
+  name: string;
+  aliases: string[];
+  raDeg: number;
+  decDeg: number;
+  /** Cosmicflows-4's distance and its range, Mpc; the methods (src/sim/cosmos/cosmicWeb.ts METHOD bits) and ±mag. */
+  distMpc: number;
+  distLoMpc: number;
+  distHiMpc: number;
+  methods: number;
+  edm: number;
+  posMpc: [number, number, number];
+  anchorMpc: [number, number, number];
 }
 
 /** A black hole's companion star. */
@@ -142,6 +182,11 @@ export interface HoleSystemJson {
     massMsun: number;
   };
   orbits: HoleOrbitJson[];
+  /**
+   * The X-ray binaries with no ephemeris used for their phase: the donor is put nearest to us at J2000.0 (assumed, and
+   * said on the card), so where the two are on their orbit is illustrative.
+   */
+  phaseAssumed?: boolean;
   /** What the build checked (Kepler's law against the published orbit, the donor in front at T0). */
   checks?: string[];
 }

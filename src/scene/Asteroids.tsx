@@ -71,7 +71,7 @@ function makePoints(s: LoadedSection): Drawn {
   points.frustumCulled = false;
   points.renderOrder = 2;
   points.layers.set(POINTS_LAYER);
-  return { id: s.id, conic: s.shape === SHAPE_CONIC, section: s, points, material, plan: { ...boundsOf(s), id: s.id, count: s.count }, near: null };
+  return { id: s.id, conic: s.shape === SHAPE_CONIC, sample: !!s.sample, section: s, points, material, plan: { ...boundsOf(s), id: s.id, count: s.count }, near: null };
 }
 
 const ssbWorld = new Vector3();
@@ -131,7 +131,8 @@ function loadedUrls(): string[] {
 }
 
 /**
- * Every asteroid and comet of JPL's Small-Body Database with a usable orbit, about 1.47 million (sim/asteroids):
+ * The asteroids and comets of JPL's Small-Body Database worth a card, about 33,000 (every named one, the large ones,
+ * every comet), and a drawn-only sample of one in 20 of the rest (scripts/asteroids/notable.mjs; sim/asteroids):
  * one draw per section, each of tens of thousands of bodies whose orbits are solved in the vertex shader
  * (render/shaders/asteroids.vert.glsl), coloured by group and as bright as each really is from the camera (lod.ts).
  * A section that cannot hold a body bright enough to show is not drawn, and its file not fetched (load.ts). The

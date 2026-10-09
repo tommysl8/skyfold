@@ -18,12 +18,12 @@ export const KEPLER_LINE =
 export const ASTEROID_CARD = {
   title: 'Asteroids and comets',
   line: (total: number) =>
-    `${total.toLocaleString('en-US')} asteroids and comets from JPL’s Small-Body Database, each as bright as it really is from here, coloured by its orbit.`,
+    `${total.toLocaleString('en-US')} asteroids and comets worth a card from JPL’s Small-Body Database (every named one, the large ones, every comet), and a sample of the rest; each as bright as it really is from here, coloured by its orbit.`,
   caveat: KEPLER_LINE,
   more: [
     'Amber: near-Earth asteroids. Sand: the main belt. Gold: the Hildas, in step with Jupiter. Olive: Jupiter’s Trojans. Lilac: Centaurs. Blue-grey: beyond Neptune. Ice: comets.',
     'Each point is the body’s real brightness from the camera (its size, its distances from the Sun and from you, its phase), shown as a long exposure would show it, longer the farther out you are. At most 200,000 are drawn at once: the brightest from here, and any that pass close.',
-    'Ceres, Vesta, Pluto and the other dwarf planets, Arrokoth and the comets with tails are bodies of their own, drawn with their accurate tracks. Click any other point for its card.',
+    'Ceres, Vesta, Pluto and the other dwarf planets, Arrokoth and the comets with tails are bodies of their own, drawn with their accurate tracks. The others with a card: every named body, every comet, near-Earth asteroids of about a kilometre and up, belt asteroids of about 15 km and up. Of the 1.4 million others, one in 20 is drawn as a sample so the belts keep their shape: those points have no card.',
   ],
   credit:
     'Orbits, sizes and names: JPL Small-Body Database (NASA/JPL-Caltech), October 2026; asteroids with an orbit condition code of 7 or better, comets with orbits fitted since 1990 (periodic ones) or perihelion since 1900. Positions checked against JPL Horizons.',

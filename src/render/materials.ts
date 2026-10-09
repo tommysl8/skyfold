@@ -71,6 +71,8 @@ import nebulaVert from './shaders/nebula.vert.glsl?raw';
 import clusterRingVert from './shaders/clusterRing.vert.glsl?raw';
 import nebulaFrag from './shaders/nebula.frag.glsl?raw';
 import galaxiesVert from './shaders/galaxies.vert.glsl?raw';
+import galaxyPictureVert from './shaders/galaxyPicture.vert.glsl?raw';
+import galaxyPictureFrag from './shaders/galaxyPicture.frag.glsl?raw';
 import cosmicWebVert from './shaders/cosmicWeb.vert.glsl?raw';
 import galaxyMapGlsl from './shaders/galaxyMap.glsl?raw';
 import surveyVert from './shaders/survey.vert.glsl?raw';
@@ -909,6 +911,39 @@ export function createClusterRingMaterial(): ShaderMaterial {
  * The galaxies beyond the Milky Way (shaders/galaxies.vert.glsl): instanced particle templates and
  * single splats, drawn into the Galaxy's target with the Milky Way model's splat settings.
  */
+/**
+ * A galaxy's photograph (shaders/galaxyPicture.*.glsl; scene/GalaxyPictures.tsx): light added into the Galaxy layer's
+ * target with the particles, both faces drawn (from behind a thin sheet of stars shows the same light, mirrored).
+ */
+export function createGalaxyPictureMaterial(): ShaderMaterial {
+  initBlackbodyUniforms();
+  return new ShaderMaterial({
+    uniforms: {
+      ...relativityUniforms,
+      uBigPass: galaxyUniforms.uBigPass,
+      uMap: { value: null as Texture | null },
+      uRel: { value: new Vector3() },
+      uSky: { value: new Vector3() },
+      uRight: { value: new Vector3() },
+      uUp: { value: new Vector3() },
+      uNormal: { value: new Vector3() },
+      uLos: { value: new Vector3(0, 0, -1) },
+      uDist: { value: 1 },
+      uSurface: { value: 0 },
+      uLnT: { value: Math.log(5000) },
+      uLn1pz: { value: 0 },
+    },
+    vertexShader: galaxyPictureVert,
+    fragmentShader: galaxyPictureFrag,
+    side: DoubleSide,
+    blending: AdditiveBlending,
+    premultipliedAlpha: true,
+    depthTest: false,
+    depthWrite: false,
+    transparent: false,
+  });
+}
+
 export function createGalaxiesMaterial(): ShaderMaterial {
   const g = galaxyUniforms;
   return new ShaderMaterial({

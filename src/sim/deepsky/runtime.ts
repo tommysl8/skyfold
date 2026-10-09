@@ -57,6 +57,7 @@ import {
   snrRecord,
   type DeepSkyEntry,
 } from './records';
+import MORE_GALAXY_NAMES from '../cosmos/moreGalaxyNames.json';
 import { COMPACT_PX, galacticAlpha, galaxyAlpha, MIN_RING_PX, PICK_MIN_ALPHA, regionAlpha, STYLE } from './markers';
 
 // ─── The loaded catalogues ──────────────────────────────────────────────────────────────
@@ -187,7 +188,16 @@ function buildPulsars(list: Pulsar[], shown: (p0: number) => number): LoadedSet 
   });
 }
 
-function buildGalaxies(list: NgcGalaxy[]): LoadedSet {
+/**
+ * The galaxies drawn as bodies of their own beyond the Local Group (sim/cosmos: the famous ones and the Virgo and Coma
+ * clusters' brightest, public/data/more-galaxies.json.gz), by designation → the body's name: left out of the catalogue,
+ * and their designations lead to the bodies.
+ */
+const MORE_GALAXIES = new Map(MORE_GALAXY_NAMES.names.map(([d, body]) => [d, body] as const));
+
+function buildGalaxies(all: NgcGalaxy[]): LoadedSet {
+  for (const [d, body] of MORE_GALAXIES) addExisting(d, body);
+  const list = all.filter((o) => !MORE_GALAXIES.has(o.designation));
   const n = list.length;
   const x: ExtragalacticArrays = { count: n, posMpc: new Float64Array(3 * n), anchorMpc: new Float64Array(3 * n), size: new Float32Array(n), nearMpc: new Float32Array(n), farMpc: new Float32Array(n), kind: new Uint8Array(n) };
   list.forEach((o, i) => {

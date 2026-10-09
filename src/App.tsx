@@ -5,6 +5,7 @@ import { Starfield } from './scene/Starfield';
 import { MilkyWayBackground } from './scene/MilkyWay';
 import { GalaxyModel } from './scene/GalaxyModel';
 import { Nebulae } from './scene/Nebulae';
+import { GalaxyPictures } from './scene/GalaxyPictures';
 import { Galaxies } from './scene/Galaxies';
 import { CosmicWeb } from './scene/CosmicWeb';
 import { Surveys } from './scene/Surveys';
@@ -131,6 +132,7 @@ export default function App() {
           <CmbMap />
           <GalaxyModel />
           <Galaxies />
+          <GalaxyPictures />
           <Nebulae />
           <Starfield />
           <NuclearCluster />
