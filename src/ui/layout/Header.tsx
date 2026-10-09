@@ -265,6 +265,7 @@ function ViewMenu() {
       showCmb: u.showCmb,
       aurora: u.aurora,
       jets: u.jets,
+      fieldLines: u.fieldLines,
       retarded: u.retarded,
       showFps: u.showFps,
       shortcuts: u.shortcuts,
@@ -465,6 +466,13 @@ function ViewMenu() {
             hint="The jets of M87 and Centaurus A, beamed by their measured speeds: the side coming towards us brightened, the other faint"
           >
             Relativistic jets
+          </Check>
+          <Check
+            checked={s.fieldLines}
+            onChange={() => t('fieldLines')}
+            hint="Magnetic field lines from measured field models: the Sun’s and the planets’, and the Milky Way’s"
+          >
+            Magnetic field lines
           </Check>
           <Check checked={s.showOverlays} onChange={() => t('showOverlays')} kbd="U" hint="Scale bar and camera readout; in flight the reticle and apex markers">
             Readouts over the view
