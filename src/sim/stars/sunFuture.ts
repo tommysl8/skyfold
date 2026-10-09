@@ -91,7 +91,7 @@ export function loadTracks(): Promise<Track[] | null> {
 /** The Sun's record as it is today, kept while another age is shown. */
 let today: { radiusKm: number; eqKm?: number; polKm?: number; vmag: number; teffK: number; gm?: number } | null = null;
 
-/** Show the Sun at an age (yr), or today (null). Loads the tracks first if needed. */
+/** Show the Sun at an age (yr), or today (null), ending the journey's play. Loads the tracks first if needed. */
 export function setSunAge(ageYr: number | null): void {
   if (ageYr === null) {
     if (sunFuture.ageYr === null) return;
@@ -108,6 +108,8 @@ export function setSunAge(ageYr: number | null): void {
     void loadTracks().then((t) => t && setSunAge(ageYr));
     return;
   }
+  // An age chosen (the card's slider) ends the journey's play.
+  stopPlay();
   sunFuture.ageYr = Math.min(m.lastAgeYr, Math.max(SUN_AGE_TODAY_YR, ageYr));
   apply();
   changed();

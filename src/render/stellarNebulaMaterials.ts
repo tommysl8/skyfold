@@ -172,12 +172,12 @@ float chord(vec3 d, float a) {
 void main() {
   #include <logdepthbuf_fragment>
   vec3 d = normalize(vWorld);
-  float outer = chord(d, uR);
-  float mid = chord(d, 0.82 * uR);
-  float inner = chord(d, 0.6 * uR);
-  float red = (outer - mid) / uR;
-  float teal = (mid - inner) / uR;
-  vec3 col = uGain * (teal * vec3(0.22, 0.85, 0.75) + red * vec3(1.0, 0.24, 0.2));
+  float path = (chord(d, uR) - chord(d, 0.6 * uR)) / uR;
+  // How far from the centre the ray passes, as a share of the radius: the inner gas teal, the rim red.
+  float tc = dot(uCentre, d);
+  float b = sqrt(max(0.0, dot(uCentre, uCentre) - tc * tc)) / uR;
+  vec3 tint = mix(vec3(0.22, 0.85, 0.75), vec3(1.0, 0.24, 0.2), smoothstep(0.55, 0.95, b));
+  vec3 col = uGain * path * tint;
   if (max(col.r, max(col.g, col.b)) < 1e-4) discard;
   gl_FragColor = vec4(col, 1.0);
 }

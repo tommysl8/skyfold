@@ -173,7 +173,7 @@ export function StellarNebulae() {
       mesh.scale.setScalar(pn.radiusKm);
       mat.uniforms.uCentre.value.copy(mesh.position);
       mat.uniforms.uR.value = pn.radiusKm;
-      mat.uniforms.uGain.value = 0.35 * pn.glow;
+      mat.uniforms.uGain.value = 0.06 * pn.glow;
     } else if (nebula.current) nebula.current.mesh.visible = false;
   });
 
