@@ -299,6 +299,8 @@ export const NAMED_SCENES = [
   'm87-jet',
   'centaurus-a-jets',
   'aurora',
+  'galactic-field',
+  'galactic-field-sky',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -433,6 +435,8 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'm87-jet': 'The jet of M87',
   'centaurus-a-jets': 'The jets and lobes of Centaurus A',
   'aurora': 'The northern lights from space',
+  'galactic-field': 'The Milky Way’s magnetic field',
+  'galactic-field-sky': 'The Galaxy’s field across our sky',
 };
 
 /** Define (or replace) a named scene. */
@@ -985,11 +989,11 @@ function start(s: Scene, note: string): boolean {
  * relativistic view (split, or with its Doppler colours), the cosmic web, and near a black hole
  * its lens, the accretion flow and the flow's band and blur (the scenes made to show the lens
  * switch the flow off), and the thin accretion discs (whose scenes hide the orbit lines, which run through the
- * disc's plane). What one scene turned on, the next scene turns back (unless the visitor
+ * disc's plane), and the magnetic field lines. What one scene turned on, the next scene turns back (unless the visitor
  * has changed it since), so the CMB map does not stay over Jupiter after the CMB scene, nor the
  * flow stay hidden after a lens scene.
  */
-const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur'] as const;
+const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines'] as const;
 type SceneView = (typeof SCENE_VIEWS)[number];
 type SceneViews = Partial<Pick<UIState, SceneView>>;
 
@@ -1010,6 +1014,7 @@ function currentViews(): Pick<UIState, SceneView> {
     accretionDisks: s.accretionDisks,
     accretionBand: s.accretionBand,
     ehtBlur: s.ehtBlur,
+    fieldLines: s.fieldLines,
   };
 }
 
@@ -2063,6 +2068,63 @@ const PHENOMENA_VIEWS: readonly Destination[] = (
   },
 }));
 registerDestinations(() => (isBody('m87') ? PHENOMENA_VIEWS : PHENOMENA_VIEWS.slice(0, 1)));
+
+// ─── The Milky Way's magnetic field (sim/galaxy/magneticField.ts, fieldView.ts) ──────────
+
+/** How far out the field's scene stands from the Galaxy's centre: far enough for the halo's field, 20 kpc either side. */
+const FIELD_VIEW_KM = 50 * KPC_KM;
+/** How far its view is tipped from the north galactic pole towards the Sun, so the halo and the X-field show in depth. */
+const FIELD_VIEW_TILT_DEG = 70;
+
+defineScene('galactic-field', {
+  label: PENDING_LABELS['galactic-field'],
+  note: 'The Milky Way’s magnetic field from 160,000 light-years out, well above the plane of its disc and tipped to see it in depth: field lines of a model fitted to radio measurements (Unger and Farrar 2024). In the disc the field follows the spiral arms and reverses between them, amber where it runs clockwise seen from the north and blue where it runs the other way; above and below the disc a halo field circles the Galaxy, one way in the north and the other way in the south; and an X-shaped field (lilac) rises through the inner disc. Each dash points the way the field points. It is a few millionths of a gauss, and the real field is as strong again in tangles too small to draw. The View menu turns the field lines off.',
+  unavailable: () => needs('milky-way')() ?? (galaxyStatus() === 'loading' || galaxyStatus() === 'failed' ? missingReason('milky-way') : null),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ fieldLines: true, showLabels: false });
+      useUI.getState().select(null);
+      const t = (FIELD_VIEW_TILT_DEG * Math.PI) / 180;
+      // From the centre: towards the north galactic pole, tipped towards the Sun (l = 180° seen from the centre).
+      const dir = galacticToWorld(0, 90).multiplyScalar(Math.cos(t)).addScaledVector(galacticToWorld(180, 0), Math.sin(t)).normalize();
+      controller.goTo('milky-way', { distance: FIELD_VIEW_KM, direction: dir });
+    }),
+});
+
+defineScene('galactic-field-sky', {
+  label: PENDING_LABELS['galactic-field-sky'],
+  note: 'From just beyond Earth, looking towards the centre of the Galaxy: faint streaks run along the magnetic field across the sky, measured by WMAP from the polarisation of the Milky Way’s radio glow (electrons spiralling round the field shine polarised across it). Along the Milky Way the field lies in its plane; the arc climbing from the plane left of the centre is the North Polar Spur, the edge of a bubble blown by old supernovae. Each streak is the field summed along the line of sight. Drag to look round the sky; the View menu turns the field off.',
+  unavailable: needs('milky-way', 'earth'),
+  run: (note) =>
+    scene(note, () => {
+      // The orbits' lines would cross the sky from here: hidden (the next scene puts them back).
+      useUI.setState({ fieldLines: true, showOrbits: false });
+      useUI.getState().select(null);
+      // Orbiting the Galaxy's centre from 40,000 km short of Earth on its side: the sky from Earth, towards Sagittarius.
+      const toEarth = sim.bodies.earth.pos.clone().sub(sim.bodies['milky-way'].pos);
+      controller.goTo('milky-way', { distance: toEarth.length() - 40_000, direction: toEarth.normalize() });
+    }),
+});
+
+/** The field's two scenes as places to go, for "Where to?". */
+const FIELD_VIEWS: readonly Destination[] = (
+  [
+    ['galactic-field-view', 'The Milky Way’s magnetic field', ['magnetic field', 'galactic magnetic field', 'Milky Way magnetic field', 'field lines', 'magnetic field lines', 'UF23', 'X-field', 'halo field', 'GMF'], 'A model of the Galaxy’s field', 'galactic-field', ['milky-way']],
+    ['galactic-field-sky-view', 'The Galaxy’s field across our sky', ['magnetic drapery', 'polarisation', 'polarization', 'polarised sky', 'WMAP polarisation', 'Planck drapery', 'North Polar Spur'], 'The field over the sky, measured', 'galactic-field-sky', ['milky-way', 'earth']],
+  ] as const
+).map(([id, name, aliases, kind, spec, bodies]) => ({
+  id,
+  name,
+  aliases,
+  kind,
+  group: 'milky-way' as const,
+  distanceKm: () => NaN,
+  unavailable: () => (bodies.every((b) => isBody(b)) ? null : 'Loading…'),
+  go: () => {
+    runScene(spec);
+  },
+}));
+registerDestinations(() => (isBody('milky-way') ? FIELD_VIEWS : []));
 
 // ─── Cygnus X-1's disc ──────────────────────────────────────────────────────────────────
 

@@ -61,6 +61,18 @@ const DeepSky = lazy(() => import('./scene/DeepSky'));
 // And the phenomena's models (supernovae, the kilonova, the jets, the aurora), once one is first near (sim/phenomena).
 const Phenomena = lazy(() => import('./scene/Phenomena'));
 
+// And the Milky Way's magnetic field, while View › Magnetic field lines is on (nothing of it loads or runs before).
+const GalacticField = lazy(() => import('./scene/GalacticField'));
+
+function GalacticFieldLayer() {
+  const on = useUI((s) => s.fieldLines);
+  return on ? (
+    <Suspense fallback={null}>
+      <GalacticField />
+    </Suspense>
+  ) : null;
+}
+
 function PhenomenaLayer() {
   const started = useSyncExternalStore(subscribePhenomena, () => phenomena.started);
   return started ? (
@@ -152,6 +164,7 @@ export default function App() {
           <Surveys />
           <DeepSkyLayer />
           <PhenomenaLayer />
+          <GalacticFieldLayer />
           <Constellations />
           <PlanetHosts />
           <EclipticGrid />

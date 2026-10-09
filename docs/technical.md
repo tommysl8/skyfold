@@ -101,6 +101,11 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   them) and Centaurus A's jets and lobes (false colour) are beamed by their speeds as seen from the camera. Earth's
   auroral ovals glow on the night side about the date's geomagnetic poles (IGRF-14), where Starkov's model puts them for
   the activity chosen in the View menu (Kp). What is a model is said on each card; `docs/data/phenomena.md` writes it up.
+- **The Milky Way's magnetic field.** View › Magnetic field lines draws the Galaxy's regular field as field lines of
+  the UF23 model (Unger & Farrar 2024) in 3D, traced through the disc, the halo and the X-field, coloured by their sense
+  and dimmed by the model's dust behind the disc; from the Solar System it shows instead the field's direction across the
+  sky, measured from WMAP's polarisation maps, as faint streaks. A chunk of its own, loaded only when switched on;
+  `docs/data/galactic-field.md` writes it up.
 - **Two size modes.** *True scale* shows specks, as reality does (planets still shine at their real apparent
   magnitude). *Enlarged* draws bodies at least a few pixels across while keeping every distance true.
 - **Travel.** Enter β exactly, or use a logit-scaled fader (0.00001c to 0.99999c) and presets (Voyager 1, Parker
@@ -254,6 +259,7 @@ pixel ratio, when frames take over 8.5 ms.
 | Named galaxies, clusters and young galaxies (`src/sim/cosmos/named.json`) | SIMBAD (CDS) positions; distances, redshifts, disc angles and sizes from the papers cited in each entry and RC3 | Facts quoted with citation |
 | Cosmology and the home clock (`src/physics/cosmology/`, `future.json`) | Planck 2018 parameters (Planck Collaboration 2020) and the CMB temperature of Fixsen (2009); the future of the Sun, the Milky Way, Andromeda and the universe from Schröder & Connon Smith (2008), van der Marel et al. (2012), [Sawala et al. (2025)](https://doi.org/10.1038/s41550-025-02563-1) (survival curve read from their figure 3), Cautun et al. (2019), Loeb (2002), Krauss & Scherrer (2007), Adams & Laughlin (1997) and the others cited in the file | Facts quoted with citation; the Sawala et al. figure is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | The supernovae, the kilonova, the jets and the aurora (`src/sim/phenomena/`) | Light curves, speeds and sizes from the papers cited in the code and `docs/data/phenomena.md`; the IGRF-14 dipole (IAGA, via NOAA NCEI); Starkov's auroral oval (Starkov 1994, via Sigernes et al. 2011) | Facts quoted with citation; IGRF free to use; the code MIT |
+| The Milky Way's magnetic field (`src/sim/galaxy/magneticField.ts`, `public/textures/field-sky-wmap.png`) | The UF23 "base" model of [Unger & Farrar 2024](https://doi.org/10.3847/1538-4357/ad4a54); WMAP nine-year K-band polarisation, NASA / WMAP Science Team | Numbers quoted with citation; NASA data, public domain; the derived texture CC BY 4.0 |
 | Typefaces | IBM Plex Sans (IBM), JetBrains Mono (JetBrains), Source Serif 4 (Adobe) | SIL OFL 1.1 |
 
 
