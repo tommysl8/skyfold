@@ -1,10 +1,12 @@
 /**
- * The shipped extragalactic files, read once per test run: the Local Group, the named objects and
- * the cosmic web, and an 8-bit PNG decoder for the CMB maps (Node's zlib through
+ * The shipped extragalactic files, read once per test run: the Local Group, the named objects, the
+ * more galaxies and their pictures' list, and the cosmic web, and an 8-bit PNG decoder for the CMB maps (Node's zlib through
  * process.getBuiltinModule, as test/files.ts reaches fs).
  */
 import { decodeCosmicWeb, type CosmicWeb } from '../sim/cosmos/cosmicWeb';
 import type { LocalGalaxiesDoc, NamedDoc } from '../sim/cosmos/localGalaxies';
+import type { MoreGalaxiesDoc } from '../sim/cosmos/moreGalaxies';
+import type { PicturesDoc } from '../sim/cosmos/pictures';
 import { readBytes, readJson } from './files';
 import { gunzipFile } from './stars';
 
@@ -16,9 +18,12 @@ const zlib = (globalThis as unknown as { process: { getBuiltinModule(id: string)
 let local: LocalGalaxiesDoc | undefined;
 let named: NamedDoc | undefined;
 let web: CosmicWeb | undefined;
+let more: MoreGalaxiesDoc | undefined;
 
 export const loadLocalGalaxies = (): LocalGalaxiesDoc => (local ??= JSON.parse(new TextDecoder().decode(gunzipFile('public/data/local-galaxies.json.gz'))) as LocalGalaxiesDoc);
 export const loadNamed = (): NamedDoc => (named ??= readJson<NamedDoc>('src/sim/cosmos/named.json'));
+export const loadMore = (): MoreGalaxiesDoc => (more ??= JSON.parse(new TextDecoder().decode(gunzipFile('public/data/more-galaxies.json.gz'))) as MoreGalaxiesDoc);
+export const loadPictures = (): PicturesDoc => readJson<PicturesDoc>('src/sim/cosmos/pictures.json');
 export const loadWeb = (): CosmicWeb => (web ??= decodeCosmicWeb(gunzipFile('public/data/cosmic-web.bin.gz')));
 
 export interface DecodedPng {

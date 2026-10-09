@@ -18,6 +18,7 @@ export type GalaxyClass =
   | 'dwarf-elliptical'
   | 'compact-elliptical'
   | 'elliptical'
+  | 'lenticular'
   | 'lenticular-peculiar'
   | 'cluster'
   | 'high-z'

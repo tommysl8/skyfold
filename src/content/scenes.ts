@@ -37,7 +37,7 @@
  */
 import { SearchRelativeLongitude, Body } from 'astronomy-engine';
 import { Vector3 } from 'three';
-import { AU_KM, C_KM_S, LIGHT_YEAR_KM, SUN_RADIUS_KM } from '../physics/constants';
+import { AU_KM, C_KM_S, KPC_KM, LIGHT_YEAR_KM, MPC_KM, SUN_RADIUS_KM } from '../physics/constants';
 import { einsteinAngle } from '../physics/schwarzschild';
 import { bodyName, bodyPositionAt, bodyStateAt, childrenOf, displayRadiusKm, getBody, isBody, type BodyId } from '../sim/bodies';
 import { blackHoleRsKm, controller, type HoldStep } from '../controls/cameraController';
@@ -63,7 +63,7 @@ import { refusalText } from '../ui/flight/tripText';
 import { astroTimeAt, daysInMonth, formatDurationShort, formatSimDate, msFromAstroTime, msFromCivil } from '../lib/time';
 import { useUI, type UIState } from '../state/ui';
 import { emitPulse } from '../sim/pulses';
-import { frameCosmicWeb, frameLocalGroup, frameMilkyWay, goToBody, goToStarSystem, goToSystem, showCmbMap } from '../ui/navigation';
+import { frameCosmicWeb, frameFromOurSide, frameLocalGroup, frameMilkyWay, goToBody, goToStarSystem, goToSystem, showCmbMap } from '../ui/navigation';
 import { afterArrival, planOneG, startTrip } from '../ui/tripActions';
 import { formatIsoDate } from './learn/catalogue';
 
@@ -245,6 +245,9 @@ export const NAMED_SCENES = [
   'milky-way-outside',
   'local-group',
   'cosmic-web',
+  'famous-galaxies',
+  'virgo-cluster-close',
+  'coma-cluster-close',
   'cmb-map',
   'cmb-glow',
   'edge-of-reach',
@@ -360,6 +363,9 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'milky-way-outside': 'The Milky Way from outside',
   'local-group': 'The Local Group',
   'cosmic-web': 'The cosmic web',
+  'famous-galaxies': 'Famous galaxies, as photographed',
+  'virgo-cluster-close': 'The Virgo Cluster',
+  'coma-cluster-close': 'The Coma Cluster',
   'cmb-map': 'The cosmic microwave background',
   'cmb-glow': 'The Big Bang’s glow, seen at speed',
   'edge-of-reach': 'The edge of reach',
@@ -457,6 +463,16 @@ const GALAXY_TARGETS: ReadonlySet<string> = new Set([
   'centaurus-a',
   'sombrero',
   'whirlpool',
+  'm82',
+  'm101',
+  'm64',
+  'm63',
+  'm83',
+  'ngc-253',
+  'm86',
+  'm100',
+  'ngc-4874',
+  'ngc-4889',
   'virgo-cluster',
   'coma-cluster',
   'bullet-cluster',
@@ -1240,6 +1256,40 @@ defineScene('cosmic-web', {
     scene(note, () => {
       useUI.setState({ showLabels: true });
       frameCosmicWeb();
+    }),
+});
+
+defineScene('famous-galaxies', {
+  label: 'Famous galaxies, as photographed',
+  note: 'The Whirlpool Galaxy, 8.6 million parsecs (28 million light-years) away, seen from our side and drawn with Hubble’s photograph of it, as bright as its measured light. A photograph shows a galaxy only from about where it was taken: turn the view away from our line of sight, or come close, and it gives way to the model built from the galaxy’s size, tilt and brightness. Andromeda, Triangulum, Bode’s Galaxy, the Cigar, the Sombrero, the Pinwheel, the Southern Pinwheel, the Sculptor and Black Eye galaxies, the Leo Triplet and the Antennae have photographs too: find them in Where to?',
+  unavailable: needs('whirlpool'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ showLabels: true });
+      useUI.getState().select('whirlpool');
+      frameFromOurSide('whirlpool', 90 * KPC_KM);
+    }),
+});
+
+defineScene('virgo-cluster-close', {
+  label: 'The Virgo Cluster',
+  note: 'The nearest big cluster of galaxies, about 16.5 million parsecs (54 million light-years) away, from 2.5 million parsecs out, a little off our line of sight. Its sixty brightest galaxies are drawn as galaxies of their own, at their measured distances where those are known well (most of the ellipticals, from the fluctuations of their surface brightness) and at the cluster’s distance where not; the giant ellipticals M87, M49, M86 and M60 are its brightest. As bright as they really are, most are faint smudges from here: the dark sky between them is real. The cosmic web is turned off to show the cluster alone; the View menu turns it back on.',
+  unavailable: needs('virgo-cluster', 'm86'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ showLabels: true, cosmicWeb: 'off' });
+      frameFromOurSide('virgo-cluster', 2.5 * MPC_KM, 25);
+    }),
+});
+
+defineScene('coma-cluster-close', {
+  label: 'The Coma Cluster',
+  note: 'A rich cluster of more than a thousand galaxies, 98.5 million parsecs (321 million light-years) away, from 6 million parsecs out along our line of sight. Its brightest galaxies are drawn as galaxies of their own: the two giant ellipticals NGC 4889 and NGC 4874 at its heart, and some thirty more. Their own distances are not measured well enough to place them in depth, so all are at the cluster’s distance, each in its own direction: seen from the side they would lie in a sheet. The cosmic web is turned off; the View menu turns it back on.',
+  unavailable: needs('coma-cluster', 'ngc-4874'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ showLabels: true, cosmicWeb: 'off' });
+      frameFromOurSide('coma-cluster', 6 * MPC_KM, 0);
     }),
 });
 
