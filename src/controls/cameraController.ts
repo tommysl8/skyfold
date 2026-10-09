@@ -314,18 +314,25 @@ export class CameraController implements ControllerHoleApi {
 
   // ── Setup ─────────────────────────────────────────────────────────────────────────────
 
-  /** Put the camera in orbit around a body, facing its sunlit side. */
-  placeAt(id: BodyId, dist = framingDistance(id)): void {
+  /**
+   * Put the camera in orbit around a body, at once: facing its sunlit side, or along `dir` (world axes, from the body
+   * to the camera) when given. Over a black hole `heightKm` sets the height above the horizon exactly (a saved place's:
+   * dist − r_s would lose it), clamped to the floor.
+   */
+  placeAt(id: BodyId, dist = framingDistance(id), dir?: Vec3Like, heightKm?: number): void {
     this.moves++;
+    this.tr = null;
     this.setTarget(id);
     this.frameBody = id;
-    const dir = this.niceDirection(id);
-    this.az = this.goalAz = Math.atan2(dir.x, dir.z);
-    this.el = this.goalEl = Math.asin(dir.y);
+    const len = dir ? Math.hypot(dir.x, dir.y, dir.z) : 0;
+    const d = dir && len > 0 ? new Vector3(dir.x / len, dir.y / len, dir.z / len) : this.niceDirection(id);
+    this.az = this.goalAz = Math.atan2(d.x, d.z);
+    this.el = this.goalEl = Math.asin(Math.max(-1, Math.min(1, d.y)));
     this.logDist = this.goalLogDist = Math.log(dist);
     if (this.holeRs > 0) {
-      this.setHeight(Math.max(this.floorKm, dist - this.holeRs));
-      this.setHoverDir(dir);
+      const h = heightKm !== undefined && heightKm > 0 ? heightKm : dist - this.holeRs;
+      this.setHeight(Math.min(MAX_DIST_KM, Math.max(this.floorKm, h)));
+      this.setHoverDir(d);
       this.lookRel = null;
       const b = sim.bodies[id];
       this.placeHover(b.pos, b.vel, this.heightExact);
@@ -463,6 +470,16 @@ export class CameraController implements ControllerHoleApi {
     if (this.mode !== 'orbit' || this.target !== id || this.holeRs > 0) return false;
     this.orbitDirInto(this.az, this.el, out).multiplyScalar(Math.exp(this.logDist));
     return true;
+  }
+
+  /**
+   * Where the slew under way ends: the body, the direction from it to the camera (world axes) and the distance from
+   * its centre, km, and over a black hole the exact height above its horizon (NaN otherwise); null outside a slew.
+   */
+  get slewGoal(): { id: BodyId; dir: Readonly<Vector3>; distKm: number; heightKm: number } | null {
+    const tr = this.tr;
+    if (this.mode !== 'transition' || !tr) return null;
+    return { id: tr.toBody, dir: tr.dir1, distKm: tr.w1, heightKm: tr.rs > 0 ? Math.max(hoverFloorKm(tr.toBody, tr.rs), tr.h1) : NaN };
   }
 
   /** The distance the orbit camera is easing to, km (NaN outside orbit mode). */
@@ -1434,7 +1451,8 @@ export class CameraController implements ControllerHoleApi {
     if (this.holeRs > 0) this.goalLogHeight = Math.max(Math.log(this.floorKm), Math.min(Math.log(MAX_DIST_KM), this.goalLogHeight));
   }
 
-  private nearestBody(): BodyId {
+  /** The body nearest the camera for its size (a nearby Moon before a distant Sun): what leaving free flight orbits. */
+  nearestBody(): BodyId {
     let best: BodyId = 'sun';
     let bestScore = Infinity;
     for (const b of sim.bodyList) {
