@@ -107,7 +107,7 @@ export const JOURNEYS: Journey[] = [
   journey({
     id: 'black-hole-tour',
     title: 'A tour of black holes',
-    sub: 'Seven stops, from GRS 1915+105 to one of the heaviest known, 16 s each',
+    sub: 'Five stops, from one of the lightest black holes known to M31*, 16 s each',
     scene: 'black-hole-tour',
   }),
   journey({

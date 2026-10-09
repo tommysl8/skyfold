@@ -44,6 +44,7 @@ import { blackHoleRsKm, controller, type HoldStep } from '../controls/cameraCont
 import { framingDistance, systemFramingDistance } from '../controls/framing';
 import { galacticToWorld } from '../sim/frames';
 import { blackHoleStatus } from '../sim/blackholes';
+import { STELLAR_FRAMING_RS } from '../sim/blackholes/records';
 import { SGRA_FLOW } from '../sim/blackholes/accretion';
 import { fall, startFall } from '../sim/fall';
 import { alignBehind } from '../sim/lensBodies';
@@ -162,6 +163,7 @@ const TARGET_NAMES = {
   'cyg-x-1': 'Cygnus X-1',
   'ogle-2011-blg-0462': 'OGLE-2011-BLG-0462',
   'grs-1915': 'GRS 1915+105',
+  'gro-j0422': 'GRO J0422+32',
   'lmc-x-1': 'LMC X-1',
   'm33-x-7': 'M33 X-7',
   'orion-nebula': 'Orion Nebula',
@@ -482,7 +484,7 @@ const LOADING_GALAXIES = 'Loading the galaxies…';
  * lone hole arrive with the star catalogue, M87* and the other galaxies' holes with the galaxies (blackHoleStatus says
  * which).
  */
-const STELLAR_HOLE_TARGETS: ReadonlySet<string> = new Set(['gaia-bh1', 'gaia-bh2', 'gaia-bh3', 'cyg-x-1', 'ogle-2011-blg-0462', 'grs-1915', 'lmc-x-1', 'm33-x-7']);
+const STELLAR_HOLE_TARGETS: ReadonlySet<string> = new Set(['gaia-bh1', 'gaia-bh2', 'gaia-bh3', 'cyg-x-1', 'ogle-2011-blg-0462', 'grs-1915', 'gro-j0422', 'lmc-x-1', 'm33-x-7']);
 const GALAXY_HOLE_TARGETS: ReadonlySet<string> = new Set(['m87-star', 'm31-star', 'ngc-4258-bh', 'ngc-4889-bh']);
 const BUSY = 'A flight is under way: finish it or abort it first';
 /** A fall into a black hole holds tripActive as a flight does, but is stopped rather than aborted. */
@@ -1821,23 +1823,38 @@ defineScene('grs-1915-disk', {
     }),
 });
 
-/** One stop of the tour: the hole, where the camera hovers (r in units of M; along the line to the Sun or above its disc) and what to say. */
+/**
+ * One stop of the tour: the hole, where the camera hovers (r in units of M) and what to say. The view: 'sun', on the
+ * line to the Sun (the hole as we see it); a number, that many degrees above its disc's plane; 'milky-way', beyond the
+ * hole on the line from the Milky Way's centre, so the Galaxy behind it is bent into a ring.
+ */
 export interface TourStop {
   hole: BodyId;
   rM: number;
-  /** 'sun': on the line to the Sun (as we see it); a number: that many degrees above its disc's plane. */
-  view: 'sun' | number;
+  view: 'sun' | number | 'milky-way';
   text: () => string;
 }
 
 /** How long the tour holds at each stop, s. */
 export const TOUR_STOP_S = 16;
 
+/** M31*'s stop: where a source far behind it closes into a ring 1.5° in radius, r = 4M/θ² (units of M). */
+export const M31_RING_RADIUS_DEG = 1.5;
+export const M31_RING_RM = 4 / ((M31_RING_RADIUS_DEG * Math.PI) / 180) ** 2;
+
 /**
- * The tour of black holes: from the Milky Way out to one of the heaviest known, each held TOUR_STOP_S seconds. Three
- * discs (each a model, its typical state), then four holes at the centres of galaxies, weighed four ways.
+ * The tour of black holes, each held TOUR_STOP_S seconds: the lightest known, then three discs (each a model of a
+ * typical state) from across the Galaxy to M33, then a supermassive hole with the Milky Way bent round it. (The holes
+ * at the centres of the far galaxies are not stops: from beside them the app's sky is nearly black, with only their
+ * galaxies' markers to bend.)
  */
 export const BLACK_HOLE_TOUR: readonly TourStop[] = [
+  {
+    hole: 'gro-j0422',
+    rM: 2 * STELLAR_FRAMING_RS,
+    view: 'sun',
+    text: () => `GRO J0422+32, ${massWords(holeMass('gro-j0422'))}, ${lightYearsAway('gro-j0422')} away in Perseus: one of the lightest black holes known, between the heaviest neutron stars and the other black holes, seen from 10,000 horizon radii; its small red companion circles it every 5.1 hours.`,
+  },
   {
     hole: GRS_1915,
     rM: GRS_1915_VIEW.rM,
@@ -1854,31 +1871,14 @@ export const BLACK_HOLE_TOUR: readonly TourStop[] = [
     hole: 'm33-x-7',
     rM: 100,
     view: 'sun',
-    text: () => `M33 X-7, ${massWords(holeMass('m33-x-7'))}, ${lightYearsAway('m33-x-7')} away in the Triangulum Galaxy, seen nearly edge-on as we see it: once an orbit its companion eclipses it.`,
+    text: () => `M33 X-7, ${massWords(holeMass('m33-x-7'))}, ${lightYearsAway('m33-x-7')} away in the Triangulum Galaxy, its disc seen nearly edge-on as we see it: once an orbit its giant companion eclipses it.`,
   },
   {
     hole: 'm31-star',
-    rM: 100,
-    view: 'sun',
-    text: () => `M31*, ${massWords(holeMass('m31-star'))}, at the centre of the Andromeda Galaxy, weighed by the motions of the stars round it. Its galaxy’s own starlight is not drawn here, so its Einstein disc is dark.`,
-  },
-  {
-    hole: 'ngc-4258-bh',
-    rM: 100,
-    view: 'sun',
-    text: () => `The black hole of M106 (NGC 4258), ${massWords(holeMass('ngc-4258-bh'))}, ${lightYearsAway('ngc-4258-bh')} away: weighed by water masers in a thin disc orbiting it, the most precise mass of any black hole beyond our own galaxy.`,
-  },
-  {
-    hole: 'm84-bh',
-    rM: 100,
-    view: 'sun',
-    text: () => `The black hole of M84, ${massWords(holeMass('m84-bh'))}, in the Virgo cluster ${lightYearsAway('m84-bh')} away, weighed by a disc of glowing gas the Hubble telescope saw turning round it.`,
-  },
-  {
-    hole: 'ngc-4889-bh',
-    rM: 100,
-    view: 'sun',
-    text: () => `The black hole of NGC 4889, ${massWords(holeMass('ngc-4889-bh'))}, in the Coma cluster ${lightYearsAway('ngc-4889-bh')} away: one of the heaviest known. Its horizon would hold the Solar System many times over, yet from 100 horizon radii the view is the same as at every black hole.`,
+    rM: M31_RING_RM,
+    view: 'milky-way',
+    text: () =>
+      `M31*, ${massWords(holeMass('m31-star'))}, at the centre of the Andromeda Galaxy, weighed by the motions of the stars round it, seen from ${Math.round((M31_RING_RM * holeMKm('m31-star')) / AU_KM / 100) * 100} au beyond it: the Milky Way, 2.5 million light-years behind it, is bent into a ring ${(2 * (einsteinAngle({ frame: 'static', r: M31_RING_RM }) * 180) / Math.PI).toFixed(1)}° across. Andromeda’s own stars close by are not drawn.`,
   },
 ];
 
@@ -1891,7 +1891,12 @@ export function tourNote(i: number): string {
 
 /** Where the tour's camera hovers at a stop, from the hole (world axes). */
 function tourDir(stop: TourStop): Vector3 {
-  return stop.view === 'sun' ? sunward(stop.hole) : discView(stop.hole, stop.view);
+  if (stop.view === 'sun') return sunward(stop.hole);
+  if (stop.view === 'milky-way') {
+    const d = sim.bodies[stop.hole].pos.clone().sub(sim.bodies[SGR_A].pos);
+    return d.lengthSq() > 0 ? d.normalize() : IN_THE_PLANE.clone();
+  }
+  return discView(stop.hole, stop.view);
 }
 
 /** Go to stop i of the tour, and once there wait TOUR_STOP_S seconds for the next (dropped if the camera is moved or another scene starts). */
