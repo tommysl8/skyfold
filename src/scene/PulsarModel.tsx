@@ -9,12 +9,20 @@
  * us at each pulse; a pair moves on the simulation's clock. A magnetar has its twisted close field (loops a few star
  * radii across, in magenta) and wider hot spots, and radio beams only if it has been seen pulsing in radio.
  *
+ * With View › Magnetic field lines on, each star's whole magnetosphere replaces its few loops (sim/deepsky/
+ * magnetosphere.ts): a pulsar's closed zone, its open lines wound into the wind and the striped wind's current sheet;
+ * a magnetar's denser twisted field, as far out as its measured field sets; the Double Pulsar's B confined by A's wind.
+ * They turn with the beams' spin phase. Built the first time the switch is on near that pulsar; with it off nothing
+ * of them is made or drawn, and the close-up is as it was.
+ *
  * Part of the deep-sky chunk (mounted by scene/DeepSky.tsx). Cost: nothing far from a pulsar; near one, up to four
- * beams ray-marched over the pixels they cover (24 samples each way), a few thousand line segments and a sphere.
+ * beams ray-marched over the pixels they cover (24 samples each way), a few thousand line segments and a sphere; with
+ * the field lines on, about 25,000 more segments a star and the wind's sheet (docs/data/deepsky.md §5).
  */
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
+  BufferAttribute,
   BufferGeometry,
   ConeGeometry,
   Float32BufferAttribute,
@@ -29,8 +37,19 @@ import {
   AdditiveBlending,
   type ShaderMaterial,
 } from 'three';
-import { createBeamMaterial, createFieldLineMaterial, createGlowMaterial, createStarMaterial } from '../render/pulsarMaterials';
+import { createBeamMaterial, createFieldLineMaterial, createGlowMaterial, createMagnetosphereMaterial, createSheetMaterial, createStarMaterial } from '../render/pulsarMaterials';
+import {
+  denseTwistedField,
+  DOUBLE_PULSAR_A_EDOT,
+  DOUBLE_PULSAR_B_EDOT,
+  type FieldLineSet,
+  magnetopauseKm,
+  pulsarMagnetosphere,
+  stripedSheet,
+  twistedReach,
+} from '../sim/deepsky/magnetosphere';
 import { psfUniforms } from '../render/materials';
+import { GUIDES_LAYER } from '../render/LightspeedScenePass';
 import { bodyRecords, getBody, type BodyId } from '../sim/bodies';
 import { fieldLines, magneticAxisAt, NS_RADIUS_KM, pairPlaces, rotateAbout, spinPhase, twistedFieldLines, type PulsarModel, type Spin } from '../sim/deepsky/pulsarModel';
 import { pulsarId } from '../sim/deepsky/records';
@@ -77,6 +96,12 @@ interface Star {
   /** The magnetic frame at phase 0: x, y (z is the magnetic axis). */
   x0: Vector3;
   y0: Vector3;
+  /** Across the spin axis towards the magnetic axis at phase 0 (the turning frame's x). */
+  u0: Vector3;
+  /** What its whole magnetosphere is (View › Magnetic field lines), its field (G; a magnetar's), and once built its objects. */
+  fieldKind: 'pulsar' | 'magnetar' | 'confined';
+  bG: number;
+  field: { lines: LineSegments; mat: ShaderMaterial; sheet: Mesh | null; sheetMat: ShaderMaterial | null } | null;
 }
 
 interface Built {
@@ -89,7 +114,65 @@ interface Built {
   dispose: () => void;
 }
 
-function buildStar(spin: Spin, sphereGeo: SphereGeometry, coneGeo: ConeGeometry, glowGeo: BufferGeometry, magnetar: PulsarModel['magnetar'] = null): Star {
+/** The Double Pulsar's B, whose field A's wind confines. */
+const DOUBLE_PULSAR_B = 'J0737-3039B';
+
+function lineGeometry(f: FieldLineSet): BufferGeometry {
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(f.positions, 3));
+  g.setAttribute('aArc', new BufferAttribute(f.arc, 1));
+  g.setAttribute('aPol', new BufferAttribute(f.pol, 1));
+  g.setAttribute('aFlow', new BufferAttribute(f.flow, 1));
+  g.setAttribute('aW', new BufferAttribute(f.weight, 1));
+  return g;
+}
+
+/** A star's whole magnetosphere, made the first time the switch is on near it. */
+function buildField(s: Star): NonNullable<Star['field']> {
+  const rlc = s.spin.lightCylinderKm;
+  let f: FieldLineSet;
+  let dashKm: number;
+  if (s.fieldKind === 'magnetar') {
+    f = denseTwistedField(s.bG);
+    dashKm = 0.12 * twistedReach(s.bG) * NS_RADIUS_KM;
+  } else if (s.fieldKind === 'confined') {
+    // Dipole loops out to 2.5 magnetopause radii (about 10⁵ km); the vertex shader confines them.
+    const rmp = magnetopauseKm(DOUBLE_PULSAR_A_EDOT, DOUBLE_PULSAR_B_EDOT, s.spin.periodS, 8.8e5);
+    const closed = [0.04, 0.07, 0.11, 0.17, 0.25, 0.36, 0.5, 0.75, 1].map((l) => (l * 2.5 * rmp) / rlc);
+    f = pulsarMagnetosphere(s.spin.periodS, s.spin.alphaRad, NS_RADIUS_KM, { closed, open: [], azimuths: 14 });
+    dashKm = 0.08 * rmp;
+  } else {
+    f = pulsarMagnetosphere(s.spin.periodS, s.spin.alphaRad);
+    dashKm = 0.15 * rlc;
+  }
+  const mat = createMagnetosphereMaterial();
+  mat.uniforms.uDashKm.value = dashKm;
+  if (s.fieldKind === 'magnetar') mat.uniforms.uGain.value = 2.2;
+  const lines = new LineSegments(lineGeometry(f), mat);
+  lines.frustumCulled = false;
+  lines.renderOrder = 1;
+  // Guides, on the orbit lines' layer (scene/HoleFieldLines.tsx says why).
+  lines.layers.set(GUIDES_LAYER);
+  s.group.add(lines);
+  let sheet: Mesh | null = null;
+  let sheetMat: ShaderMaterial | null = null;
+  if (s.fieldKind === 'pulsar') {
+    const sh = stripedSheet(s.spin.periodS, s.spin.alphaRad);
+    const g = new BufferGeometry();
+    g.setAttribute('position', new BufferAttribute(sh.positions, 3));
+    g.setAttribute('aU', new BufferAttribute(sh.u, 1));
+    g.setIndex(new BufferAttribute(sh.index, 1));
+    sheetMat = createSheetMaterial();
+    sheet = new Mesh(g, sheetMat);
+    sheet.frustumCulled = false;
+    sheet.renderOrder = 1;
+    sheet.layers.set(GUIDES_LAYER);
+    s.group.add(sheet);
+  }
+  return { lines, mat, sheet, sheetMat };
+}
+
+function buildStar(spin: Spin, sphereGeo: SphereGeometry, coneGeo: ConeGeometry, glowGeo: BufferGeometry, magnetar: PulsarModel['magnetar'] = null, jname = ''): Star {
   const group = new Group();
   const starMat = createStarMaterial();
   const sphere = new Mesh(sphereGeo, starMat);
@@ -149,16 +232,20 @@ function buildStar(spin: Spin, sphereGeo: SphereGeometry, coneGeo: ConeGeometry,
   if (x0.lengthSq() < 1e-12) x0.set(spin.axis.y, spin.axis.z, spin.axis.x);
   x0.normalize();
   const y0 = new Vector3().crossVectors(spin.mag0, x0).normalize();
-  return { spin, group, sphere, starMat, glow, glowMat, beams, lines, linesMat, twisted, twistedMat, x0, y0 };
+  const u0 = spin.mag0.clone().addScaledVector(spin.axis, -spin.mag0.dot(spin.axis));
+  if (u0.lengthSq() < 1e-12) u0.copy(x0);
+  u0.normalize();
+  const fieldKind = magnetar ? 'magnetar' : jname === DOUBLE_PULSAR_B ? 'confined' : 'pulsar';
+  return { spin, group, sphere, starMat, glow, glowMat, beams, lines, linesMat, twisted, twistedMat, x0, y0, u0, fieldKind, bG: magnetar?.bG ?? NaN, field: null };
 }
 
-function build(id: BodyId, model: PulsarModel): Built {
+function build(id: BodyId, model: PulsarModel, jname: string): Built {
   const root = new Group();
   const sphereGeo = new SphereGeometry(1, 64, 32);
   const coneGeo = unitCone();
   const glowGeo = new BufferGeometry().setAttribute('position', new Float32BufferAttribute([0, 0, 0], 3));
-  const stars = [buildStar(model.spin, sphereGeo, coneGeo, glowGeo, model.magnetar)];
-  if (model.pair) stars.push(buildStar(model.pair.companion, sphereGeo, coneGeo, glowGeo));
+  const stars = [buildStar(model.spin, sphereGeo, coneGeo, glowGeo, model.magnetar, jname)];
+  if (model.pair) stars.push(buildStar(model.pair.companion, sphereGeo, coneGeo, glowGeo, null, model.pair.companionJname ?? ''));
   for (const s of stars) root.add(s.group);
   const orbits: LineLoop[] = [];
   let orbitMat: LineBasicMaterial | null = null;
@@ -192,6 +279,10 @@ function build(id: BodyId, model: PulsarModel): Built {
       s.linesMat?.dispose();
       s.twisted?.geometry.dispose();
       s.twistedMat?.dispose();
+      s.field?.lines.geometry.dispose();
+      s.field?.mat.dispose();
+      s.field?.sheet?.geometry.dispose();
+      s.field?.sheetMat?.dispose();
     }
     for (const o of orbits) o.geometry.dispose();
     orbitMat?.dispose();
@@ -226,8 +317,52 @@ const toCam = new Vector3();
 const x = new Vector3();
 const y = new Vector3();
 const neg = new Vector3();
+const e1 = new Vector3();
+const e2 = new Vector3();
+const toOther = new Vector3();
 
-function updateStar(s: Star, model: PulsarModel, offset: Vector3, wallS: number, o: number): void {
+/** The whole magnetosphere this frame: turned with the star (in the spin frame, or the magnetic frame), or hidden. */
+function updateField(s: Star, on: boolean, phase: number, wallS: number, o: number, other: Vector3 | null, offset: Vector3): void {
+  if (s.lines) s.lines.visible = !on;
+  if (s.twisted) s.twisted.visible = !on;
+  if (!on) {
+    if (s.field) {
+      s.field.lines.visible = false;
+      if (s.field.sheet) s.field.sheet.visible = false;
+    }
+    return;
+  }
+  if (!s.field) s.field = buildField(s);
+  const { spin } = s;
+  const u = s.field.mat.uniforms;
+  if (s.fieldKind === 'pulsar') {
+    rotateAbout(s.u0, spin.axis, 2 * Math.PI * phase, e1);
+    e2.crossVectors(spin.axis, e1);
+    u.uRot.value.set(e1.x, e2.x, spin.axis.x, e1.y, e2.y, spin.axis.y, e1.z, e2.z, spin.axis.z);
+  } else {
+    magneticAxisAt(spin, phase, mag);
+    rotateAbout(s.x0, spin.axis, 2 * Math.PI * phase, x);
+    rotateAbout(s.y0, spin.axis, 2 * Math.PI * phase, y);
+    u.uRot.value.set(x.x, y.x, mag.x, x.y, y.y, mag.y, x.z, y.z, mag.z);
+  }
+  if (s.fieldKind === 'confined' && other) {
+    // A's wind from A's side: the magnetopause at this moment's separation (Lyutikov & Thompson 2005).
+    toOther.copy(other).sub(offset);
+    const d = toOther.length();
+    toOther.divideScalar(Math.max(d, 1e-9));
+    u.uConfine.value.set(toOther.x, toOther.y, toOther.z, magnetopauseKm(DOUBLE_PULSAR_A_EDOT, DOUBLE_PULSAR_B_EDOT, spin.periodS, d));
+  }
+  u.uTime.value = wallS % 3600;
+  u.uOpacity.value = o;
+  s.field.lines.visible = true;
+  if (s.field.sheet && s.field.sheetMat) {
+    s.field.sheetMat.uniforms.uRot.value.copy(u.uRot.value);
+    s.field.sheetMat.uniforms.uOpacity.value = o;
+    s.field.sheet.visible = true;
+  }
+}
+
+function updateStar(s: Star, model: PulsarModel, offset: Vector3, wallS: number, o: number, fieldOn = false, other: Vector3 | null = null): void {
   const { spin } = s;
   s.group.position.copy(offset);
   const phase = spinPhase(spin, wallS);
@@ -270,11 +405,18 @@ function updateStar(s: Star, model: PulsarModel, offset: Vector3, wallS: number,
     u.uTime.value = wallS % 3600;
     u.uOpacity.value = o;
   }
+  updateField(s, fieldOn, phase, wallS, o, other, offset);
   // The point of light while the star is small on screen, flaring as a beam sweeps over the camera.
   const px = (NS_RADIUS_KM / Math.max(dCam, 1)) * (sim.viewport.height / 2 / Math.tan((sim.camera.fovDeg * Math.PI) / 360));
   const small = 1 - smoothstep(6, 30, px);
   s.glowMat.uniforms.uIntensity.value = o * (small * (spin.beams ? 0.9 : 0.6) + 2.5 * flash);
   s.glowMat.uniforms.uSizePx.value = 36 * (1 + 1.5 * flash);
+}
+
+/** A pulsar body's catalogue name ("J0737-3039B"), from its record's aliases. */
+function jnameOf(id: BodyId): string {
+  const r = getBody(id);
+  return r?.aliases?.find((a) => /^J\d{4}[+-]\d{2,4}[A-Za-z]*$/.test(a)) ?? '';
 }
 
 export function PulsarModel() {
@@ -307,7 +449,7 @@ export function PulsarModel() {
     }
     if (built.current?.id !== want.id || built.current.model !== want.model) {
       dispose();
-      built.current = build(want.id, want.model);
+      built.current = build(want.id, want.model, jnameOf(want.id));
       g.add(built.current.root);
     }
     const { model, stars, orbitMat } = built.current;
@@ -319,7 +461,8 @@ export function PulsarModel() {
     offsets[0].set(0, 0, 0);
     if (model.pair) pairPlaces(model.pair, sim.timeMs, offsets[0], offsets[1]);
     const wallS = performance.now() / 1000;
-    stars.forEach((s, i) => updateStar(s, model, offsets[i], wallS, o));
+    const fieldOn = useUI.getState().fieldLines;
+    stars.forEach((s, i) => updateStar(s, model, offsets[i], wallS, o, fieldOn, stars.length > 1 ? offsets[1 - i] : null));
     if (orbitMat) orbitMat.opacity = 0.22 * o;
   });
 

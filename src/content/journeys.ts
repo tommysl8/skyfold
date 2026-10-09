@@ -136,6 +136,12 @@ export const JOURNEYS: Journey[] = [
   journey({ id: 'sn-1987a', title: 'Supernova 1987A', sub: 'From Earth: a new star in the Large Magellanic Cloud', scene: 'sn-1987a-from-earth', clock: 'February 1987, faster and faster' }),
   journey({ id: 'sn-1572-close', title: 'Tycho’s star explodes', sub: 'A model up close: the fireball, then the debris growing to today’s remnant', scene: 'sn-1572-up-close', clock: 'Each few seconds e times older' }),
   journey({ id: 'kilonova', title: 'Two neutron stars collide', sub: 'GW170817: the last minute of the inspiral, then the kilonova, blue then red', scene: 'kilonova-gw170817', clock: '17 August 2017: real time, then faster' }),
+  journey({ id: 'merger-field', title: 'Two neutron stars merge: their magnetic fields', sub: 'GW170817’s fields meeting, tearing apart and winding into a jet’s funnel (a model)', scene: 'merger-field', clock: '17 August 2017: real time, then faster' }),
+  journey({ id: 'crab-magnetosphere', title: 'The Crab pulsar’s magnetosphere', sub: 'Its field lines turning with it, wound into a striped wind (a model)', scene: 'crab-magnetosphere' }),
+  journey({ id: 'magnetar-field', title: 'A magnetar’s twisted field', sub: 'SGR 1806−20, a field a thousand times a pulsar’s (a model)', scene: 'magnetar-field' }),
+  journey({ id: 'double-pulsar-field', title: 'The Double Pulsar’s magnetic fields', sub: 'One pulsar’s wind shaping the other’s field', scene: 'double-pulsar-field' }),
+  journey({ id: 'm87-star-field', title: 'M87*’s magnetic field', sub: 'The field threading the hole, as the EHT’s polarisation suggests (a model)', scene: 'm87-star-field' }),
+  journey({ id: 'sgr-a-star-field', title: 'Sgr A*’s magnetic field', sub: 'An ordered field wound by the hole’s spin (a model)', scene: 'sgr-a-star-field' }),
   journey({ id: 'm87-jet', title: 'The jet of M87', sub: 'A jet at nearly the speed of light, its far side beamed out of sight', scene: 'm87-jet' }),
   journey({ id: 'aurora', title: 'The northern lights from space', sub: 'Earth’s auroral oval on the night side', scene: 'aurora' }),
 ];

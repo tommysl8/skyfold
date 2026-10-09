@@ -74,6 +74,8 @@ import { inspiralAt, kilonovaAt, MERGER_MS } from '../sim/phenomena/kilonova';
 import { startPace } from '../sim/phenomena/pace';
 import { bodyFixedDir, geomagneticPole } from '../sim/phenomena/aurora';
 import { registerDestinations, type Destination } from './destinations';
+import { requestDeepSky } from '../sim/deepsky';
+import { fieldAxisWorld } from '../sim/blackholes/fieldAxis';
 
 // ─── Targets ────────────────────────────────────────────────────────────────────────────
 
@@ -299,6 +301,12 @@ export const NAMED_SCENES = [
   'm87-jet',
   'centaurus-a-jets',
   'aurora',
+  'crab-magnetosphere',
+  'magnetar-field',
+  'double-pulsar-field',
+  'merger-field',
+  'm87-star-field',
+  'sgr-a-star-field',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -433,6 +441,12 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'm87-jet': 'The jet of M87',
   'centaurus-a-jets': 'The jets and lobes of Centaurus A',
   'aurora': 'The northern lights from space',
+  'crab-magnetosphere': 'The Crab pulsar’s magnetosphere',
+  'magnetar-field': 'A magnetar’s twisted field',
+  'double-pulsar-field': 'The Double Pulsar’s magnetic fields',
+  'merger-field': 'Two neutron stars merge: their magnetic fields',
+  'm87-star-field': 'M87*’s magnetic field',
+  'sgr-a-star-field': 'Sgr A*’s magnetic field',
 };
 
 /** Define (or replace) a named scene. */
@@ -984,12 +998,12 @@ function start(s: Scene, note: string): boolean {
  * Views a scene may turn on for itself: the CMB map over the sky, light-time correction, the
  * relativistic view (split, or with its Doppler colours), the cosmic web, and near a black hole
  * its lens, the accretion flow and the flow's band and blur (the scenes made to show the lens
- * switch the flow off), and the thin accretion discs (whose scenes hide the orbit lines, which run through the
- * disc's plane). What one scene turned on, the next scene turns back (unless the visitor
+ * switch the flow off), the thin accretion discs (whose scenes hide the orbit lines, which run through the
+ * disc's plane), and the magnetic field lines. What one scene turned on, the next scene turns back (unless the visitor
  * has changed it since), so the CMB map does not stay over Jupiter after the CMB scene, nor the
  * flow stay hidden after a lens scene.
  */
-const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur'] as const;
+const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines'] as const;
 type SceneView = (typeof SCENE_VIEWS)[number];
 type SceneViews = Partial<Pick<UIState, SceneView>>;
 
@@ -1010,6 +1024,7 @@ function currentViews(): Pick<UIState, SceneView> {
     accretionDisks: s.accretionDisks,
     accretionBand: s.accretionBand,
     ehtBlur: s.ehtBlur,
+    fieldLines: s.fieldLines,
   };
 }
 
@@ -2063,6 +2078,123 @@ const PHENOMENA_VIEWS: readonly Destination[] = (
   },
 }));
 registerDestinations(() => (isBody('m87') ? PHENOMENA_VIEWS : PHENOMENA_VIEWS.slice(0, 1)));
+
+// ─── Magnetic fields (sim/deepsky/magnetosphere.ts, mergerField.ts; sim/blackholes/holeField.ts) ───────────
+
+const CRAB_PULSAR: BodyId = 'psr-j0534p2200';
+const SGR_1806: BodyId = 'psr-j1808m2024';
+const DOUBLE_PULSAR: BodyId = 'psr-j0737m3039a';
+
+/** Why a pulsar's scene cannot run yet: the pulsar catalogue (asked for here, a few hundred kB) is still on its way. */
+const needsPulsar =
+  (id: BodyId) =>
+  (): string | null => {
+    if (isBody(id)) return null;
+    if (typeof window !== 'undefined') requestDeepSky(['pulsars']);
+    return 'Loading the pulsar catalogue…';
+  };
+
+/** A direction `deg` from a body's spin axis, on the side of `towards` (world, from the body). */
+function offAxis(axis: Vector3, towards: Vector3, deg: number): Vector3 {
+  const side = towards.clone().addScaledVector(axis, -towards.dot(axis));
+  if (side.lengthSq() < 1e-12) side.set(axis.y, axis.z, axis.x).addScaledVector(axis, -axis.y);
+  side.normalize();
+  const a = (deg * Math.PI) / 180;
+  return axis.clone().multiplyScalar(Math.cos(a)).addScaledVector(side, Math.sin(a)).normalize();
+}
+
+/** A pulsar seen with its field lines on, `radii` of its framing size out, `deg` from its spin axis on our side. */
+function pulsarField(id: BodyId, note: string, distanceKm: (size: number) => number, deg: number): boolean {
+  const model = getBody(id)?.pulsar;
+  if (!model) return false;
+  return scene(note, () => {
+    setWarp(1);
+    setPaused(false);
+    useUI.setState({ fieldLines: true, selected: id, showLabels: false });
+    controller.goTo(id, { distance: distanceKm(model.sizeKm), direction: offAxis(model.spin.axis, model.toEarth, deg) });
+  });
+}
+
+defineScene('crab-magnetosphere', {
+  label: PENDING_LABELS['crab-magnetosphere'],
+  get note() {
+    const a = getBody(CRAB_PULSAR)?.pulsar?.spin.alphaRad;
+    const alpha = a === undefined ? 'its magnetic axis’s tilt' : `±${Math.round((a * 180) / Math.PI)}°`;
+    return `The Crab pulsar from 15,000 km, its whole magnetic field drawn as a model: closed loops turning with the star out to its light cylinder, 1,590 km out, where turning with it would take the speed of light; the open lines from its polar caps, wound back into a spiral wind; and, faint, the current sheet between the wind’s two polarities, rippling outwards over ${alpha} of latitude as the tilted star turns. Cyan marks field pointing out of the star, amber into it: along the wind they alternate in stripes. It turns 30 times a second, shown ten times slower, in step with its beams. The shapes follow force-free models (Contopoulos, Kazanas & Fendt 1999; Spitkovsky 2006; Bogovalov 1999).`;
+  },
+  unavailable: needsPulsar(CRAB_PULSAR),
+  run: (note) => pulsarField(CRAB_PULSAR, note, () => 15_000, 75),
+});
+
+defineScene('magnetar-field', {
+  label: PENDING_LABELS['magnetar-field'],
+  note: 'SGR 1806−20, the magnetar of the giant flare of 27 December 2004, from 900 km. Its field, about 2 × 10¹⁵ gauss at the surface from how fast its spin slows, a thousand times a normal pulsar’s, is drawn as a model: dipole loops twisted about the magnetic axis by about a radian, as Thompson, Lyutikov & Kulkarni (2002) describe magnetars, reaching out to where the field has fallen to about 10¹¹ gauss, some 28 star radii, where its currents scatter the star’s X-rays. Cyan marks field leaving the star, amber returning to it.',
+  unavailable: needsPulsar(SGR_1806),
+  run: (note) => pulsarField(SGR_1806, note, () => 900, 70),
+});
+
+defineScene('double-pulsar-field', {
+  label: PENDING_LABELS['double-pulsar-field'],
+  note: 'The Double Pulsar, two neutron stars 880,000 km apart going round each other every 2 hours 27 minutes, with their magnetic fields drawn as a model. Pulsar B’s field is squeezed to about 40,000 km on the side facing A, where the wind of A, which spins 120 times faster, presses on it (Lyutikov & Thompson 2005), and drawn out behind; A’s own magnetosphere, its light cylinder only 1,080 km out, is the small knot round A. Seen from Earth, A passes behind B’s field once an orbit and its pulses are eclipsed for about 30 seconds, flickering in time with B’s spin: the eclipses that let that shape be measured.',
+  unavailable: needsPulsar(DOUBLE_PULSAR),
+  run: (note) => pulsarField(DOUBLE_PULSAR, note, (a) => 0.9 * a, 20),
+});
+
+defineScene('merger-field', {
+  label: PENDING_LABELS['merger-field'],
+  note: 'GW170817’s two neutron stars in their last 12 seconds, with their magnetic fields drawn as a model (theirs were not measured: about 10¹² gauss each is assumed). Each star carries its own field round the orbit; as they close in the two fields meet, some lines joining the stars in a twisting tube, as simulations find (Palenzuela et al. 2013; Most & Philippov 2020). At the merger the joined field tears apart in a burst (really a few milliseconds, shown over a quarter of a second); then the remnant’s field, amplified a thousandfold in milliseconds and wound round its axis (Kiuchi et al. 2015), opens into a funnel along the axis about 60 ms later, where a jet is launched (Ruiz et al. 2016), drawn growing at half the speed of light. The chirp runs at its real pace (the orbit drawn 100 times slower).',
+  unavailable: needs(KILONOVA_ID),
+  run: (note) =>
+    scene(note, () => {
+      setWarp(1);
+      setPaused(false);
+      useUI.setState({ fieldLines: true, selected: KILONOVA_ID, showLabels: false });
+      const at = sim.bodies[KILONOVA_ID];
+      const dir = sim.bodies.earth.pos.clone().sub(at.pos).normalize().addScaledVector(UP, 0.5).normalize();
+      controller.goTo(KILONOVA_ID, { distance: 2500, direction: dir });
+      afterSlew(KILONOVA_ID, () => {
+        if (!setEpoch(MERGER_MS - 12_000)) return;
+        updateEphemeris();
+        setWarp(1);
+        setPaused(false);
+        startPace({
+          target: KILONOVA_ID,
+          zeroMs: MERGER_MS,
+          realUntilMs: MERGER_MS + 3000,
+          efoldS: 2.5,
+          maxWarp: 2e5,
+          endMs: MERGER_MS + 21 * 86_400_000,
+          // Further back than the kilonova's scene, so the burst's field shows beside the remnant's glare.
+          distanceKm: (ms) => (ms < MERGER_MS ? Math.max(4 * inspiralAt(ms).separationKm, 700) : Math.max(3.4 * kilonovaAt(ms).blueKm, 3000)),
+        });
+      });
+    }),
+});
+
+/** A hole's field seen from `rM` (units of M), `deg` from its spin axis on the Sun's side, the flow off. */
+function holeField(hole: BodyId, note: string, rM: number, deg: number): boolean {
+  return scene(note, () => {
+    holeViews(hole, { flow: false });
+    useUI.setState({ fieldLines: true, selected: hole });
+    const axis = fieldAxisWorld(hole) ?? IN_THE_PLANE.clone();
+    const dir = offAxis(axis, sunward(hole), deg);
+    toHole(hole, rM, dir, hoverStep(hole, rM, dir));
+  });
+}
+
+defineScene('m87-star-field', {
+  label: PENDING_LABELS['m87-star-field'],
+  note: 'Hovering 60 M (3,850 au) from M87*, the field threading the hole drawn as a model consistent with the Event Horizon Telescope’s polarisation: lines through the horizon, wound into helices as the spinning hole turns them (at half its rate, for a spin of 0.5) and opening into the funnel the jet comes out of; fainter lines from the disc. Cyan marks field leaving the hole, amber entering it. The EHT measured the spiral of its ring’s polarisation, not this field: the simulations that match it best have such a strong, ordered field (a magnetically arrested disc). Light bends round the hole, so the lines behind it show again round the shadow’s edge.',
+  unavailable: needs(M87_STAR),
+  run: (note) => holeField(M87_STAR, note, 60, 65),
+});
+
+defineScene('sgr-a-star-field', {
+  label: PENDING_LABELS['sgr-a-star-field'],
+  note: 'Hovering 60 M (2.5 au) from Sagittarius A*, the field threading the hole drawn as a model consistent with the Event Horizon Telescope’s polarisation of its ring (strongly ordered, spiralling; EHT 2024): lines through the horizon wound into helices by a spin of 0.94, the one model that passes all the EHT’s tests, opening into a funnel along its axis, with fainter lines from the disc. Cyan marks field leaving the hole, amber entering it. Light bends round the hole: the lines behind it show again round the shadow’s edge. The gas is switched off here; its card switches it back.',
+  unavailable: needs(SGR_A),
+  run: (note) => holeField(SGR_A, note, 60, 70),
+});
 
 // ─── Cygnus X-1's disc ──────────────────────────────────────────────────────────────────
 
