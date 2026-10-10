@@ -85,6 +85,8 @@ import dopplerColourGlsl from './shaders/dopplerColour.glsl?raw';
 import galaxyCompositeGlsl from './shaders/galaxyComposite.glsl?raw';
 import flowLookupGlsl from './shaders/flowLookup.glsl?raw';
 import diskLookupGlsl from './shaders/diskLookup.glsl?raw';
+import localDustReadGlsl from './shaders/localDustRead.glsl?raw';
+import { localDustUniforms } from './localDustUniforms';
 
 // Register custom chunks so shaders can `#include <lightspeed_…>`.
 const chunks = ShaderChunk as unknown as Record<string, string>;
@@ -103,6 +105,8 @@ chunks.lightspeed_flowlookup = flowLookupGlsl;
 chunks.lightspeed_disklookup = diskLookupGlsl;
 // The display law the cosmic web and the galaxy surveys share (a product, so the surveys' glows can be exact).
 chunks.lightspeed_galaxymap = galaxyMapGlsl;
+// What the Sun's neighbourhood's dust does to the sky map, the Galaxy layer and the stars (render/dustLayer.ts).
+chunks.lightspeed_localdust = localDustReadGlsl;
 
 /**
  * Blackbody lookup texture shared by the point-source shaders and the remap pass. Float32 with
@@ -275,7 +279,7 @@ export function createCmbPointMaterial(): ShaderMaterial {
 
 export function createStarMaterial(): ShaderMaterial {
   return new ShaderMaterial({
-    uniforms: { ...pointShared(), ...starUniforms },
+    uniforms: { ...pointShared(), ...starUniforms, ...localDustUniforms },
     vertexShader: starsVert,
     fragmentShader: pointFrag,
     blending: AdditiveBlending,
@@ -648,6 +652,8 @@ export const milkyWayUniforms = {
   /** The 8K map's luminance for the fine structure (scripts/build-milkyway-detail.py), and whether it is in use. */
   uMwDetail: { value: null as Texture | null },
   uMwDetailOn: { value: 0 },
+  /** The neighbourhood's dust: how the clouds in front dim the map and the light they scatter (render/dustLayer.ts). */
+  ...localDustUniforms,
 };
 
 /**

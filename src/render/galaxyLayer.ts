@@ -68,6 +68,7 @@ import { MW_MU_FADE, patchFlux } from '../sim/galaxy/background';
 import { lens } from './lens/lensState';
 import { lensUniforms } from './lens/lensUniforms';
 import { createFrameGeometry } from './lens/lensGeometry';
+import { localDustUniforms } from './localDustUniforms';
 
 /** Layer of the Galaxy's particles: drawn only into the Galaxy's target. */
 export const GALAXY_LAYER = 4;
@@ -144,6 +145,8 @@ export class GalaxyLayer {
     uFade: { value: new Vector2(0, 1e-9) },
     uGain: { value: 1.6 },
     uModelShare: { value: 1 },
+    /** The neighbourhood's dust, which the display law applies first (render/dustLayer.ts). */
+    ...localDustUniforms,
   };
   readonly composite: ShaderMaterial;
   /** The full-screen quad that adds the target to the view (a mesh of the scene: scene/GalaxyModel.tsx mounts it). */
@@ -153,7 +156,7 @@ export class GalaxyLayer {
     const i = this.inputs;
     i.uGalaxyGlow.value = this.black;
     this.composite = new ShaderMaterial({
-      uniforms: { uGalaxy: i.uGalaxy, uGalaxyBig: i.uGalaxyBig, uGalaxyGlow: i.uGalaxyGlow, uFade: i.uFade, uGain: i.uGain, uModelShare: i.uModelShare, uLensBox: lensUniforms.uLensBox },
+      uniforms: { uGalaxy: i.uGalaxy, uGalaxyBig: i.uGalaxyBig, uGalaxyGlow: i.uGalaxyGlow, uFade: i.uFade, uGain: i.uGain, uModelShare: i.uModelShare, uLensBox: lensUniforms.uLensBox, ...localDustUniforms },
       vertexShader: lensBoxVert,
       fragmentShader: COMPOSITE_FRAG,
       blending: AdditiveBlending,

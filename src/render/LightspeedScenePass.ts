@@ -66,6 +66,7 @@ import { lensUniforms } from './lens/lensUniforms';
 import { quality } from './quality';
 import { GALAXY_GLOW_LAYER, GALAXY_LAYER, galaxyLayer } from './galaxyLayer';
 import { SURVEY_GLOW_LAYER, surveyGlow } from './surveyGlow';
+import { dustLayer } from './dustLayer';
 import { meterSky } from './lens/skyMeter';
 import { lensedVariant } from './lensVariants';
 import remapVert from './shaders/remap.vert.glsl?raw';
@@ -293,6 +294,7 @@ export class LightspeedScenePass extends Pass {
       setPointUniforms(false);
       setLensView(false);
       surfaceUniforms.uLnExposureSurface.value = relView.lnExposureClassical;
+      dustLayer.render(renderer, camera, target, target ? target.width : renderer.domElement.width, target ? target.height : renderer.domElement.height);
       galaxyLayer.render(renderer, scene, camera, target, target ? target.width : renderer.domElement.width, target ? target.height : renderer.domElement.height);
       surveyGlow.render(renderer, scene, camera, target, target ? target.width : renderer.domElement.width, target ? target.height : renderer.domElement.height);
       renderer.autoClear = true;
@@ -331,6 +333,7 @@ export class LightspeedScenePass extends Pass {
       setPointUniforms(false);
       setLensView(false);
       surfaceUniforms.uLnExposureSurface.value = relView.lnExposureClassical;
+      dustLayer.render(renderer, camera, target, w, h, 0, relView.splitX);
       galaxyLayer.render(renderer, scene, camera, target, w, h, 0, relView.splitX);
       surveyGlow.render(renderer, scene, camera, target, w, h, 0, relView.splitX);
       x0 = Math.round(relView.splitX * w);
@@ -343,6 +346,7 @@ export class LightspeedScenePass extends Pass {
     // 2. Point sources in the ship frame (the Galaxy's particles first, into their own target).
     setPointUniforms(true);
     setLensView(true);
+    dustLayer.render(renderer, camera, target, w, h, relView.split ? relView.splitX : 0, 1);
     galaxyLayer.render(renderer, scene, camera, target, w, h, relView.split ? relView.splitX : 0, 1);
     surveyGlow.render(renderer, scene, camera, target, w, h, relView.split ? relView.splitX : 0, 1);
     renderer.clear();

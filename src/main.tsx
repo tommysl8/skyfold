@@ -10,6 +10,7 @@ import { loadFeaturedExoplanets } from './sim/exoplanets';
 import { loadGalaxy } from './sim/galaxy';
 import { loadCosmos } from './sim/cosmos';
 import { registerPhenomena } from './sim/phenomena';
+import { registerDustClouds } from './sim/dust/load';
 import { startPlaces } from './ui/resume';
 
 if (import.meta.env.DEV) {
@@ -67,7 +68,9 @@ if (import.meta.env.DEV) {
     import('./sim/deepsky'),
     import('./scene/GalaxyPictures'),
     import('./sim/phenomena'),
-  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky, pictures, phen]) =>
+    import('./render/dustLayer'),
+    import('./sim/dust/load'),
+  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky, pictures, phen, dustLayerMod, dustLoad]) =>
     Object.assign(window, {
       __ls: {
         sim: s.sim,
@@ -110,6 +113,8 @@ if (import.meta.env.DEV) {
         deepSky: deepSky.deepSkyGate,
         /** The supernovae, the kilonova, the jets and the aurora: what is wanted and each one's state this frame (sim/phenomena). */
         phenomena: phen.phenomena,
+        /** The neighbourhood's 3D dust: its march and grids, and what has loaded (render/dustLayer.ts, sim/dust). */
+        dust: { layer: dustLayerMod.dustLayer, state: dustLoad.dustState },
         /** The galaxies' photographs mounted, and each galaxy's share of light they draw this frame (scene/GalaxyPictures.tsx). */
         pictures: { mounted: pictures.galaxyPictures, shares: pictures.pictureShares },
         /** The asteroids and comets: what has loaded, the drawn sections, picking and registering one (sim/asteroids, scene/Asteroids.tsx). */
@@ -154,6 +159,10 @@ void loadFeaturedExoplanets();
 // The Milky Way: Sagittarius A* and its stars at once, the nebulae soon after, and the model of the
 // Galaxy and the star clusters once the stars are in (sim/galaxy).
 void loadGalaxy({ idle: true });
+
+// The Sun's neighbourhood in 3D dust: its named clouds and the Radcliffe Wave at once (labels, cards, search); the
+// dust map itself only once the camera leaves home (sim/dust, scene/DustClouds.tsx).
+registerDustClouds();
 
 // The galaxies beyond: the Local Group and the named galaxies, clusters and young galaxies once the
 // browser is idle, their shapes built in a worker; the cosmic web loads when it is first wanted

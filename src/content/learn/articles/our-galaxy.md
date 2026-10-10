@@ -4,7 +4,7 @@ title: Our galaxy
 shelf: galaxies
 order: 13
 pitch: We live inside a disc of stars we cannot see across. How astronomers mapped it anyway, weighed the black hole at its heart and found the galaxy it ate.
-updated: 2026-09-25
+updated: 2026-10-09
 ---
 
 In the most crowded part of the Milky Way, William Herschel once counted 588 stars in a single field of view, a patch of sky half the width of the full Moon. As the sky turned, he reckoned, 116,000 stars passed through it in a quarter of an hour.[^herschel1785] His 20-foot reflector, with a mirror 18.7 inches (47.5 cm) across, was his measuring rod: where he counted more stars, the Milky Way had to reach further into space.
@@ -48,6 +48,14 @@ Kapteyn had measured about the right amount of reddening in 1909, Trumpler point
 Astronomers measure brightness in magnitudes, where bigger numbers mean fainter. One rule is enough here: 5 magnitudes is a factor of exactly 100, so dimming by $A$ magnitudes multiplies the light you receive by $10^{-0.4A}$.
 
 Trumpler's 0.7 magnitudes per kiloparsec lets through $10^{-0.28}$, or 52%, of the light for each kiloparsec. The line of sight to the centre of the Galaxy runs through thick clouds and is far worse: about 30 magnitudes in visible light.[^genzel2010] That is six factors of 100, and $100^6 = 10^{12}$. Of every million million photons of yellow light heading our way from a star near the centre, one arrives. The dimming falls steeply with wavelength, though. At 2.2 micrometres, in the near infrared, it is only about 3 magnitudes, a factor of 16.[^genzel2010] That one fact decided how the centre would be explored: with radio dishes and infrared cameras.
+
+### The dust in three dimensions
+
+A star is dimmed and reddened only by the dust in front of it, so stars at many distances along one line of sight show where along it the dust lies. With Gaia's distances and spectra for 54 million nearby stars, Gordian Edenhofer and colleagues mapped the dust in three dimensions out to 1,250 parsecs, finely enough to see inside individual clouds.[^edenhofer2024] The Sun sits in a cavity a few hundred parsecs across, the Local Bubble, with clouds such as Taurus, Ophiuchus and Orion beyond its walls. In such maps João Alves and colleagues found in 2020 the Radcliffe Wave, a chain of star-forming clouds 2.7 kpc long that rises and falls through the plane of the Galaxy by about 160 parsecs; in 2024 Ralf Konietzka and colleagues found that its young stars move up and down with it, as in a wave travelling outwards.[^alves2020][^konietzka2024]
+
+::: see-it radcliffe-wave
+The dust you see near the Sun in Skyfold is this map. It dims the stars and the Milky Way behind it, so its clouds move against the sky as you fly among them, and it faintly scatters starlight. The line marks the Wave's model, fitted to its clouds and young stars.
+:::
 
 ## A disc that spins
 
@@ -281,6 +289,8 @@ With current measurements it is close to a coin toss. In 2025 Till Sawala and co
 - Event Horizon Telescope Collaboration, "First Sagittarius A\* Event Horizon Telescope results. I. The shadow of the supermassive black hole in the center of the Milky Way", *Astrophysical Journal Letters* 930, L12 (2022). https://doi.org/10.3847/2041-8213/ac6674 (open access)
 - M. J. Reid, K. M. Menten, A. Brunthaler et al., "Trigonometric parallaxes of high-mass star-forming regions: our view of the Milky Way", *Astrophysical Journal* 885, 131 (2019). https://doi.org/10.3847/1538-4357/ab4a11 (open access at https://arxiv.org/abs/1910.03357)
 - A. Helmi, C. Babusiaux, H. H. Koppelman et al., "The merger that led to the formation of the Milky Way's inner stellar halo and thick disk", *Nature* 563, 85-88 (2018). https://doi.org/10.1038/s41586-018-0625-x (open access at https://arxiv.org/abs/1806.06038)
+- G. Edenhofer, C. Zucker, P. Frank et al., "A parsec-scale Galactic 3D dust map out to 1.25 kpc from the Sun", *Astronomy & Astrophysics* 685, A82 (2024). https://doi.org/10.1051/0004-6361/202347628 (open access; the map is at https://doi.org/10.5281/zenodo.8187942)
+- J. Alves, C. Zucker, A. A. Goodman et al., "A Galactic-scale gas wave in the solar neighbourhood", *Nature* 578, 237-239 (2020). https://doi.org/10.1038/s41586-019-1874-z (open access at https://arxiv.org/abs/2001.08748)
 - A.-C. Eilers, D. W. Hogg, H.-W. Rix and M. K. Ness, "The circular velocity curve of the Milky Way from 5 to 25 kpc", *Astrophysical Journal* 871, 120 (2019). https://doi.org/10.3847/1538-4357/aaf648 (open access at https://arxiv.org/abs/1810.09466)
 - J. Bland-Hawthorn and O. Gerhard, "The Galaxy in context: structural, kinematic, and integrated properties", *Annual Review of Astronomy and Astrophysics* 54, 529-596 (2016). https://doi.org/10.1146/annurev-astro-081915-023441 (open access at https://arxiv.org/abs/1602.07702; the standard reference for the Galaxy's vital statistics)
 
@@ -332,6 +342,9 @@ With current measurements it is close to a coin toss. In 2025 Till Sawala and co
 [^shapley1918]: H. Shapley, "Studies based on the colors and magnitudes in stellar clusters. VII. The distances, distribution in space, and dimensions of 69 globular clusters", Astrophysical Journal 48, 154-181 (1918), pp. 170-177 and 180. https://doi.org/10.1086/142423
 [^trumpler1930]: R. J. Trumpler, "Absorption of light in the galactic system", Publications of the Astronomical Society of the Pacific 42, 214-227 (1930), pp. 217-222. https://doi.org/10.1086/124039
 [^genzel2010]: R. Genzel, F. Eisenhauer and S. Gillessen, "The Galactic Center massive black hole and nuclear star cluster", Reviews of Modern Physics 82, 3121-3195 (2010), sections on extinction, on the first stellar proper motions (speckle imaging, 1992-1998) and on R0. https://doi.org/10.1103/RevModPhys.82.3121
+[^edenhofer2024]: G. Edenhofer, C. Zucker, P. Frank, A. K. Saydjari, J. S. Speagle, D. Finkbeiner and T. A. Enßlin, "A parsec-scale Galactic 3D dust map out to 1.25 kpc from the Sun", Astronomy & Astrophysics 685, A82 (2024), abstract and section 7. https://doi.org/10.1051/0004-6361/202347628
+[^alves2020]: J. Alves, C. Zucker, A. A. Goodman et al., "A Galactic-scale gas wave in the solar neighbourhood", Nature 578, 237-239 (2020). https://doi.org/10.1038/s41586-019-1874-z
+[^konietzka2024]: R. Konietzka, A. A. Goodman, C. Zucker et al., "The Radcliffe Wave is oscillating", Nature 628, 62-65 (2024). https://doi.org/10.1038/s41586-024-07127-3
 [^oort1927]: J. H. Oort, "Observational evidence confirming Lindblad's hypothesis of a rotation of the galactic system", Bulletin of the Astronomical Institutes of the Netherlands 3, 275-282 (No. 120, 14 April 1927). https://adsabs.harvard.edu/pdf/1927BAN.....3..275O
 [^eilers2019]: A.-C. Eilers, D. W. Hogg, H.-W. Rix and M. K. Ness, "The circular velocity curve of the Milky Way from 5 to 25 kpc", Astrophysical Journal 871, 120 (2019). https://doi.org/10.3847/1538-4357/aaf648
 [^gravity2019]: GRAVITY Collaboration, "A geometric distance measurement to the Galactic center black hole with 0.3% uncertainty", Astronomy & Astrophysics 625, L10 (2019). https://doi.org/10.1051/0004-6361/201935656

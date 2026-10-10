@@ -1,8 +1,8 @@
 /**
  * Everything the app loads at start-up, registered from the shipped files as the loaders would
  * (in their order): the Solar System, the star catalogue, the featured planetary systems, the
- * Milky Way (Sgr A* and the S-stars, the nebulae, the clusters) and the galaxies beyond it. For
- * tests that need the whole registry, as a visitor has it a few seconds after the page opens.
+ * Milky Way (Sgr A* and the S-stars, the nebulae, the clusters, the neighbourhood's dust clouds) and the galaxies
+ * beyond it. For tests that need the whole registry, as a visitor has it a few seconds after the page opens.
  */
 import { registerSolarSystem, type BodiesFile, type RingsFile } from '../sim/solarSystem';
 import { indexMoonCatalog, type MoonCatalog } from '../sim/moonModels';
@@ -19,6 +19,7 @@ import { loadFeaturedFile } from './exoplanets';
 import { gunzipFile, loadExtra, loadNames, loadStars, loadSystems } from './stars';
 import { readBytes, readJson } from './files';
 import { registerPhenomena } from '../sim/phenomena';
+import { registerDustClouds } from '../sim/dust/load';
 
 let done = false;
 
@@ -53,4 +54,5 @@ export function registerUniverse(): void {
   registerCosmos(loadLocalGalaxies(), loadNamed(), loadMore(), loadPictures());
 
   registerPhenomena();
+  registerDustClouds();
 }

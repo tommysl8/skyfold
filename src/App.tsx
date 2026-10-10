@@ -4,6 +4,7 @@ import { SimDriver } from './scene/SimDriver';
 import { Starfield } from './scene/Starfield';
 import { MilkyWayBackground } from './scene/MilkyWay';
 import { GalaxyModel } from './scene/GalaxyModel';
+import { DustClouds } from './scene/DustClouds';
 import { Nebulae } from './scene/Nebulae';
 import { GalaxyPictures } from './scene/GalaxyPictures';
 import { Galaxies } from './scene/Galaxies';
@@ -144,6 +145,7 @@ export default function App() {
           <MilkyWayBackground />
           <CmbMap />
           <GalaxyModel />
+          <DustClouds />
           <Galaxies />
           <GalaxyPictures />
           <Nebulae />
