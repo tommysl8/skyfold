@@ -530,7 +530,12 @@ export function nodePointCount(buffer: ArrayBuffer | Uint8Array): number {
 
 export const HIERARCHY_MAGIC = 'LSSH';
 export const HIERARCHY_VERSION = 2;
+/**
+ * The header: 64 bytes, room for 11 catalogues' counts; more grow it in steps of 16 (the size is kept at byte 6 and the
+ * decoder reads it from there, so files with the 64-byte header read as before).
+ */
 const HIERARCHY_HEADER = 64;
+export const hierarchyHeaderBytes = (sources: number): number => Math.max(HIERARCHY_HEADER, Math.ceil((20 + 4 * sources) / 16) * 16);
 /**
  * childMask u8, pad u8 u16, points u32, subtree points u32, file bytes u32, box 6 × u16; then the node's own galaxies'
  * summary: light of each class 4 × u16 (log-coded: lightCode), centroid 3 × u16 and rms radius u16 (65,535ths of the
@@ -583,18 +588,19 @@ export type HierarchyInput = Pick<SurveyNode, 'childMask' | 'points' | 'subtree'
 
 /** Encode the hierarchy: nodes in breadth-first order with their records; `perSource` the counts. */
 export function encodeHierarchy(nodes: readonly HierarchyInput[], total: number, perSource: readonly number[]): Uint8Array {
-  const buf = new ArrayBuffer(HIERARCHY_HEADER + NODE_RECORD * nodes.length);
+  const head = hierarchyHeaderBytes(perSource.length);
+  const buf = new ArrayBuffer(head + NODE_RECORD * nodes.length);
   const dv = new DataView(buf);
   for (let i = 0; i < 4; i++) dv.setUint8(i, HIERARCHY_MAGIC.charCodeAt(i));
   dv.setUint16(4, HIERARCHY_VERSION, true);
-  dv.setUint16(6, HIERARCHY_HEADER, true);
+  dv.setUint16(6, head, true);
   dv.setUint32(8, nodes.length, true);
   dv.setUint32(12, total, true);
   dv.setUint32(16, perSource.length, true);
   perSource.forEach((c, i) => dv.setUint32(20 + 4 * i, c, true));
   const frac = (v: number, lo: number, side: number) => Math.max(0, Math.min(65535, Math.round(((v - lo) / side) * 65535)));
   nodes.forEach((n, i) => {
-    const o = HIERARCHY_HEADER + NODE_RECORD * i;
+    const o = head + NODE_RECORD * i;
     dv.setUint8(o, n.childMask);
     dv.setUint32(o + 4, n.points, true);
     dv.setUint32(o + 8, n.subtree, true);

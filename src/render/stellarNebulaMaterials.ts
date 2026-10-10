@@ -7,9 +7,10 @@
  *    a thin shell, 1/|n·v| (its rim brightens). The colour is a model: the reddish brown of its pictures;
  *  - WR 104's pinwheel: dust grains streaming out along an Archimedean spiral, placed in the vertex shader from
  *    their age (so the whole spiral turns on the simulation's clock), glowing warm. They shine in the infrared,
- *    where the spiral was imaged: shown in false colour.
+ *    where the spiral was imaged: shown in false colour;
+ *  - the Sun's own planetary nebula, when the Sun is shown at that age (a model).
  */
-import { AdditiveBlending, Color, FrontSide, ShaderMaterial, Vector3 } from 'three';
+import { AdditiveBlending, BackSide, Color, FrontSide, ShaderMaterial, Vector3 } from 'three';
 
 const HOMUNCULUS_VERT = /* glsl */ `
 #include <common>
@@ -133,6 +134,66 @@ export function createPinwheelMaterial(pixelRatio: { value: number }): ShaderMat
     },
     vertexShader: PINWHEEL_VERT,
     fragmentShader: PINWHEEL_FRAG,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+  });
+}
+
+const PN_VERT = /* glsl */ `
+#include <common>
+#include <logdepthbuf_pars_vertex>
+varying vec3 vWorld;
+void main() {
+  vec4 w = modelMatrix * vec4(position, 1.0);
+  vWorld = w.xyz;
+  gl_Position = projectionMatrix * viewMatrix * w;
+  #include <logdepthbuf_vertex>
+}
+`;
+
+// The Sun's planetary nebula (sim/stars/sunFuture.ts): an expanding shell of gas lit by the hot core, its light the path
+// length through it along each ray from the camera (inside it or out), worked out exactly for nested spheres: the inner
+// part glowing in [O III] (teal), the outer in Hα and [N II] (red), as the ionisation of planetary nebulae is layered.
+const PN_FRAG = /* glsl */ `
+#include <logdepthbuf_pars_fragment>
+uniform vec3 uCentre;   // the nebula's centre, camera-relative world position
+uniform float uR;       // outer radius (world units)
+uniform float uGain;
+varying vec3 vWorld;
+// Length of the ray from the camera (the origin) inside a sphere of radius a about uCentre.
+float chord(vec3 d, float a) {
+  float tc = dot(uCentre, d);
+  float h2 = a * a - (dot(uCentre, uCentre) - tc * tc);
+  if (h2 <= 0.0) return 0.0;
+  float h = sqrt(h2);
+  return max(0.0, (tc + h) - max(0.0, tc - h));
+}
+void main() {
+  #include <logdepthbuf_fragment>
+  vec3 d = normalize(vWorld);
+  float path = (chord(d, uR) - chord(d, 0.6 * uR)) / uR;
+  // How far from the centre the ray passes, as a share of the radius: the inner gas teal, the rim red.
+  float tc = dot(uCentre, d);
+  float b = sqrt(max(0.0, dot(uCentre, uCentre) - tc * tc)) / uR;
+  vec3 tint = mix(vec3(0.22, 0.85, 0.75), vec3(1.0, 0.24, 0.2), smoothstep(0.55, 0.95, b));
+  vec3 col = uGain * path * tint;
+  if (max(col.r, max(col.g, col.b)) < 1e-4) discard;
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+export function createPlanetaryNebulaMaterial(): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uCentre: { value: new Vector3() },
+      uR: { value: 1 },
+      uGain: { value: 0 },
+    },
+    vertexShader: PN_VERT,
+    fragmentShader: PN_FRAG,
+    // The far side: drawn whether the camera is outside the shell or inside it, each pixel once.
+    side: BackSide,
     blending: AdditiveBlending,
     depthWrite: false,
     transparent: true,

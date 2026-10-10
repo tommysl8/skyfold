@@ -4,7 +4,7 @@ title: Our galaxy
 shelf: galaxies
 order: 13
 pitch: We live inside a disc of stars we cannot see across. How astronomers mapped it anyway, weighed the black hole at its heart and found the galaxy it ate.
-updated: 2026-09-25
+updated: 2026-10-09
 ---
 
 In the most crowded part of the Milky Way, William Herschel once counted 588 stars in a single field of view, a patch of sky half the width of the full Moon. As the sky turned, he reckoned, 116,000 stars passed through it in a quarter of an hour.[^herschel1785] His 20-foot reflector, with a mirror 18.7 inches (47.5 cm) across, was his measuring rod: where he counted more stars, the Milky Way had to reach further into space.
@@ -120,6 +120,14 @@ In 2017 Alberto Sanna's team measured a water maser in the Scutum–Centaurus ar
 
 ::: see-it milky-way-outside
 This is a model, not a photograph. No camera has ever left the Sun's neighbourhood; every view of our galaxy from outside is built from measurements like those in this article. Look for the central bar, the arms, and the Sun about halfway out.
+:::
+
+::: note A magnetic galaxy
+The disc is threaded by a magnetic field of a few millionths of a gauss, about a hundred-thousandth of the strength of Earth's field at the ground. It shows in radio light: electrons spiralling round the field lines shine polarised across them, and the field twists the polarisation of distant radio sources behind it (Faraday rotation), one way where it points towards us and the other way where it points away. In 2024 Michael Unger and Glennys Farrar fitted models of the large-scale field to both. In the disc the field follows the spiral arms at a pitch of about 11°, the arms' own, and reverses between them; above and below the disc a halo field circles the Galaxy one way in the north and the other way in the south; and an X-shaped field rises through the inner disc, as in other spiral galaxies seen edge-on. A tangled field about as strong again is too small-scale to map.[^uf2024]
+:::
+
+::: see-it galactic-field
+The model's field lines: amber where the field runs clockwise seen from the north, blue the other way. View › Magnetic field lines draws them anywhere; from the Solar System it shows the field across the sky instead, as WMAP measured it.
 :::
 
 ## Something heavy in Sagittarius
@@ -399,4 +407,5 @@ With current measurements it is close to a coin toss. In 2025 Till Sawala and co
 [^skamid]: SKA Observatory, "SKA-Mid". https://www.skao.int/en/explore/telescopes/ska-mid
 [^skatimeline]: SKA Observatory, "Timeline to Science" (checked 25 September 2026). https://www.skao.int/en/science-users/647/timeline-science
 [^skagoals]: SKA Observatory, "Science goals" (checked 25 September 2026). https://www.skao.int/en/explore/science-goals
+[^uf2024]: M. Unger and G. R. Farrar, "The coherent magnetic field of the Milky Way", Astrophysical Journal 970, 95 (2024), sections 5 and 7 and Table 3. https://doi.org/10.3847/1538-4357/ad4a54 (open access at https://arxiv.org/abs/2311.12120)
 [^sawala2025]: T. Sawala, J. Delhomelle, A. J. Deason, C. S. Frenk et al., "No certainty of a Milky Way–Andromeda collision", Nature Astronomy 9, 1206-1217 (2025). https://doi.org/10.1038/s41550-025-02563-1

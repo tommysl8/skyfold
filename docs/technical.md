@@ -31,7 +31,7 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   orbit); each card gives the figure.
   Ceres, Vesta, the dwarf planets and large trans-Neptunian objects, Arrokoth, four comets (with dust and ion tails
   from a simple physical model), the three interstellar visitors, and Voyager 1 and 2, New Horizons, Pioneer 10,
-  Parker Solar Probe and JWST follow Chebyshev fits to JPL Horizons (spacecraft within 25 km, and under a km near
+  Parker Solar Probe, JWST, Juno, Europa Clipper and SOHO follow Chebyshev fits to JPL Horizons (spacecraft within 25 km, and under a km near
   their flybys). Moons are textured with USGS and NASA mosaics and turn by the IAU rotation models; eight
   irregular bodies, 67P and Arrokoth among them, use real shape models, and Nix, Hydra and Haumea their measured
   ellipsoids; Jupiter, Uranus, Neptune, Haumea and Quaoar
@@ -101,6 +101,25 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   them) and Centaurus A's jets and lobes (false colour) are beamed by their speeds as seen from the camera. Earth's
   auroral ovals glow on the night side about the date's geomagnetic poles (IGRF-14), where Starkov's model puts them for
   the activity chosen in the View menu (Kp). What is a model is said on each card; `docs/data/phenomena.md` writes it up.
+- **Round Earth.** The ISS, Tiangong and Hubble as bodies with cards and simple shapes, placed by SGP4 (Vallado et al.
+  2006, checked against its test cases) from the current GP elements, fetched from CelesTrak by the browser and kept
+  in its cache; with View › Satellites every active satellite (about 16,700, and the tracked debris of four break-ups)
+  moved on the GPU from SGP4's mean elements, dimmed in Earth's shadow, within 30 days of the elements. Eclipses are
+  drawn per pixel from the share of the Sun's disc each point sees: the Moon's shadow on Earth (the 2017 and 2024
+  eclipses within 3 s and 2 km of NASA's greatest eclipse) and Earth's on the Moon, red in the umbra (Danjon's rule;
+  NASA's contacts to 4 s). `docs/data/near-earth.md` writes it up.
+- **The Milky Way's magnetic field.** View › Magnetic field lines draws the Galaxy's regular field as field lines of
+  the UF23 model (Unger & Farrar 2024) in 3D, traced through the disc, the halo and the X-field, coloured by their sense
+  and dimmed by the model's dust behind the disc; from the Solar System it shows instead the field's direction across the
+  sky, measured from WMAP's polarisation maps, as faint streaks. A chunk of its own, loaded only when switched on;
+  `docs/data/galactic-field.md` writes it up.
+- **Magnetic fields.** View › Magnetic field lines draws the measured fields of the Sun and the planets: Earth's from
+  IGRF-14 for the date, Jupiter's from Juno (JRM33), Saturn's from Cassini's Grand Finale (Cassini 11+), Uranus's and
+  Neptune's tipped, off-centre fields from Voyager 2 (AH5, O8), Mercury's offset dipole (MESSENGER) and Ganymede's
+  dipole, traced in a worker and turned with each body, cut at published magnetopauses (Shue, Joy, Arridge) for a
+  typical solar wind; the Sun's corona as a potential field to 2.5 solar radii from SDO/HMI's map of the date's
+  Carrington rotation (2010–2026), with Parker spirals and the current sheet out to 3 au. The tails and the currents in
+  space are not modelled; `docs/data/fields.md` writes it up.
 - **Where the mass is.** View › Dark matter (off by default) draws what gives out no light: the Milky Way's dark halo as a
   faint fog of its projected density (McMillan's 2017 mass model), tracer stars going round with its pull and, beside
   them, as fast as the stars and gas alone would carry them, with the measured rotation curve (Eilers et al. 2019) on
@@ -252,6 +271,7 @@ first, at most 50.
 | Voyager 1 state vectors | [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) | NASA/JPL-Caltech |
 | Moon orbit models (`public/data/moons.json`) | Fitted to [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) satellite ephemerides (MAR099, JUP365, SAT441, URA182/URA184, NEP097/NEP105, PLU060) and the [JPL satellite mean elements](https://ssd.jpl.nasa.gov/sats/elem/) | NASA/JPL-Caltech |
 | Trajectories of dwarf planets, comets, interstellar objects and spacecraft (`public/data/tracks.bin`, `tracks.json`) | Fitted to [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) (spacecraft ephemerides from NASA/JPL, NASA/JHUAPL/SwRI and NASA/GSFC) | NASA/JPL-Caltech |
+| Satellites' orbital elements (fetched at run time, not shipped) | [CelesTrak](https://celestrak.org/) GP data of the US Space Force's catalogue; SGP4 after Vallado et al. 2006 (python-sgp4, MIT) | Not redistributed; CelesTrak's usage policy |
 | Physical data, rotation models, facts and rings (`public/data/bodies.json`, `rings.json`) | JPL Solar System Dynamics and Small-Body Database; IAU WGCCRE 2015 rotation models (Archinal et al. 2018) via NAIF `pck00011.tpc`; PDS Small Bodies Node and Rings Node; NASA and ESA mission pages; the papers cited in each file | US Government works and published values |
 | Moon, Ceres and Vesta maps (`public/textures/{io,europa,ganymede,callisto,enceladus,tethys,dione,rhea,iapetus,titan,triton,charon,ceres,vesta,phobos,mimas,deimos}.jpg`) | Global mosaics from [USGS Astrogeology](https://astrogeology.usgs.gov/) (Voyager, Galileo, Cassini, New Horizons, Dawn and Viking data: NASA/JPL-Caltech, SSI, DLR, JHUAPL/SwRI, UCLA/MPS/IDA, LPI; Mimas by T. Roatsch, DLR; Triton by P. Schenk; Phobos and Deimos by P. Stooke) | Public domain / no use constraints |
 | Uranian moon maps (`public/textures/{miranda,ariel,umbriel,titania,oberon}.jpg`) | Voyager 2 maps from [NASA 3D Resources](https://github.com/nasa/NASA-3D-Resources) | NASA, free and without copyright |
@@ -286,6 +306,8 @@ first, at most 50.
 | Named galaxies, clusters and young galaxies (`src/sim/cosmos/named.json`) | SIMBAD (CDS) positions; distances, redshifts, disc angles and sizes from the papers cited in each entry and RC3 | Facts quoted with citation |
 | Cosmology and the home clock (`src/physics/cosmology/`, `future.json`) | Planck 2018 parameters (Planck Collaboration 2020) and the CMB temperature of Fixsen (2009); the future of the Sun, the Milky Way, Andromeda and the universe from Schröder & Connon Smith (2008), van der Marel et al. (2012), [Sawala et al. (2025)](https://doi.org/10.1038/s41550-025-02563-1) (survival curve read from their figure 3), Cautun et al. (2019), Loeb (2002), Krauss & Scherrer (2007), Adams & Laughlin (1997) and the others cited in the file | Facts quoted with citation; the Sawala et al. figure is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | The supernovae, the kilonova, the jets and the aurora (`src/sim/phenomena/`) | Light curves, speeds and sizes from the papers cited in the code and `docs/data/phenomena.md`; the IGRF-14 dipole (IAGA, via NOAA NCEI); Starkov's auroral oval (Starkov 1994, via Sigernes et al. 2011) | Facts quoted with citation; IGRF free to use; the code MIT |
+| The Milky Way's magnetic field (`src/sim/galaxy/magneticField.ts`, `public/textures/field-sky-wmap.png`) | The UF23 "base" model of [Unger & Farrar 2024](https://doi.org/10.3847/1538-4357/ad4a54); WMAP nine-year K-band polarisation, NASA / WMAP Science Team | Numbers quoted with citation; NASA data, public domain; the derived texture CC BY 4.0 |
+| The Sun's field harmonics and the planets' field models (`public/data/fields/sun-hmi-pfss.bin`, `src/sim/fields/`) | Computed from SDO/HMI synoptic maps (NASA/SDO and the HMI science team); IGRF-14 (IAGA, NOAA NCEI); JRM33, Cassini 11+, AH5, O8 and the other papers in `docs/data/fields.md` | NASA data with credit; coefficients quoted with citation |
 | Dark matter (`src/sim/galaxy/darkMatter.ts`, `src/sim/cosmos/bulletCluster.ts`, `public/images/dark-matter/bullet-xray.jpg`) | McMillan 2017 (mass model), Eilers et al. 2019 (rotation curve), Clowe et al. 2006 (the Bullet Cluster's galaxies, gas and lensing peaks); X-ray picture NASA/CXC/CfA/M. Markevitch et al. | Facts quoted with citation; the Chandra image without asserted copyright, with its credit; the code MIT |
 | Typefaces | IBM Plex Sans (IBM), JetBrains Mono (JetBrains), Source Serif 4 (Adobe) | SIL OFL 1.1 |
 
@@ -337,6 +359,9 @@ node scripts/build-blackholes.mjs
 npm run data:nsc
 python scripts/sgra-flow/flow_tables.py
 npm run data:blackhole-fixtures
+# The Sun's magnetic field (docs/data/fields.md): HMI's synoptic maps downloaded into data-raw/hmi/ (the command is in
+# the script's header), then the harmonics (numpy)
+python scripts/build-sun-field.py
 # Checks on the GPU (a development server on port 5190): every shader compiled cold in a headless Chrome, and the
 # standard views' frame times; the lens's pictures against the references are scripts/lens-check/lens-check.js, run
 # in a tab (docs/data/blackholes.md §11)
@@ -363,6 +388,7 @@ src/sim/blackholes/ the black holes' records and the accretion flow's model; src
                lensBodies.ts: the hole's gravity each frame, falls, and bodies seen through the lens
 src/sim/cosmos/ beyond it: the Local Group and named galaxies, their particle templates, the cosmic web, the CMB map
 src/sim/phenomena/ the supernovae and their light curves, GW170817's chirp and kilonova, the jets' beaming, the aurora
+src/sim/fields/ magnetic fields: spherical harmonics, the field-line tracer, the Sun's and the planets' models
 src/lib/       number formatting (significant figures, SI grouping, units) and least-squares statistics
 src/render/    shaders, materials, the relativistic scene pass, post-processing, adaptive quality; render/lens/ the
                black hole's lens and render/flow/ the accretion flow's map

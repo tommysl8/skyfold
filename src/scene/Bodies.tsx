@@ -27,6 +27,7 @@ import {
   Float32BufferAttribute,
   type Group,
   LatheGeometry,
+  Matrix4,
   type Mesh,
   Quaternion,
   type ShaderMaterial,
@@ -37,7 +38,7 @@ import {
   Vector3,
 } from 'three';
 import { blackbodyRgb } from '../physics/blackbody';
-import { SUN_TEFF_K } from '../physics/constants';
+import { SUN_RADIUS_KM, SUN_TEFF_K } from '../physics/constants';
 import {
   bodyRecords,
   displayRadiusKm,
@@ -53,12 +54,16 @@ import {
   type RingSpec,
 } from '../sim/bodies';
 import { bodyEntries } from '../sim/bodies/registry';
+import { eclipsersOf } from '../sim/eclipses';
 import { eqjToWorld, raDecToWorld } from '../sim/frames';
 import { sim } from '../sim/sim';
 import { useUI } from '../state/ui';
 import { createOrbitMaterial, createPlanetMaterial, createRingMaterial, createStarSurfaceMaterial, createSunMaterial, SUN_CENTRE_RADIANCE } from '../render/materials';
 import { roundStarGeometry, starShapeGeometry } from '../render/starShape';
 import { StarCells } from '../render/starCells';
+import { sunFuture } from '../sim/stars/sunFuture';
+import { starSurface, type StarSurface } from '../sim/stars/closeup';
+import type { SunState } from '../sim/stars/evolution';
 import { bandsExtent, bandsTexture, extentFactor } from '../render/rings';
 import { loadShape } from '../render/shapes';
 import { acquireTexture, pumpTextureUploads, releaseTexture, setPinnedTextures, type TextureOptions } from '../render/textures';
@@ -220,6 +225,7 @@ export function Planet({ id }: { id: BodyId }) {
     else if (p.triaxialRadiiKm) m.scale.set(p.triaxialRadiiKm[0] * k, p.triaxialRadiiKm[2] * k, p.triaxialRadiiKm[1] * k);
     else m.scale.set(eq * k, (p.polarRadiusKm ?? eq) * k, eq * k);
     lightRelative(rec, material.uniforms.uSunRel.value);
+    placeEclipsers(id, material, group.current.position, eq / b.displayRadius);
 
     if (!requested.current && wantsTextures(id)) {
       requested.current = true;
@@ -245,6 +251,46 @@ export function Planet({ id }: { id: BodyId }) {
       {vis.rings && <Rings id={id} spec={vis.rings} planetMaterial={material} />}
     </group>
   );
+}
+
+/**
+ * The bodies that can eclipse this one (sim/eclipses.ts eclipsersOf: its planet, its large moons), for the planet
+ * shader's shadows: each one's drawn place relative to the camera and its true radius, and the light its atmosphere
+ * bends into its shadow. Nothing for a body with none (most of them).
+ */
+function placeEclipsers(id: BodyId, material: ShaderMaterial, centre: Vector3, trueScale: number): void {
+  const u = material.uniforms;
+  const list = eclipsersOf(id, registryVersion());
+  const b = sim.bodies[id];
+  const sun = sim.bodies.sun;
+  let n = 0;
+  for (const e of list) {
+    const o = sim.bodies[e.id];
+    if (!o?.present || !b || !sun) continue;
+    // Only while its penumbra can reach this body (an eclipse season): otherwise the shader skips it altogether.
+    if (!inPenumbra(sun.pos, o.pos, e.radiusKm, b.pos, displayRadiusKm(getBody(id)!))) continue;
+    u.uOccluders.value[n].set(o.apparentPos.x - sim.camera.pos.x, o.apparentPos.y - sim.camera.pos.y, o.apparentPos.z - sim.camera.pos.z, e.radiusKm);
+    u.uOccluderGlow.value[n].set(e.glow[0], e.glow[1], e.glow[2]);
+    if (++n === 4) break;
+  }
+  u.uOccluderCount.value = n;
+  u.uCenterW.value.copy(centre);
+  u.uTrueScale.value = trueScale;
+}
+
+const ax = new Vector3();
+const off = new Vector3();
+
+/** Whether the penumbra of a sphere (centre `o`, radius `r`) lit by the Sun at `s` reaches a body at `p` of radius `rb`. */
+function inPenumbra(s: Vector3, o: Vector3, r: number, p: Vector3, rb: number): boolean {
+  ax.copy(o).sub(s);
+  const so = ax.length();
+  ax.divideScalar(so);
+  off.copy(p).sub(o);
+  const along = off.dot(ax);
+  if (along <= 0) return false;
+  const perp = off.addScaledVector(ax, -along).length();
+  return perp < r + (along * (SUN_RADIUS_KM + r)) / so + rb;
 }
 
 function ringGeometry(inner: number, outer: number, segments: number): BufferGeometry {
@@ -384,13 +430,38 @@ function Rings({ id, spec, planetMaterial }: { id: BodyId; spec: RingSpec; plane
 
 // ─── The Sun and other stars ─────────────────────────────────────────────────────────────
 
+/**
+ * The Sun's surface at another age (sim/stars/sunFuture.ts), for the star-surface material: limb darkening and granules
+ * for its temperature and gravity (closeup.ts), worked out again only when its temperature or radius has changed by a
+ * per cent or two.
+ */
+function agedSunSurface(st: SunState, last: { key: string; surface: StarSurface | null }): StarSurface {
+  const key = `${Math.round(Math.log(st.teffK) * 100)}|${Math.round(Math.log(st.rsun) * 50)}`;
+  if (last.key !== key || !last.surface) {
+    last.key = key;
+    last.surface = starSurface({ teffK: st.teffK, radiusRsun: st.rsun, massMsun: st.massMsun });
+  }
+  return last.surface;
+}
+
 export function Sun() {
   const mesh = useRef<Mesh>(null!);
   const material = useMemo(createSunMaterial, []);
+  // The Sun at another age: the material every other star's disc has, its cells baked while it is large.
+  const aged = useMemo(() => createStarSurfaceMaterial(), []);
+  const agedCells = useRef<StarCells | null>(null);
+  const agedLast = useRef<{ key: string; surface: StarSurface | null }>({ key: '', surface: null });
+  useEffect(
+    () => () => {
+      aged.dispose();
+      agedCells.current?.dispose();
+    },
+    [aged],
+  );
   const requested = useRef(false);
   const hold = useHeldTextures();
   const map = getBody('sun')?.visual?.map;
-  useFrame(() => {
+  useFrame(({ gl }) => {
     const b = sim.bodies.sun;
     if (!b) return;
     const m = mesh.current;
@@ -399,8 +470,51 @@ export function Sun() {
     m.position.copy(b.apparentPos).sub(sim.camera.pos);
     m.quaternion.copy(b.apparentQuat);
     m.scale.setScalar(b.displayRadius);
-    const geometry = b.radiusPx < LOD_PX ? SPHERE_LO : SPHERE_HI;
+    const st = sunFuture.state;
+    // (The star-surface material reads each vertex's temperature share, aTemp: the round star meshes have it.)
+    const geometry = st ? (b.radiusPx < LOD_PX ? STAR_SPHERE_LO : STAR_SPHERE_HI) : b.radiusPx < LOD_PX ? SPHERE_LO : SPHERE_HI;
     if (m.geometry !== geometry) m.geometry = geometry;
+    m.material = st ? aged : material;
+    if (st) {
+      const s = agedSunSurface(st, agedLast.current);
+      const u = aged.uniforms;
+      u.uColor.value.setRGB(...blackbodyRgb(st.teffK));
+      u.uTeff.value = st.teffK;
+      u.uTPole.value = st.teffK;
+      u.uLimbU.value.set(...s.limbU);
+      const freq = Math.sqrt(s.granules / (4 * Math.PI));
+      u.uGranContrast.value = StarCells.holds(freq) ? s.granuleContrast : 0;
+      // As StarBody: full radiance while small, stopped down and its contrast stretched up close.
+      const t = Math.min(1, Math.max(0, (b.radiusPx - 30) / 170));
+      const k = t * t * (3 - 2 * t);
+      u.uIntensity.value = 6 - 5.2 * k;
+      u.uContrast.value = 1 + 1.4 * k;
+      // Cells baked while the disc is large; made again when the granules' size has changed by a tenth.
+      const cells = agedCells.current;
+      const want = u.uGranContrast.value > 0 && b.radiusPx > 40;
+      if (cells && (!want || Math.abs(Math.log(u.uGranFreq.value / freq)) > 0.1)) {
+        cells.dispose();
+        agedCells.current = null;
+      }
+      if (want && !agedCells.current) {
+        u.uGranFreq.value = freq;
+        agedCells.current = new StarCells(freq, 0);
+      }
+      if (agedCells.current) {
+        const shownS = (performance.now() / 1000) * s.speedup;
+        agedCells.current.update(gl, (shownS / s.turnoverS) % 1000);
+        u.uCells.value = agedCells.current.target.texture;
+        u.uHasCells.value = agedCells.current.ready ? 1 : 0;
+      } else {
+        u.uHasCells.value = 0;
+        u.uGranFreq.value = freq;
+      }
+      return;
+    }
+    if (agedCells.current) {
+      agedCells.current.dispose();
+      agedCells.current = null;
+    }
     // Simple auto-exposure: at its true radiance when small (the disc then averages a 5,772 K
     // surface, as the stars and the CMB assume), and dimmer up close so limb darkening and
     // granulation show.
@@ -504,6 +618,13 @@ export function StarBody({ id }: { id: BodyId }) {
     const b = sim.bodies[id];
     if (!b) return;
     const m = mesh.current;
+    // A variable star (sim/stars/variability.ts): its colour follows its temperature.
+    const lum = rec?.physical.luminous;
+    if (lum?.variable && lum.teffK !== material.uniforms.uTeff.value) {
+      material.uniforms.uTeff.value = lum.teffK;
+      material.uniforms.uTPole.value = lum.teffK * (surface?.poleTeffRatio ?? 1);
+      material.uniforms.uColor.value.setRGB(...blackbodyRgb(lum.teffK));
+    }
     // Hidden while the lens draws it exactly (lens.spheres).
     m.visible = b.present && b.radiusPx >= MESH_MIN_PX && !(lens.spheres.length > 0 && lens.spheres.includes(id));
     if (!m.visible) return;
@@ -523,7 +644,7 @@ export function StarBody({ id }: { id: BodyId }) {
     const t = Math.min(1, Math.max(0, (b.radiusPx - 30) / 170));
     const k = t * t * (3 - 2 * t);
     // Up close, its hottest part (a fast rotator’s pole) at the same level as any other star’s centre.
-    u.uIntensity.value = (6 - 5.2 * k) / Math.pow(hottest, 1.4 * k);
+    u.uIntensity.value = ((6 - 5.2 * k) / Math.pow(hottest, 1.4 * k)) * (lum?.discRadiance ?? 1);
     // AgX tone mapping compresses a stop to a few per cent of the screen’s range: up close the disc’s contrast is
     // stretched to 2.4 stops a stop (the card says so), from afar it is exact.
     u.uContrast.value = 1 + 1.4 * k;
@@ -565,9 +686,12 @@ export function StarBody({ id }: { id: BodyId }) {
 export const PROBE_MODEL_RADIUS_KM = 0.00185;
 
 /** Radius of each craft model as built (km): it is scaled from this to the spacecraft's radius. */
-const CRAFT_RADIUS_KM = { probe: PROBE_MODEL_RADIUS_KM, jwst: 0.0106, parker: 0.00115 } as const;
+const CRAFT_RADIUS_KM = { probe: PROBE_MODEL_RADIUS_KM, jwst: 0.0106, parker: 0.00115, iss: 0.0545, tiangong: 0.028, hubble: 0.00665 } as const;
 
 type Craft = keyof typeof CRAFT_RADIUS_KM;
+
+/** The craft in Earth orbit fly a local-vertical attitude: +Y away from Earth, +Z along their motion, X across the orbit. */
+const EARTH_ORBITERS = new Set<Craft>(['iss', 'tiangong', 'hubble']);
 
 const flatMaterial = (hex: string, side = false) => {
   const m = createPlanetMaterial({ baseColor: new Color(hex), flat: true, ambient: 0.02 });
@@ -589,6 +713,8 @@ interface CraftPart {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: [number, number, number];
+  /** A solar array that turns about the model's X axis to face the Sun (the ISS's, Tiangong's, Hubble's). */
+  sunward?: boolean;
 }
 
 /**
@@ -599,8 +725,13 @@ interface CraftPart {
  *         side, and the 6.5 m gold primary mirror on the cold side, facing across the shield
  *  parker Parker Solar Probe: the 2.3 m heat shield (at the Sun), the bus and the solar arrays
  *         tucked in its shadow
+ *  iss    the International Space Station: the 94 m truss across the orbit, the 67 m of pressurised modules
+ *         along it, and eight 35 × 12 m solar array wings turning to the Sun (NASA's figures)
+ *  tiangong  Tianhe along the orbit with Wentian and Mengtian across it in a T, each with its arrays
+ *  hubble the 13.3 m tube, 4.2 m across, its two solar arrays to the sides
  */
 function craftParts(craft: Craft): CraftPart[] {
+  if (craft === 'iss' || craft === 'tiangong' || craft === 'hubble') return earthOrbiterParts(craft);
   if (craft === 'jwst') {
     const shield = flatPolygon([
       [0, 0.0106],
@@ -669,6 +800,62 @@ function craftParts(craft: Craft): CraftPart[] {
   ];
 }
 
+/** The craft in Earth orbit, at true size (km); +Y away from Earth, +Z along the orbit, X across it. Simplified. */
+function earthOrbiterParts(craft: 'iss' | 'tiangong' | 'hubble'): CraftPart[] {
+  const box = new BoxGeometry(1, 1, 1);
+  const tube = new CylinderGeometry(1, 1, 1, 16);
+  const white = flatMaterial('#e4e1d8');
+  const grey = flatMaterial('#8f8c86');
+  const array = flatMaterial('#3a3020', true);
+  const blue = flatMaterial('#2c3550', true);
+  // A cylinder of radius r and length l along Z (or X), centred at `at`.
+  const along = (r: number, l: number, at: [number, number, number], m = white): CraftPart => ({ geometry: tube, material: m, position: at, rotation: [Math.PI / 2, 0, 0], scale: [r, l, r] });
+  const across = (r: number, l: number, at: [number, number, number], m = white): CraftPart => ({ geometry: tube, material: m, position: at, rotation: [0, 0, Math.PI / 2], scale: [r, l, r] });
+  if (craft === 'iss') {
+    const parts: CraftPart[] = [
+      // The truss, 94 m, across the orbit
+      { geometry: box, material: grey, position: [0, 0.002, 0], scale: [0.094, 0.0025, 0.0025] },
+      // Pressurised modules along the orbit (the US and Russian segments), and Kibo and Columbus across it
+      along(0.0021, 0.04, [0, -0.002, 0.004]),
+      along(0.0015, 0.027, [0, -0.002, -0.029]),
+      across(0.0022, 0.022, [0, -0.002, 0.018]),
+      // Radiators
+      { geometry: box, material: white, position: [0.012, 0.002, -0.009], scale: [0.0005, 0.0003, 0.014] },
+      { geometry: box, material: white, position: [-0.012, 0.002, -0.009], scale: [0.0005, 0.0003, 0.014] },
+    ];
+    // Eight array wings, 35 × 12 m, in pairs near the truss's ends, turning about the truss.
+    for (const x of [-0.045, -0.032, 0.032, 0.045])
+      for (const z of [-0.019, 0.019]) parts.push({ geometry: box, material: array, position: [x, 0.002, z], scale: [0.0115, 0.0002, 0.034], sunward: true });
+    return parts;
+  }
+  if (craft === 'tiangong') {
+    return [
+      // Tianhe, 16.6 m, along the orbit; Wentian and Mengtian, about 17.9 m each, across it at the node
+      along(0.00211, 0.0166, [0, 0, -0.004]),
+      across(0.0021, 0.0179, [0.0105, 0, 0.0045]),
+      across(0.0021, 0.0179, [-0.0105, 0, 0.0045]),
+      // The labs' large arrays at their far ends, and Tianhe's pair
+      { geometry: box, material: array, position: [0.022, 0, 0.0045], scale: [0.0045, 0.0002, 0.027], sunward: true },
+      { geometry: box, material: array, position: [-0.022, 0, 0.0045], scale: [0.0045, 0.0002, 0.027], sunward: true },
+      { geometry: box, material: array, position: [0.0055, 0, -0.008], scale: [0.0085, 0.0002, 0.0028], sunward: true },
+      { geometry: box, material: array, position: [-0.0055, 0, -0.008], scale: [0.0085, 0.0002, 0.0028], sunward: true },
+    ];
+  }
+  return [
+    along(0.0021, 0.0133, [0, 0, 0], flatMaterial('#cfd2d6')),
+    // The aperture door at the front, and the arrays (7.1 × 2.6 m) to either side
+    { geometry: new CircleGeometry(0.0021, 24), material: grey, position: [0, 0, 0.00665] },
+    { geometry: box, material: blue, position: [0.0034, 0, -0.0015], scale: [0.0026, 0.0001, 0.0071], sunward: true },
+    { geometry: box, material: blue, position: [-0.0034, 0, -0.0015], scale: [0.0026, 0.0001, 0.0071], sunward: true },
+  ];
+}
+
+const basis = new Matrix4();
+const bx = new Vector3();
+const by = new Vector3();
+const bz = new Vector3();
+const axisX = new Vector3(1, 0, 0);
+
 /**
  * A spacecraft at true size (metres, in km units), scaled to the body's radius: Voyager's shape
  * for the probes, with the high-gain antenna always pointed at Earth; Webb and Parker Solar Probe
@@ -680,6 +867,7 @@ export function Spacecraft({ id }: { id: BodyId }) {
   const craft: Craft = getBody(id)?.visual?.craft ?? 'probe';
   const parts = useMemo(() => craftParts(craft), [craft]);
   const materials = useMemo(() => [...new Set(parts.map((p) => p.material))], [parts]);
+  const arrays = useRef<Group>(null!);
   useEffect(
     () => () => {
       for (const g of new Set(parts.map((p) => p.geometry))) g.dispose();
@@ -697,7 +885,22 @@ export function Spacecraft({ id }: { id: BodyId }) {
     g.visible = b.present && b.radiusPx >= MESH_MIN_PX;
     if (!g.visible) return;
     g.position.copy(b.apparentPos).sub(sim.camera.pos);
-    if (target) {
+    const earth = sim.bodies.earth;
+    if (EARTH_ORBITERS.has(craft) && earth) {
+      // Local vertical: +Y away from Earth, X along the orbit's normal, +Z along the motion.
+      by.copy(b.pos).sub(earth.pos).normalize();
+      tmp.copy(b.vel).sub(earth.vel);
+      bx.crossVectors(by, tmp).normalize();
+      bz.crossVectors(bx, by);
+      basis.makeBasis(bx, by, bz);
+      g.quaternion.setFromRotationMatrix(basis);
+      // The arrays turn about X to face the Sun as nearly as that axis allows.
+      const sun = sim.bodies.sun;
+      if (sun && arrays.current) {
+        tmp.copy(sun.pos).sub(b.pos).normalize();
+        arrays.current.quaternion.setFromAxisAngle(axisX, Math.atan2(-tmp.dot(bz), tmp.dot(by)));
+      }
+    } else if (target) {
       tmp.copy(target.pos).sub(b.apparentPos).normalize();
       g.quaternion.setFromUnitVectors(tmp2.set(0, 1, 0), tmp);
     }
@@ -708,9 +911,14 @@ export function Spacecraft({ id }: { id: BodyId }) {
 
   return (
     <group ref={group} visible={false}>
-      {parts.map((p, i) => (
-        <mesh key={i} geometry={p.geometry} material={p.material} position={p.position} rotation={p.rotation} scale={p.scale} />
-      ))}
+      {parts.map((p, i) =>
+        p.sunward ? null : <mesh key={i} geometry={p.geometry} material={p.material} position={p.position} rotation={p.rotation} scale={p.scale} />,
+      )}
+      <group ref={arrays}>
+        {parts.map((p, i) =>
+          p.sunward ? <mesh key={i} geometry={p.geometry} material={p.material} position={p.position} rotation={p.rotation} scale={p.scale} /> : null,
+        )}
+      </group>
     </group>
   );
 }

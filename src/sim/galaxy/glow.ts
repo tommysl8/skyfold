@@ -184,8 +184,22 @@ export const GLOW_STEPS = 32;
 /** Step ends at s_k = GLOW_S_SCALE (e^(kλ) − 1), kpc, so the first steps are parsecs and the last a fifth of the way. */
 export const GLOW_S_SCALE = 0.01;
 
-/** ∫ e^(−|z|/h) dz from 0 to z. */
-const layer = (z: number, h: number) => Math.sign(z) * h * (1 - Math.exp(-Math.abs(z) / h));
+/** 1 − e^(−x) for x ≥ 0, as the shader takes it (no cancellation for small x). */
+const oneMinusExp = (x: number): number => (x < 1e-3 ? x * (1 - 0.5 * x * (1 - x / 3)) : 1 - Math.exp(-x));
+
+/**
+ * ∫ e^(−|z|/h) dz from za to zb (the shader's layerColumn). Not as the difference of the integrals from 0, which
+ * many scale heights from the midplane are both h to within float32's precision: on the GPU their difference was
+ * noise of either sign, and the glow's colour normalisation divided by it (a saturated white band across the sky,
+ * seen from a kiloparsec below the young arm stars' 60-pc layer). On one side of the midplane the column is
+ * h e^(−|z|near/h) (1 − e^(−Δ/h)), positive and exact to a few ulp; across it, the two halves' sum.
+ */
+export function layerColumn(za: number, zb: number, h: number): number {
+  const a = Math.abs(za) / h;
+  const b = Math.abs(zb) / h;
+  const m = za * zb >= 0 ? h * Math.exp(-Math.min(a, b)) * oneMinusExp(Math.abs(zb - za) / h) : h * (oneMinusExp(a) + oneMinusExp(b));
+  return zb >= za ? m : -m;
+}
 
 export interface GlowSetup {
   thin: GlowDisc;
@@ -242,7 +256,7 @@ export function nearGlow(camG: Vec3, dir: Vec3, g: GlowSetup): { thin: number; y
     const mix = dtau > 1e-6 ? (1 - Math.exp(-dtau)) / dtau : 1;
     const seen = Math.exp(-tau) * mix;
     // ∫ e^(−|z|/h) ds over the step, kpc.
-    const column = (h: number) => (flat ? L * Math.exp(-Math.abs(za) / h) : ((layer(zb, h) - layer(za, h)) * L) / dz);
+    const column = (h: number) => (flat ? L * Math.exp(-Math.abs(za) / h) : (layerColumn(za, zb, h) * L) / dz);
     const R = Math.hypot(q[0], q[1]);
     const s = 0.5 * (sa + sb);
     const wDisc = 1 - particleShare(s, discRange);

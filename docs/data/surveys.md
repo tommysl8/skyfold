@@ -10,7 +10,8 @@ matching, the loading and the choice of nodes), `src/scene/Surveys.tsx` and `src
 
 With them, from 500 Mpc out, 866,298 quasars over the whole sky from Quaia, the Gaia–unWISE quasar catalogue: those the
 surveys do not have, with distances from Gaia's rough redshifts, drawn as streaks along the line of sight as long as
-the distances are uncertain (§10).
+the distances are uncertain (§10); and beside them 810,059 galaxies of Gaia DR3 with redshifts from their low-resolution
+spectra, out to z = 0.6, drawn the same way (§11). The Milky Way's plane stays empty: no survey sees through it.
 
 ## 1. Outputs
 
@@ -19,8 +20,8 @@ the distances are uncertain (§10).
 | `public/data/survey/hierarchy.bin.gz` | 81.7 kB | the octree's 2,699 nodes: children, galaxy counts, file sizes, bounding boxes, and each node's own galaxies' summed light, centroid and spread |
 | `public/data/survey/r<octants>.bin.gz` | 2,699 files, 63.7 MB in all; median 11 kB, largest 102 kB | one node each: its galaxies (position, kind, luminosity) and its eight octants' glows |
 | `docs/data/surveys-build-log.txt` | | the build's counts, cuts and sizes |
-| `public/data/survey-quaia/hierarchy.bin.gz`, `r<octants>.bin.gz` | 4.7 kB; 166 files, 4.83 MB in all, median 16 kB, largest 102 kB | Quaia's quasars in the same format, each with its distance error (§10) |
-| `docs/data/quaia-build-log.txt` | | that build's counts and sizes |
+| `public/data/survey-quaia/hierarchy.bin.gz`, `r<octants>.bin.gz` | 10.5 kB; 364 files, 9.37 MB in all, median 10 kB, largest 106 kB | Quaia's quasars and Gaia DR3's galaxies in the same format, each with its distance error (§10, §11) |
+| `docs/data/quaia-build-log.txt` | | that build's counts and sizes (both parts) |
 
 4.73 bytes a galaxy. Every file is under 1 MB (the build refuses otherwise). The files' base URL is one constant,
 `SURVEY_BASE_URL` in `src/sim/surveys/load.ts` (default the site's own `/data/survey/`): to serve the tiles from
@@ -88,7 +89,9 @@ redshifts taken to the CMB frame and turned into comoving positions in the Planc
 luminosity added; positions rounded to 5″ and 0.125 Mpc; tiled into an octree with summed glows.
 
 Not used: 6dFGS, 2dFGRS and GAMA (no licence found on their pages), targets not yet observed, and any model of the
-unobserved universe. Quaia (CC BY 4.0) is used, as a part of its own whose distances are shown as rough (§10).
+unobserved universe. Quaia (CC BY 4.0) is used, as a part of its own whose distances are shown as rough (§10), and with
+it Gaia DR3's galaxies with redshifts (CC BY-NC 3.0 IGO, as the star catalogue's Gaia values; §11). The other whole-sky
+catalogues weighed for the sky beyond DESI and the SDSS, and why they are not used, are in §11.
 
 ## 4. What is done to the catalogues
 
@@ -280,7 +283,8 @@ is to be checked on the laptop.
 ## 9. Caveats and later
 
 - Two thirds of the sky is not in these surveys (everything south of declination −20° and the Milky Way's plane; from
-  500 Mpc out Quaia's quasars fill it, with rough distances, all but the 10° nearest the plane), and
+  500 Mpc out Quaia's quasars and Gaia's galaxies fill it, with rough distances, all but the 10° nearest the plane: §11),
+  and
   the map thins with distance: flux-limited surveys see only the brighter galaxies far away, and each chose different
   kinds, so the density and colour change with distance (BGS to z ≈ 0.4, then LRGs, then ELGs and quasars) because of
   selection, not structure. DR1 is one year of five: its footprint is mottled on the scale of DESI's tiles.
@@ -366,7 +370,7 @@ degrees. So, with the reasons measured:
 vertex shader, 31,000 streaks and 107,000 points cost 0.5 ms less than 200,000 points), but its pixels cost: 31,000
 full-length streaks added 2.5 ms at 2 Gpc. So a Quaia quasar counts against the point budget as its streak's pixels over
 a point's (`streakCost`: the median error, two thirds across the line of sight, at its node's distance; 0.5 when too
-long to draw), and Quaia takes at most a quarter of the budget (`QUAIA_BUDGET_SHARE`); the survey has the rest, all of it
+long to draw), and Quaia takes at most a quarter of the budget (`QUAIA_BUDGET_SHARE`; 0.4 since §11); the survey has the rest, all of it
 when Quaia uses less. Chosen by one law over both octrees (`lod.ts selectNodesOf`, which can), Quaia's sparse, costly
 streaks took two thirds of the budget from 2 Gpc and left the survey's own map a third of its points. From 2 Gpc Quaia
 draws about 3,500 quasars and the survey 150,000 points; from 14 Gpc 13,500 and 150,000.
@@ -403,3 +407,79 @@ for another), and a streak shows the quoted 1σ only. Its selection is uneven on
 density there is not structure. Quasars inside the surveys' footprint that DR1 has not yet observed are drawn as Quaia's:
 DESI's later releases will turn many of them into spectroscopic points. Quaia's root node is drawn only in part from
 every view, so its glows are rarely drawn.
+
+## 11. Gaia DR3's galaxies, and the sky beyond DESI and the SDSS
+
+Seen from far out (the view home from 9.4 billion light-years, say), DESI and the SDSS are two fans with the rest of the
+sky empty, and from some such views Quaia's quasars did not show at all (below). Two things were done: the galaxies of
+Gaia DR3 with a redshift were added to Quaia's tiles, and the streaks were made to draw from everywhere.
+
+**What was weighed** (read 9 October 2026; the rule, as for 6dFGS, 2dFGRS and GAMA in §3: shipped only where the terms
+allow redistribution; where none are stated, not):
+
+| Catalogue | Coverage | Terms found | Used |
+| --- | --- | --- | --- |
+| Gaia DR3 galaxy candidates with redshifts (Gaia Collaboration, Bailer-Jones et al. 2023; Delchambre et al. 2023) | whole sky outside the Milky Way's plane, z < 0.6 | Gaia data are CC BY-NC 3.0 IGO (https://www.cosmos.esa.int/web/gaia-users/license): redistribution with credit, non-commercially, as the star catalogue's Gaia values already are | yes |
+| DESI Legacy Imaging Surveys DR9/DR10 photometric redshifts (Zhou et al. 2021) | DECaLS, BASS, MzLS and DES footprints, far south too | only the Sky Viewer's images carry a licence (CC BY 4.0, https://www.legacysurvey.org/acknowledgment/); the catalogues ask for an acknowledgement but state no licence; and billions of rows | no |
+| DES Y6 Gold photometric redshifts | the DES footprint, 5,000 deg² of the south | the DES data-access page (https://www.darkenergysurvey.org/the-des-project/data-access/) asks for an acknowledgement; its terms page (https://des.ncsa.illinois.edu/terms) states no licence that could be read | no |
+| WISE × SuperCOSMOS photometric redshifts (Bilicki et al. 2016) | whole sky outside the plane, 18.5 million galaxies, z ≈ 0.2 | the SuperCOSMOS Science Archive page (http://ssa.roe.ac.uk/WISExSCOS.html) asks to cite the paper and acknowledge the WFAU; the archive's data are "subject to the copyright" of the plates' owners; no licence | no |
+| 2MPZ (Bilicki et al. 2014) | whole sky outside the plane, about a million galaxies, z ≈ 0.07 | as WISE × SuperCOSMOS (http://ssa.roe.ac.uk/TWOMPZ.html) | no |
+| 2MRS (Huchra et al. 2012) | whole sky beyond 5–8° of the plane, 44,599 spectroscopic redshifts to about 300 Mpc | the catalogue's page (http://tdc-www.harvard.edu/2mrs/) gives the paper and the files, no licence | no |
+| GLADE+ (Dálya et al. 2022) | whole sky, 22.5 million galaxies (2MPZ, WISE × SuperCOSMOS, HyperLEDA and others) | the page (https://glade.elte.hu) asks for a citation, no licence; and it is built of the catalogues above | no |
+| CDS VizieR copies of any of these | | VizieR's rules: free for scientific use with citation, copyright as the catalogue's origin; no licence of its own | no |
+
+**Which galaxies.** `scripts/surveys/gaia-galaxies.mjs` fetches from the Gaia archive, in 48 slices of the sky by source
+id, the "purer" galaxy candidates of Bailer-Jones et al. 2023 §9 (a Sérsic profile fitted, or both of the discrete
+source classifier's models say galaxy, or the variability classifier does: about 95 % galaxies) that the Unresolved
+Galaxy Classifier gave a redshift from their BP/RP spectra (`redshift_ugc`): 1,139,455 rows (81 MB gzipped, kept in
+`data-raw/gaia-galaxies/`). `scripts/build-quaia.mjs` then:
+
+- leaves out the redshifts the classifier gets least right, as the Gaia DR3 data model says (its galaxy_candidates
+  table): below 0.02, 0.28 to 0.30 and above 0.58, and the interval 0.070–0.071, which holds several thousand bright
+  galaxies whose redshifts are probably below 0.04 (15,859 in all; `quaia.ts gaiaRedshiftKept`);
+- leaves to Quaia the 6 that Quaia has as quasars (by source id), and to DESI and the SDSS the 313,531 within 1.5″ of one
+  of their objects, matched as Quaia's are (DESI's Bright Galaxy Survey 162,636, SDSS-I/II 137,832, BOSS 12,874, the rest
+  a few hundred): their spectroscopic redshifts win. Matched again with every galaxy moved 30″ north, 275 (0.02 %) found
+  a neighbour;
+- places the other 810,059 as the survey's galaxies and Quaia's quasars (CMB frame, the app's cosmology), each
+  redshift's error half its quoted prediction interval (`gaiaSigmaZ`, the estimate the data model gives; typically
+  ±0.03) turned into a comoving distance error: median 123 Mpc, 95 % 175, 99 % 265; 860 are drawn fainter for theirs
+  (`quaiaFade`);
+- classes them grey, the survey's class for a galaxy without a measured colour (Gaia's BP and RP of an extended source
+  are taken in windows of a few arcseconds, not a galaxy's colour), catalogue code 11 (`GAIA_GALAXY_SOURCE`);
+- gives each a luminosity from its G as the survey's from r (`gaiaLogL`: M = G − DM + 2.5 log10(1 + z) against
+  M*_r = −21.2): median log L/L* −1.05, low because Gaia's G, measured in its window, misses a large galaxy's outer light.
+
+Median z 0.13 (CMB frame), distances 289 Mpc (5 %) to 986 Mpc (95 %); 417,995 lie south of declination −20°, where the
+surveys have almost nothing. They go into Quaia's tiles beside its quasars (the quasars exactly as before: every step of
+§10 is unchanged, and the build log's numbers for them are the same), drawn the same way, as streaks along the line of
+sight, in grey. The tiles: 1,676,357 objects in 364 nodes, depth 8, 9.37 MB (5.59 bytes an object), files median 10 kB,
+largest 106 kB, hierarchy 10.5 kB (were 4.83 MB in 166 nodes). The hierarchy's header grows past 64 bytes for more than
+eleven catalogues' counts (`format.ts hierarchyHeaderBytes`; the decoder reads its size from the file, so the survey's
+own tiles read as before). Up to 2 million of them stay decoded (`load.ts QUAIA_MAX_CACHED_POINTS`). A far view still
+downloads the hierarchy and the root node only (now 117 kB: 10.5 and 106).
+
+**Why the streaks did not show, and the fix.** A node's model matrix carries its numbers, not a transform
+(scene/Surveys.tsx), and three.js flips a mesh's winding where that matrix's determinant is negative: with the
+material's default front side, every streak of such a node was culled. The sign depends on the node and on where the
+camera is, so from some views (the view home from 9.4 billion light-years among them) none of Quaia showed, while §10's
+measurements, from other places, saw them. The streak material is now double-sided (`materials.ts
+createQuaiaStreakMaterial`; a test checks it).
+
+**The budget share.** With the streaks drawn and Gaia's galaxies among them, Quaia's tiles take at most 0.4 of the point
+budget (`QUAIA_BUDGET_SHARE`, was a quarter): from the 9.4-billion-light-year view home about 5,000 streaks against
+120,000 survey points (a quarter gave about 3,300 against 150,000, and left the wedges thin). The streaks cost what
+§10's do per pixel: there, with the point budget at 200,000, 0.96 ms of GPU time (0.88–1.61 over three rounds of
+`perf.ab`, streaks hidden against drawn, a 3,200 × 1,584 canvas in a hidden pane, where every timing reads high), within
+the point budget the survey layer already keeps.
+
+**The Milky Way's plane stays empty.** Behind the Galaxy's dust and crowded stars no optical or infrared survey finds
+galaxies: the Zone of Avoidance, about 10° either side of the plane. Gaia's galaxy candidates, like Quaia's quasars and
+like DESI and the SDSS, are nearly absent there, and nothing is put there: blank is hidden, not empty. The layer's card
+and the About page say so.
+
+**Caveats.** Gaia's redshifts come from low-resolution spectra: about ±0.03 in z (0.008 ± 0.037 on a clean validation
+set, Gaia DR3 documentation), with outliers; a streak shows the quoted interval only. The purer sample is about 95 %
+galaxies, so a few in a hundred grey streaks are stars or quasars. Their density on the sky follows Gaia's scanning and
+the dust, not structure. Inside DESI's and the SDSS's footprints, the galaxies those surveys did not observe are drawn as
+Gaia's.

@@ -1,6 +1,6 @@
 /**
  * Loading the galaxy surveys (the tiles of sim/surveys/format.ts) as the camera goes: DESI and the SDSS
- * (public/data/survey/) and Quaia's quasars (public/data/survey-quaia/: quaia.ts), each an octree of its own with a
+ * (public/data/survey/) and Quaia's quasars with Gaia DR3's galaxies (public/data/survey-quaia/: quaia.ts), each an octree of its own with a
  * store of its own (SurveyStore), sharing one worker and the downloads in flight.
  *
  * Nothing is fetched until the layer is wanted (ui/cosmicLayers.ts surveyLoadWanted: 'auto' only once the camera is
@@ -31,8 +31,8 @@ export const QUAIA_BASE_URL: string = SURVEY_BASE_URL.replace(/survey\/$/, 'surv
 export const FETCHES = 6;
 /** Galaxies kept decoded at most (about 35 MB of GPU buffers). */
 export const MAX_CACHED_POINTS = 2_500_000;
-/** Quaia's quasars kept decoded at most: all 866,298 of them (about 14 MB). */
-export const QUAIA_MAX_CACHED_POINTS = 1_000_000;
+/** Quaia's quasars and Gaia's galaxies (their tiles: quaia.ts) kept decoded at most: about 2 million (about 30 MB). */
+export const QUAIA_MAX_CACHED_POINTS = 2_000_000;
 
 /** A node's galaxies, decoded. */
 export interface SurveyNodeData {

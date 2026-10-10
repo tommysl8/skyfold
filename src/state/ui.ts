@@ -72,6 +72,15 @@ export interface UIState {
   auroraKp: number;
   /** Relativistic jets: M87's and Centaurus A's (sim/phenomena/jets.ts). */
   jets: boolean;
+  /**
+   * The satellites round Earth (sim/satellites, scene/Satellites.tsx): every active one CelesTrak lists, fetched when
+   * first turned on; and within it, the tracked debris of four break-ups. Off by default. The ISS, Tiangong and Hubble
+   * are bodies and always there.
+   */
+  satellites: boolean;
+  satelliteDebris: boolean;
+  /** Magnetic field lines: the Sun's and the planets' measured fields, and the Milky Way's (sim/fields). */
+  fieldLines: boolean;
   /** The map of the cosmic microwave background over the sky (contrast enhanced). */
   showCmb: boolean;
   /**
@@ -197,6 +206,9 @@ export interface UIState {
       | 'holePanelAuto'
       | 'aurora'
       | 'jets'
+      | 'satellites'
+      | 'satelliteDebris'
+      | 'fieldLines'
       | 'darkMatter',
   ) => void;
   setSizeMode: (m: SizeMode) => void;
@@ -241,6 +253,11 @@ export const savedPrefs = (s: UIState) => ({
   aurora: s.aurora,
   auroraKp: s.auroraKp,
   jets: s.jets,
+  // New in this version with their defaults (off): no migration.
+  satellites: s.satellites,
+  satelliteDebris: s.satelliteDebris,
+  // New in this version with its default (off): a saved state without it keeps it, so no migration.
+  fieldLines: s.fieldLines,
   showFps: s.showFps,
   // Not leftOpen: the physics reference opens only when asked for, never on a reload.
   rightOpen: s.rightOpen,
@@ -287,6 +304,9 @@ export const useUI = create<UIState>()(
       aurora: true,
       auroraKp: 3,
       jets: true,
+      satellites: false,
+      satelliteDebris: false,
+      fieldLines: false,
       showCmb: false,
       darkMatter: false,
       welcomeOpen: !welcomed(),

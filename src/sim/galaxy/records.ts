@@ -24,6 +24,7 @@ import {
 } from './clusters';
 import { loadOrbits, skyStateInto, skyToEclipticMatrix, type Orbit, type SStarsJson } from './sstars';
 import { HOVER_FLOOR_RADIUS_RS, SGR_A_BLACK_HOLE, sgrABlackHole } from '../blackholes/records';
+import { fieldFact } from '../blackholes/holeField';
 
 const J2000_MS = Date.UTC(2000, 0, 1, 12);
 const YEAR_MS = JULIAN_YEAR_S * 1000;
@@ -55,6 +56,8 @@ export function fixedGalacticProvider(galPc: Readonly<Vec3>, label: string, good
 // ─── Sagittarius A* ──────────────────────────────────────────────────────────────────────
 
 export const SGR_A_ID = 'sgr-a-star';
+/** Sgr A*'s field, as the EHT's polarisation shows it (its card's last line). */
+const SGR_A_FIELD = fieldFact(SGR_A_ID)!;
 export const MILKY_WAY_ID = 'milky-way';
 
 /** Sgr A*: GRAVITY Collaboration (2022) mass and distance, Reid & Brunthaler (2004) position. */
@@ -158,9 +161,10 @@ export function sgrARecord(s: SgrA): BodyRecord {
       `A black hole of ${sig(s.massMsun / 1e6, 3)} million solar masses, weighed by the orbits of the stars that swing round it; S2 goes round every 16 years.`,
       `Its shadow, the dark patch its gravity carves out of the light behind it, is ${sig((2 * shadow) / AU_KM, 2)} au across, smaller than Mercury’s orbit. From Earth that is ${Math.round(shadowMicroArcsec)} millionths of an arcsecond; the Event Horizon Telescope’s picture (observed in 2017, published in 2022) shows a glowing ring 51.8 ± 2.3 of them across.`,
       'Dust between us and the centre dims its light about a trillion times in visible light (30 magnitudes) but only about ten times in the near-infrared, where astronomers follow its stars.',
+      SGR_A_FIELD.text,
     ],
-    factSources: [doiUrl(GRAVITY_2022_DOI), doiUrl('10.3847/2041-8213/ac6674'), doiUrl('10.1103/RevModPhys.82.3121')],
-    factSourceLabels: ['GRAVITY 2022', 'EHT Collaboration 2022', 'Genzel, Eisenhauer & Gillessen 2010'],
+    factSources: [doiUrl(GRAVITY_2022_DOI), doiUrl('10.3847/2041-8213/ac6674'), doiUrl('10.1103/RevModPhys.82.3121'), SGR_A_FIELD.source],
+    factSourceLabels: ['GRAVITY 2022', 'EHT Collaboration 2022', 'Genzel, Eisenhauer & Gillessen 2010', SGR_A_FIELD.label],
     positionNote: 'Position: radio position (Reid & Brunthaler 2004) at the GRAVITY (2022) distance, held fixed; its apparent drift of 6.4 milliarcseconds a year, a reflection of the Sun’s own orbit, is left out.',
     // At most three one-line notes reach the card; the rest are the data sheet's (blackHole.sheetNotes).
     modelNotes: SGR_A_BLACK_HOLE.modelNotes.slice(0, 3),

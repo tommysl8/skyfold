@@ -248,7 +248,8 @@ to the eye Titan is a featureless orange ball. Bodies without a map are drawn in
 (albedo-based lightness), and a map-less shape model is shaded by its relief alone (`flat`).
 Comets get `visual.tails` (scene/CometTails.tsx, render/cometTail.ts). Spacecraft get
 `visual.craft`: `probe` (Voyager's shape, dish at Earth), `jwst` (sunshield at the Sun), `parker`
-(heat shield at the Sun).
+(heat shield at the Sun); and the craft in Earth orbit (sim/satellites, docs/data/near-earth.md) `iss`, `tiangong`, `hubble`,
+flying a local-vertical attitude with their arrays turned to the Sun.
 
 **Rings** (rings.json). Jupiter, Uranus and Neptune get theirs with `replaceBodies`; Haumea and
 Quaoar with their records. Bands: a ring given as `radiusKm` ± `widthKm`/2, opacity
