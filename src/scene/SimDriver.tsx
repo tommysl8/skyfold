@@ -28,6 +28,7 @@ import { isWithin } from '../sim/bodies';
 import { updateCosmicSky } from '../sim/cosmos/expansion';
 import { nscPointsGate } from '../sim/galaxy/nuclearCluster';
 import { updatePhenomena } from '../sim/phenomena';
+import { updateDarkLayer } from '../sim/galaxy/darkLayer';
 
 // The nuclear star cluster's points are drawn only once the lensed programs have compiled (scene/NuclearCluster.tsx):
 // until then their light stays in the glow (sim/galaxy/nuclearCluster.ts updateNuclear).
@@ -137,6 +138,8 @@ export function SimDriver() {
     updateExoplanets(keepStar, ui.focus);
     // The deep-sky catalogues load when their layer first shows; their objects chosen as bodies go when let go of.
     updateDeepSky(keepStar, deepSkyLayersNow());
+    // How much of the dark-matter layer shows (View › Dark matter), from the camera (sim/galaxy/darkLayer.ts).
+    updateDarkLayer(dtReal);
     // The observer's rapidity, exact at any γ (from the trip model while flying)
     updateShipKinematics();
     // The black hole that matters from here, if any: its exact distance, clocks and frames (sim/gravity.ts)

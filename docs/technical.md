@@ -101,6 +101,11 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   them) and Centaurus A's jets and lobes (false colour) are beamed by their speeds as seen from the camera. Earth's
   auroral ovals glow on the night side about the date's geomagnetic poles (IGRF-14), where Starkov's model puts them for
   the activity chosen in the View menu (Kp). What is a model is said on each card; `docs/data/phenomena.md` writes it up.
+- **Where the mass is.** View › Dark matter (off by default) draws what gives out no light: the Milky Way's dark halo as a
+  faint fog of its projected density (McMillan's 2017 mass model), tracer stars going round with its pull and, beside
+  them, as fast as the stars and gas alone would carry them, with the measured rotation curve (Eilers et al. 2019) on
+  its card, and the Bullet Cluster's X-ray gas (Chandra) apart from its lensing mass (a model of Clowe et al.'s 2006
+  map). `docs/data/dark-matter.md` writes it up, with the spread in the halo's mass.
 - **Two size modes.** *True scale* shows specks, as reality does (planets still shine at their real apparent
   magnitude). *Enlarged* draws bodies at least a few pixels across while keeping every distance true.
 - **Travel.** Enter β exactly, or use a logit-scaled fader (0.00001c to 0.99999c) and presets (Voyager 1, Parker
@@ -281,6 +286,7 @@ first, at most 50.
 | Named galaxies, clusters and young galaxies (`src/sim/cosmos/named.json`) | SIMBAD (CDS) positions; distances, redshifts, disc angles and sizes from the papers cited in each entry and RC3 | Facts quoted with citation |
 | Cosmology and the home clock (`src/physics/cosmology/`, `future.json`) | Planck 2018 parameters (Planck Collaboration 2020) and the CMB temperature of Fixsen (2009); the future of the Sun, the Milky Way, Andromeda and the universe from Schröder & Connon Smith (2008), van der Marel et al. (2012), [Sawala et al. (2025)](https://doi.org/10.1038/s41550-025-02563-1) (survival curve read from their figure 3), Cautun et al. (2019), Loeb (2002), Krauss & Scherrer (2007), Adams & Laughlin (1997) and the others cited in the file | Facts quoted with citation; the Sawala et al. figure is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | The supernovae, the kilonova, the jets and the aurora (`src/sim/phenomena/`) | Light curves, speeds and sizes from the papers cited in the code and `docs/data/phenomena.md`; the IGRF-14 dipole (IAGA, via NOAA NCEI); Starkov's auroral oval (Starkov 1994, via Sigernes et al. 2011) | Facts quoted with citation; IGRF free to use; the code MIT |
+| Dark matter (`src/sim/galaxy/darkMatter.ts`, `src/sim/cosmos/bulletCluster.ts`, `public/images/dark-matter/bullet-xray.jpg`) | McMillan 2017 (mass model), Eilers et al. 2019 (rotation curve), Clowe et al. 2006 (the Bullet Cluster's galaxies, gas and lensing peaks); X-ray picture NASA/CXC/CfA/M. Markevitch et al. | Facts quoted with citation; the Chandra image without asserted copyright, with its credit; the code MIT |
 | Typefaces | IBM Plex Sans (IBM), JetBrains Mono (JetBrains), Source Serif 4 (Adobe) | SIL OFL 1.1 |
 
 

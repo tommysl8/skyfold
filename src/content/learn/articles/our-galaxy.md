@@ -225,7 +225,15 @@ If most of the Galaxy's mass were in its stars, which crowd towards the middle, 
 
 The real speed is about twice that. Anna-Christina Eilers and colleagues found the rotation speed falling only gently, by about 1.7 km/s per kiloparsec, from 229 km/s at the Sun to about 200 km/s at 25 kpc.[^eilers2019] That speed at that radius needs $2.3 \times 10^{11}$ solar masses inside, nearly four times the mass of the stars and gas. The rest is dark matter, which pulls but neither shines nor blocks light. Kapteyn and Oort used the same name for dim stars and dust; the modern dark matter is spread through a roughly round halo reaching far beyond the disc, and nobody knows what it is. Near the Sun it is thin, about 0.3 GeV per cubic centimetre: a third of a proton's mass in a sugar-cube-sized volume.[^eilers2019]
 
+::: see-it galaxy-rotation
+Gold stars go round at the speed of a mass model fitted to the Galaxy's measured rotation, Paul McMillan's of 2017; beside each, a grey one goes round at the speed the stars and gas alone would give, and far out it falls further and further behind. The gap is the dark matter's pull. The model is not the Galaxy: beyond about 18 kpc it turns a little faster than Eilers's measurements.[^mcmillan2017][^eilers2019]
+:::
+
 The total is honestly uncertain. From the motions of distant globular clusters, Laura Watkins and colleagues found about 1.5 trillion solar masses, with a likely range of about 1.1 to 2.3 trillion.[^watkins2019] In 2023 a team using Gaia's third release found the rotation speed dropping by about 30 km/s between 19.5 and 26.5 kpc, and a total of only about 200 billion.[^jiao2023] The two estimates differ by a factor of more than seven. One problem is that $v^2 = GM/r$ assumes steady orbits, and the outer Galaxy is not settled: the Large Magellanic Cloud may weigh 140 billion solar masses by itself, enough to set the outer halo moving.[^erkal2019]
+
+::: see-it milky-way-dark-halo
+The same model's dark halo, drawn as a faint fog of its density summed along each line of sight: a picture of where the mass is, not of anything that shines. In this model it holds about 95 % of the Galaxy's mass within 200 kpc, some 1.3 trillion Suns; the lighter halos the newest rotation curves allow would hold far less.[^mcmillan2017]
+:::
 
 ## What comes next
 
@@ -281,6 +289,7 @@ With current measurements it is close to a coin toss. In 2025 Till Sawala and co
 - Event Horizon Telescope Collaboration, "First Sagittarius A\* Event Horizon Telescope results. I. The shadow of the supermassive black hole in the center of the Milky Way", *Astrophysical Journal Letters* 930, L12 (2022). https://doi.org/10.3847/2041-8213/ac6674 (open access)
 - M. J. Reid, K. M. Menten, A. Brunthaler et al., "Trigonometric parallaxes of high-mass star-forming regions: our view of the Milky Way", *Astrophysical Journal* 885, 131 (2019). https://doi.org/10.3847/1538-4357/ab4a11 (open access at https://arxiv.org/abs/1910.03357)
 - A. Helmi, C. Babusiaux, H. H. Koppelman et al., "The merger that led to the formation of the Milky Way's inner stellar halo and thick disk", *Nature* 563, 85-88 (2018). https://doi.org/10.1038/s41586-018-0625-x (open access at https://arxiv.org/abs/1806.06038)
+- P. J. McMillan, "The mass distribution and gravitational potential of the Milky Way", *Monthly Notices of the Royal Astronomical Society* 465, 76-94 (2017). https://doi.org/10.1093/mnras/stw2759 (open access at https://arxiv.org/abs/1608.00971)
 - A.-C. Eilers, D. W. Hogg, H.-W. Rix and M. K. Ness, "The circular velocity curve of the Milky Way from 5 to 25 kpc", *Astrophysical Journal* 871, 120 (2019). https://doi.org/10.3847/1538-4357/aaf648 (open access at https://arxiv.org/abs/1810.09466)
 - J. Bland-Hawthorn and O. Gerhard, "The Galaxy in context: structural, kinematic, and integrated properties", *Annual Review of Astronomy and Astrophysics* 54, 529-596 (2016). https://doi.org/10.1146/annurev-astro-081915-023441 (open access at https://arxiv.org/abs/1602.07702; the standard reference for the Galaxy's vital statistics)
 
@@ -333,6 +342,7 @@ With current measurements it is close to a coin toss. In 2025 Till Sawala and co
 [^trumpler1930]: R. J. Trumpler, "Absorption of light in the galactic system", Publications of the Astronomical Society of the Pacific 42, 214-227 (1930), pp. 217-222. https://doi.org/10.1086/124039
 [^genzel2010]: R. Genzel, F. Eisenhauer and S. Gillessen, "The Galactic Center massive black hole and nuclear star cluster", Reviews of Modern Physics 82, 3121-3195 (2010), sections on extinction, on the first stellar proper motions (speckle imaging, 1992-1998) and on R0. https://doi.org/10.1103/RevModPhys.82.3121
 [^oort1927]: J. H. Oort, "Observational evidence confirming Lindblad's hypothesis of a rotation of the galactic system", Bulletin of the Astronomical Institutes of the Netherlands 3, 275-282 (No. 120, 14 April 1927). https://adsabs.harvard.edu/pdf/1927BAN.....3..275O
+[^mcmillan2017]: P. J. McMillan, "The mass distribution and gravitational potential of the Milky Way", Monthly Notices of the Royal Astronomical Society 465, 76-94 (2017): best-fitting model with an NFW halo, v0 = 233.1 km/s at R0 = 8.21 kpc, virial mass 1.37 × 10¹² solar masses. https://doi.org/10.1093/mnras/stw2759
 [^eilers2019]: A.-C. Eilers, D. W. Hogg, H.-W. Rix and M. K. Ness, "The circular velocity curve of the Milky Way from 5 to 25 kpc", Astrophysical Journal 871, 120 (2019). https://doi.org/10.3847/1538-4357/aaf648
 [^gravity2019]: GRAVITY Collaboration, "A geometric distance measurement to the Galactic center black hole with 0.3% uncertainty", Astronomy & Astrophysics 625, L10 (2019). https://doi.org/10.1051/0004-6361/201935656
 [^nobelpop]: The Royal Swedish Academy of Sciences, "The Nobel Prize in Physics 2020: Popular science background". https://www.nobelprize.org/prizes/physics/2020/popular-information/

@@ -206,7 +206,7 @@ describe('journeys', () => {
       tracks: parseTracks(readJson<TracksIndex>('public/data/tracks.json'), readBytes('public/data/tracks.bin')),
     });
     updateEphemeris();
-    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'm87-jet', 'aurora']);
+    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'galaxy-rotation', 'bullet-mass', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'm87-jet', 'aurora']);
     for (const j of JOURNEYS) {
       expect(parseScene(j.scene), j.id).not.toBeNull();
       expect(j.look.length, j.id).toBeGreaterThan(40);
@@ -216,8 +216,9 @@ describe('journeys', () => {
       // the extreme stars' tour needs the stars (articleScenes.test.ts runs it from the Learn article).
       if (['trappist', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'm87-jet'].includes(j.id))
         expect(sceneStatus(j.scene).reason).toBe(LATER);
-      // The famous galaxies and the Virgo Cluster need the galaxies (articleScenes.test.ts runs them).
-      else if (['famous-galaxies', 'virgo-cluster'].includes(j.id)) expect(sceneStatus(j.scene).ok).toBe(false);
+      // The famous galaxies, the Virgo Cluster and the Bullet Cluster's mass need the galaxies, the Galaxy's rotation the
+      // Milky Way (articleScenes.test.ts runs them).
+      else if (['famous-galaxies', 'virgo-cluster', 'galaxy-rotation', 'bullet-mass'].includes(j.id)) expect(sceneStatus(j.scene).ok).toBe(false);
       else expect(sceneStatus(j.scene).ok, j.id).toBe(true);
     }
   });

@@ -355,10 +355,11 @@ const DEFS: Record<Exclude<TemplateId, 'point'>, () => TemplateDef> = {
     populations: [blob(0.6, 600, 0.5, 0.8, -0.15), clumps(0.4, 424, 0.35, 0.08, 53, -0.2, 0.8)],
   }),
   // A cluster of galaxies: two groups of elliptical galaxies (the Bullet Cluster's two merging
-  // clusters, about 0.7 Mpc apart on the sky; Clowe et al. 2006). Illustrative: where each galaxy
-  // sits is a random draw. Unit: 1 Mpc.
+  // clusters, about 0.7 Mpc apart on the sky; Clowe et al. 2006), each about its brightest galaxy's place
+  // west (x) and north (y) of the catalogued place (sim/cosmos/bulletCluster.ts groupCentresMpc; a test checks
+  // they agree). Illustrative: where each galaxy sits is a random draw. Unit: 1 Mpc.
   cluster: () => {
-    const group = (share: number, count: number, x: number, a: number, perGalaxy: number): Population => {
+    const group = (share: number, count: number, x: number, y: number, a: number, perGalaxy: number): Population => {
       let centre: [number, number, number] = [0, 0, 0];
       let left = 0;
       let size = 0.01;
@@ -371,7 +372,7 @@ const DEFS: Record<Exclude<TemplateId, 'point'>, () => TemplateDef> = {
             const R = plummerRadius(r, a, 4 * a);
             const t: number[] = [];
             isotropic(r, R, t);
-            centre = [x + t[0], t[1], t[2]];
+            centre = [x + t[0], y + t[1], t[2]];
             size = 0.004 + 0.012 * r() * r();
             left = perGalaxy;
           }
@@ -382,7 +383,7 @@ const DEFS: Record<Exclude<TemplateId, 'point'>, () => TemplateDef> = {
         },
       };
     };
-    return { unit: 'mpc', seed: 21, populations: [group(0.7, 2048, -0.25, 0.3, 32), group(0.3, 1024, 0.47, 0.15, 32)] };
+    return { unit: 'mpc', seed: 21, populations: [group(0.7, 2048, -0.322, 0.386, 0.3, 32), group(0.3, 1024, 0.417, 0.483, 0.15, 32)] };
   },
 };
 
