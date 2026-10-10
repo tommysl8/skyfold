@@ -10,6 +10,7 @@ import { loadFeaturedExoplanets } from './sim/exoplanets';
 import { loadGalaxy } from './sim/galaxy';
 import { loadCosmos } from './sim/cosmos';
 import { registerPhenomena } from './sim/phenomena';
+import { registerSatellites } from './sim/satellites';
 import { startPlaces } from './ui/resume';
 
 if (import.meta.env.DEV) {
@@ -69,7 +70,8 @@ if (import.meta.env.DEV) {
     import('./sim/phenomena'),
     import('./scene/Heliosphere'),
     import('./scene/CometTails'),
-  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky, pictures, phen, edge, tails]) =>
+    import('./sim/satellites'),
+  ]).then(([s, c, u, fiber, trip, rel, travel, chrono, pulses, solarSystem, registry, navigation, stars, scenes, exoplanets, materials, galaxy, galaxyLayer, cosmos, gravity, lens, fall, blackholes, nsc, gpuBudget, lensTest, perf, surveyLoad, surveyScene, surveyLod, smallLoad, smallBodies, smallPick, smallScene, deepSky, pictures, phen, edge, tails, sats]) =>
     Object.assign(window, {
       __ls: {
         sim: s.sim,
@@ -112,6 +114,8 @@ if (import.meta.env.DEV) {
         deepSky: deepSky.deepSkyGate,
         /** The supernovae, the kilonova, the jets and the aurora: what is wanted and each one's state this frame (sim/phenomena). */
         phenomena: phen.phenomena,
+        /** The ISS, Tiangong, Hubble and the satellite swarm: what has loaded and what shows (sim/satellites). */
+        satellites: sats.satellites,
         /** The galaxies' photographs mounted, and each galaxy's share of light they draw this frame (scene/GalaxyPictures.tsx). */
         pictures: { mounted: pictures.galaxyPictures, shares: pictures.pictureShares },
         /** The asteroids and comets: what has loaded, the drawn sections, picking and registering one (sim/asteroids, scene/Asteroids.tsx). */
@@ -169,3 +173,7 @@ void loadCosmos({ idle: true });
 // The historical supernovae and the kilonova of GW170817: six records and one, registered at once; their models load
 // when one is first near (sim/phenomena).
 registerPhenomena();
+
+// The ISS, Tiangong and Hubble: registered at once, placed by SGP4 once their elements arrive from CelesTrak (when the
+// browser is idle); every other satellite only when the View menu's switch is turned on (sim/satellites).
+registerSatellites({ idle: true });

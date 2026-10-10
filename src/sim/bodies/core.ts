@@ -140,7 +140,11 @@ const POSITION_NOTES: Partial<Record<CoreBodyId, string>> = {
 const MODEL_NOTES: Partial<Record<CoreBodyId, string[]>> = {
   sun: ['Surface: an illustrative map (Solar System Scope), not the Sun as it is today.'],
   venus: ['Clouds: an illustrative map (Solar System Scope); the real cloud tops race round the planet every four days.'],
-  earth: ['Clouds: one fixed map (Solar System Scope), not today’s weather.'],
+  earth: [
+    'Clouds: one fixed map (Solar System Scope), not today’s weather.',
+    'The Moon’s shadow in a solar eclipse is worked out point by point from the true Sun, Moon and Earth, with the Sun as an evenly bright disc (its darker edge, limb darkening, is left out).',
+  ],
+  moon: ['In a total lunar eclipse its copper glow, sunlight bent through Earth’s atmosphere, is drawn a few hundred times brighter than it is, as a long exposure shows it.'],
   jupiter: ['Clouds: one fixed map (Solar System Scope); the real bands drift and change.'],
   saturn: ['Clouds: one fixed map (Solar System Scope); the real bands drift and change.'],
   uranus: ['Surface: an illustrative map (Solar System Scope) of a nearly featureless planet.'],

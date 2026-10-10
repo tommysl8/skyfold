@@ -16,7 +16,7 @@ const REQUIRED = [
   'hyperion', 'iapetus', 'miranda', 'ariel', 'umbriel', 'titania', 'oberon', 'triton', 'proteus', 'nereid', 'charon',
   'nix', 'hydra', 'ceres', 'vesta', 'eris', 'haumea', 'makemake', 'gonggong', 'quaoar', 'sedna', 'orcus', 'arrokoth',
   'halley', 'encke', 'churyumov-gerasimenko', 'hale-bopp', 'oumuamua', 'borisov', 'atlas-3i', 'voyager1', 'voyager2',
-  'new-horizons', 'pioneer10', 'parker-solar-probe', 'jwst',
+  'new-horizons', 'pioneer10', 'parker-solar-probe', 'jwst', 'juno', 'europa-clipper', 'soho',
 ];
 
 interface Body {

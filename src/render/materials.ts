@@ -24,7 +24,7 @@ import {
 } from 'three';
 import { blackbodyLut, blackbodyRgb, bvToTemperature } from '../physics/blackbody';
 import { buildDopplerLut, DOPPLER_LUT_LN_MAX, DOPPLER_LUT_LN_MIN, DOPPLER_LUT_SIZE } from '../physics/dopplerColor';
-import { MPC_KM, SATURN_RING_INNER_KM, SATURN_RING_OUTER_KM, SUN_TEFF_K } from '../physics/constants';
+import { MPC_KM, SATURN_RING_INNER_KM, SATURN_RING_OUTER_KM, SUN_RADIUS_KM, SUN_TEFF_K } from '../physics/constants';
 import { cosmicSky, type SkyTable } from '../sim/cosmos/expansion';
 import { STAR_MAG_LIMIT } from '../sim/stars/visibility';
 import { MW_MU_FADE } from '../sim/galaxy/background';
@@ -516,6 +516,12 @@ export function createPlanetMaterial(o: PlanetMaterialOptions): ShaderMaterial {
       uCenterW: { value: new Vector3() },
       uRingInner: { value: 1 },
       uRingOuter: { value: 2 },
+      // Eclipses (shaders/planet.frag.glsl; set by scene/Bodies.tsx for bodies that have eclipsers).
+      uOccluderCount: { value: 0 },
+      uOccluders: { value: [new Vector4(), new Vector4(), new Vector4(), new Vector4()] },
+      uOccluderGlow: { value: [new Vector3(), new Vector3(), new Vector3(), new Vector3()] },
+      uSunRadiusKm: { value: SUN_RADIUS_KM },
+      uTrueScale: { value: 1 },
       ...surfaceUniforms,
     },
     vertexShader: planetVert,

@@ -167,4 +167,12 @@ export const JOURNEYS: Journey[] = [
   journey({ id: 'sun-future', title: 'The Sun’s future', sub: 'Its whole life in a minute and a half: red giant, planetary nebula, white dwarf', scene: 'sun-future', clock: 'The Sun’s own age runs; the date stays' }),
   journey({ id: 'constellations-drift', title: 'The constellations drift', sub: 'The Big Dipper and Orion over 200,000 years of the stars’ own motions', scene: 'constellations-drift', clock: '1 s here = 5,500 years' }),
   journey({ id: 'stars-that-change', title: 'Stars that change', sub: 'Algol’s eclipse, Delta Cephei and Mira pulsing, Betelgeuse’s Great Dimming', scene: 'stars-that-change', clock: '4,000 to 2 million times faster' }),
+  journey({
+    id: 'solar-eclipse',
+    title: 'The next total solar eclipse',
+    sub: 'The Moon’s shadow racing across Earth',
+    scene: 'solar-eclipse',
+    clock: '1 s here = 1 min',
+  }),
+  journey({ id: 'lunar-eclipse', title: 'A total lunar eclipse', sub: 'The Moon turning copper in Earth’s shadow', scene: 'lunar-eclipse', clock: '1 s here = 1 min' }),
 ];

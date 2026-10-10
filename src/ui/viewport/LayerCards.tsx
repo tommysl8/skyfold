@@ -30,6 +30,7 @@ import { kindArticle } from '../../content/bodyArticles';
 import { Sources } from './Sources';
 import { ASTEROID_CARD, asteroidCardShown } from '../asteroidCard';
 import { smallBodies } from '../../sim/asteroids/load';
+import { SATELLITE_CARD, satelliteCardLines } from '../satelliteCard';
 import { FIELD_CARD, FIELD_SKY_SOURCE, FIELD_SKY_TEXT, fieldShares } from '../../sim/galaxy/fieldView';
 
 /** The web's card shows once this much of the layer shows. */
@@ -129,9 +130,12 @@ export function LayerCards() {
   const surveysMode = useUI((s) => s.surveys);
   const flowOn = useUI((s) => s.accretionFlow);
   const beltsOn = useUI((s) => s.showBelts);
+  const satsOn = useUI((s) => s.satellites);
   const fieldOn = useUI((s) => s.fieldLines);
   const hidden = useUI((s) => s.hiddenNotes);
   const away = (key: string) => hidden.includes(key);
+  // The satellites' note while their switch is on near Earth, saying why they are hidden when they are.
+  const sats = away('sats') ? null : satelliteCardLines(satsOn);
   const belts = !away('belts') && asteroidCardShown(beltsOn);
   // Shown whatever the readouts setting: the label and caveats belong with the layers.
   const web = !away('web') && (cosmicWebShare(webMode, sim.camera.pos.length()) >= WEB_CARD_SHARE || webMembersShown.now);
@@ -149,7 +153,7 @@ export function LayerCards() {
   const field = fieldOn && !away('field') ? fieldShares(sim.camera.pos) : null;
   const fieldSky = !!field && field.sky >= FIELD_CARD_SHARE && (!relView.active || relView.split);
   const fieldLines = !!field && field.lines >= FIELD_CARD_SHARE;
-  if (!web && !surveys && !cmb && !nsc && !flow && !belts && !fieldSky && !fieldLines) return null;
+  if (!web && !surveys && !cmb && !nsc && !flow && !belts && !fieldSky && !fieldLines && !sats) return null;
   const holeArticle = kindArticle('black-hole');
   return (
     <div className="flex w-full max-w-[380px] flex-col gap-1.5">
@@ -183,6 +187,16 @@ export function LayerCards() {
           more={ASTEROID_CARD.more}
           sources={[ASTEROID_CARD.credit]}
           onClose={() => hideNote('belts')}
+        />
+      )}
+      {sats && (
+        <LayerCard
+          title={SATELLITE_CARD.title}
+          line={sats.line}
+          caveat={sats.caveat}
+          more={SATELLITE_CARD.more}
+          sources={[SATELLITE_CARD.credit]}
+          onClose={() => hideNote('sats')}
         />
       )}
       {web && (

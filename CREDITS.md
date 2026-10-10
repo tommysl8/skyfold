@@ -18,7 +18,10 @@ not the author's work; they keep their own licences, which also apply to any cop
 | `public/textures/pluto_nh_color.jpg` | [NASA/JHUAPL/SwRI](https://www.nasa.gov/image-article/pluto-global-color-map/), New Horizons global colour map | NASA media, public domain |
 | `public/data/asteroids/` (built by `scripts/build-asteroids.mjs`, written up in `docs/data/asteroids.md`) | Orbital elements, absolute magnitudes, sizes, albedos, names and designations of the 32,569 notable asteroids and comets of 1,465,911 (`scripts/asteroids/notable.mjs`) and a 1-in-20 sample of the rest from the [JPL Small-Body Database](https://ssd.jpl.nasa.gov/tools/sbdb_query.html) (SBDB Query API), retrieved 30 September 2026; the accuracy check's positions (`src/sim/asteroids/__fixtures__/horizons.json`) from [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) | NASA/JPL-Caltech; US Government work, public domain |
 | `public/data/moons.json` | Orbit models fitted to [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) satellite ephemerides (MAR099, JUP365, SAT441, URA182/URA184, NEP097/NEP105, PLU060) and the [JPL satellite mean elements](https://ssd.jpl.nasa.gov/sats/elem/) | NASA/JPL-Caltech |
-| `public/data/tracks.bin`, `public/data/tracks.json` | Trajectories fitted to [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) (spacecraft ephemerides from NASA/JPL, NASA/JHUAPL/SwRI and NASA/GSFC) | NASA/JPL-Caltech |
+| `public/data/tracks.bin`, `public/data/tracks.json` | Trajectories fitted to [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) (spacecraft ephemerides from NASA/JPL, NASA/JHUAPL/SwRI and NASA/GSFC; Juno and Europa Clipper from JPL navigation, SOHO from the GSFC Flight Dynamics Facility for ESA and NASA) | NASA/JPL-Caltech |
+| Satellites' orbital elements (not shipped: fetched by each visitor's browser from CelesTrak and cached there; `docs/data/near-earth.md`) | GP data (OMM, CSV) of the US Space Force's space catalogue as served by [CelesTrak](https://celestrak.org/) (Dr T. S. Kelso): the groups `stations`, `active` and four debris groups, and catalogue number 20580 (Hubble) | Not redistributed by Skyfold; used under CelesTrak's [usage policy](https://celestrak.org/usage-policy.php) |
+| `src/sim/satellites/__fixtures__/sgp4-verification.json` (built by `scripts/satellites/build-sgp4-fixture.mjs`) | The SGP4 verification cases (`SGP4-VER.TLE`) and the reference program's output (`tcppver.out`) of Vallado, Crawford, Hujsak & Kelso (2006), "Revisiting Spacetrack Report #3", AIAA 2006-6753, as distributed with the paper's code and with [python-sgp4](https://github.com/brandon-rhodes/python-sgp4) | Published test data, quoted with citation |
+| Eclipse reference values in `src/sim/eclipses.test.ts` | NASA/GSFC eclipse predictions by Fred Espenak ([eclipse.gsfc.nasa.gov](https://eclipse.gsfc.nasa.gov/eclipse.html)): the central lines of 21 August 2017 and 8 April 2024, and the contacts of the lunar eclipse of 7 September 2025 | NASA; values quoted with citation |
 | `public/data/bodies.json`, `public/data/rings.json` | Compiled from [JPL Solar System Dynamics](https://ssd.jpl.nasa.gov/) (satellite physical parameters and mean elements, the Small-Body Database, Horizons), the IAU WGCCRE 2015 rotation models (Archinal et al. 2018) as encoded in NAIF `pck00011.tpc`, the PDS Small Bodies Node colour compilations, the PDS Rings Node, NASA and ESA mission pages and the papers cited in each entry; facts written for Skyfold | Data: US Government works and published values; text: MIT with the source code |
 | `public/textures/{io,europa,ganymede,callisto,enceladus,tethys,dione,rhea,iapetus,titan,triton,charon,ceres,vesta,phobos}.jpg` | Global mosaics from [USGS Astrogeology](https://astrogeology.usgs.gov/) (Voyager, Galileo, Cassini, New Horizons, Dawn and Viking data: NASA/JPL-Caltech, SSI, DLR, JHUAPL/SwRI, UCLA/MPS/IDA, LPI; Triton by P. Schenk; Phobos by P. Stooke), downsampled | Public domain / no use constraints (US Government and NASA mission data) |
 | `public/textures/mimas.jpg` | Cassini ISS global mosaic of Mimas by T. Roatsch (DLR), 2017, distributed by USGS Astrogeology | NASA/JPL-Caltech/SSI/DLR; no use constraints |
@@ -311,6 +314,27 @@ black, and its tones squared into a light map (colours times luminance), saved a
 | `m61.jpg` | M61 | Hillary Mathis, N.A.Sharp/NOIRLab/NSF/AURA/ | [noao-m61](https://noirlab.edu/public/images/noao-m61/) | resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map |
 | `m88.jpg` | M88 | KPNO/NOIRLab/NSF/AURA/Jim Quinn/Adam Block | [noao-m88quinn](https://noirlab.edu/public/images/noao-m88quinn/) | resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map |
 | `ngc-4921.jpg` | NGC 4921 | NASA, ESA and K. Cook (Lawrence Livermore National Laboratory, USA) | [heic0901a](https://esahubble.org/images/heic0901a/) | resized, sky subtracted, foreground stars and the sky beyond the galaxy removed, tones squared into a light map |
+
+## SGP4
+
+`src/sim/satellites/sgp4.ts` is a TypeScript port of the reference SGP4/SDP4 implementation of Vallado, Crawford,
+Hujsak and Kelso (2006), following its Python port in python-sgp4, whose licence asks for this notice:
+
+> The MIT License (MIT)
+> Copyright © 2012–2016 Brandon Rhodes
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+> documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+> rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+> permit persons to whom the Software is furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+> the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+> WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+> COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+> OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## d3-celestial licence
 

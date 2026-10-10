@@ -1,16 +1,16 @@
 # Tracks: Chebyshev trajectories for small bodies and spacecraft
 
-Task D2. Positions of 10 dwarf planets and TNOs, 4 comets, 3 interstellar objects and 7 spacecraft,
+Task D2. Positions of 10 dwarf planets and TNOs, 4 comets, 3 interstellar objects and 10 spacecraft,
 fitted to JPL Horizons with adaptive Chebyshev segments, plus the evaluator that reads them.
 
 | File | What |
 | --- | --- |
 | `scripts/build-tracks.mjs` | Fetches Horizons (cached in `data-raw/tracks/`), fits, validates, writes everything below. |
-| `public/data/tracks.bin` | Segment table and float64 Chebyshev coefficients. 1,089,536 bytes (1.04 MiB); 1,022,643 bytes with zlib level 9. |
-| `public/data/tracks.json` | Index: bodies, pieces, centres, fallbacks, jumps, provenance, measured accuracy. 88,811 bytes (16.9 kB gzipped). |
+| `public/data/tracks.bin` | Segment table and float64 Chebyshev coefficients. 1,552,880 bytes (1.48 MiB); 1,453,894 bytes with zlib level 9 (1,089,536 before Juno, Europa Clipper and SOHO were added, 9 October 2026). |
+| `public/data/tracks.json` | Index: bodies, pieces, centres, fallbacks, jumps, provenance, measured accuracy. 102,302 bytes (19.5 kB gzipped). |
 | `src/sim/tracks.ts` | Parser and evaluator. Pure TypeScript, no dependencies. |
 | `src/sim/tracks.test.ts` | 91 tests (vitest). |
-| `src/sim/__fixtures__/track-checkpoints.json` | 798 independent Horizons checkpoints used by the tests. |
+| `src/sim/__fixtures__/track-checkpoints.json` | 961 independent Horizons checkpoints used by the tests. |
 
 ### Changes after the independent verification (2026-09-25)
 
@@ -51,6 +51,7 @@ above, and the same check, re-run on the new files, now passes everywhere.
 | `ssb` | `@0` Solar System barycentre | `HelioVector(Body.SSB)`. Only extrapolated states use it (see below). |
 | `earth` | `@399` geocentre | `HelioVector(Body.Earth)` |
 | `venus` | `@299` | `HelioVector(Body.Venus)` |
+| `mars` | `@499`, Mars's body centre (Europa Clipper's 2025 flyby) | `HelioVector(Body.Mars)` |
 | `jupiter`, `saturn`, `uranus`, `neptune` | `@599`, `@699`, `@799`, `@899`, the planet's **body** centre | `HelioVector(Body.Jupiter)` etc. |
 | `pluto` | `@9`, the Pluto–Charon **barycentre** | `HelioVector(Body.Pluto)`, which is also the barycentre |
 | `arrokoth` | `@2486958`, the New Horizons flight-project ephemeris | this file's own `arrokoth` track (the evaluator resolves it) |
@@ -205,6 +206,12 @@ Source jumps:
 | Pioneer 10 | sun | 1990-01-02 00:00:57 | 31,020 | 4.19 | PN10 file boundary |
 | Parker Solar Probe | sun | 2025-06-25 06:01:09 | 79,880 | 2.19 | Reconstruction (v041) joins the od242 prediction |
 | Parker Solar Probe | sun | 2026-06-17 00:01:09 | 492 | 0.017 | Prediction joins the reference planning trajectory |
+| Europa Clipper | earth | 2024-10-14 17:09:43 | 50 | 0.008 | Navigation file boundary |
+| Europa Clipper | sun | 2024-11-23 00:01:09 | 164 | 0.008 | Navigation file boundary |
+| Europa Clipper | sun | 2026-07-09 00:01:09 | 8,843 | 0.593 | Navigation file boundary |
+| Europa Clipper | sun | 2026-08-08 00:01:09 | 8,467 | 0.494 | Reconstruction joins the prediction |
+| Europa Clipper | sun | 2027-01-23 00:01:09 | 3,993 | 0.217 | Prediction joins the mission's reference trajectory |
+| SOHO | earth | 1998-08-19 00:01:00 | 25,790 | 83.1 | Horizons' ballistic filler for the lost months begins |
 
 Five more flagged joins sit under a second before some of these jumps: New Horizons 2012-05-01, Pioneer 10
 1973-11-24 and 1983-06-12, Parker 2025-06-25 and 2026-06-17. At each, Horizons' velocity disagrees
@@ -243,8 +250,8 @@ whole 1995–2033 span as before.
 | --- | --- | --- |
 | 0 | 4 × u8 | magic `LTRK` |
 | 4 | u32 | version = 1 |
-| 8 | u32 | segment count S (2,294) |
-| 12 | u32 | coefficient count C (129,306 float64) |
+| 8 | u32 | segment count S (3,756) |
+| 12 | u32 | coefficient count C (182,838 float64) |
 | 16 | u32 | segment table offset (32) |
 | 20 | u32 | coefficient offset (32 + 24·S, a multiple of 8) |
 | 24 | u32 | total byte length |
@@ -416,6 +423,9 @@ item 7, and shows false errors of 1,800–11,800 km.
 | Pioneer 10 (`pioneer10`) | 1972-03-03 – 2050-01-01 | earth, sun, jupiter | 79 | 24,624 | 25.0 | 9.58 | 100 | 0.237 |
 | Parker Solar Probe (`parker-solar-probe`) | 2018-08-12 – 2030-01-01 | earth, sun, venus | 255 | 96,432 | 25.5 | 8.73 | 100 | 0.243 |
 | JWST (`jwst`) | 2021-12-25 – 2031-09-21 | earth | 38 | 24,600 | 24.9 | 9.05 | 100 | 0.077 |
+| Juno (`juno`) | 2011-08-05 – 2028-09-02 | earth, sun, jupiter | 601 | 219,864 | 250 | 45 | 1000 | 0.239 |
+| Europa Clipper (`europa-clipper`) | 2024-10-14 – 2034-09-03 | earth, sun, mars, jupiter | 337 | 103,968 | 250 | 43.1 | 1000 | 0.242 |
+| SOHO (`soho`) | 1995-12-02 – 2026-11-02 | earth | 524 | 139,512 | 25 | 9.59 | 100 | 0.221 |
 
 Spacecraft spans start 60 s after Horizons' first state and end 60 s before its last. The small bodies
 end at 2200-01-01 00:00 TDB, to within the 2 ms by which Horizons' printed epochs drift. The bytes column includes each segment's 24-byte table entry. The heliocentric
@@ -444,6 +454,16 @@ contributions, which exceed the 250 km target.
 | Parker Solar Probe | venus | 2021-10-15 17:22 → 2021-10-17 01:40 | 1,337,000 | 0.13 | 2021-10-16 09:31:58 | 9,860 | 0.231 |
 | Parker Solar Probe | venus | 2023-08-21 04:38 → 2023-08-21 19:29 | 616,300 | 0.05 | 2023-08-21 12:04:03 | 10,057 | 0.228 |
 | Parker Solar Probe | venus | 2024-11-06 07:12 → 2024-11-07 06:16 | 956,500 | 0.10 | 2024-11-06 18:44:49 | 6,428 | 0.243 |
+| Juno | earth | 2013-10-08 18:56 → 2013-10-10 19:48 | 929,200 | 0.05 | 2013-10-09 19:22:32 | 6,932 | 0.239 |
+| Europa Clipper | mars | 2025-02-28 15:34 → 2025-03-02 20:21 | 973,300 | 0.22 | 2025-03-01 17:58:03 | 4,274 | 0.242 |
+| Europa Clipper | earth | 2026-12-02 22:12 → 2026-12-04 18:17 | 929,200 | 0.06 | 2026-12-03 20:15:20 | 9,605 | 0.136 |
+
+**Orbiters.** Juno and Europa Clipper stay at Jupiter once there, so their last piece (`orbit` in the build's
+configuration) is Jupiter-centred from where they cross Jupiter's switch radius on the way in (Juno 2016-04-12, Europa
+Clipper 2030-01-22; 48.2 million km, Jupiter's sphere of influence, with a 5.0 and 2.7 day blend) to the end of
+the data. These pieces are fitted to the small bodies' tolerance (target 250 km, bound 1,000 km): at the cruise
+tolerance each of Juno's 70 close passes would need many more segments. Europa Clipper's flybys of Europa and the
+other moons are inside this piece, relative to Jupiter, not to the moons.
 
 Launch pieces (Earth-centred until 929,200 km) are accurate to 0.14 km within 10 Earth radii.
 Closest approaches are to the centre listed. New Horizons' 15,382 km is to the Pluto–Charon barycentre; the
@@ -493,6 +513,10 @@ moves 3.3–3.7 au a year along its ellipse (see "Regimes" for the limits).
   - New Horizons after its tracking cut-off on 2026-07-20.
   - Parker Solar Probe after 2026-01-27. From 2026-06-17 it follows the reference planning trajectory.
   - JWST after 2026-09-20, following Goddard's station-keeping schedule to 2031-09-21.
+  - Juno after 2026-09-23 (JPL's plan to September 2028), Europa Clipper after 2026-09-22 (the mission's planned
+    cruise and tour to its Ganymede impact in September 2034), SOHO after 2026-08-26.
+- **SOHO in 1998**: contact was lost from June to September; Horizons fills 1998-08-19 to 09-25 with a ballistic arc,
+  and the trajectory steps by 25,790 km where that filler begins (a listed jump).
 - **Comets and Arrokoth switch solutions with a jump.** At each switch the track steps from one JPL
   solution to the next, by 770–65,450 km (table under "Jumps"). That is the honest picture: JPL's
   solutions themselves disagree by that much there. The Encke, 67P and Halley JPL solutions include

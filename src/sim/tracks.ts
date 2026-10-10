@@ -29,7 +29,7 @@ export type Regime = 'precise' | 'extrapolated' | 'before-launch' | 'unknown';
 export interface TrackResult {
   /** Position relative to `centre`, km, ecliptic J2000. */
   pos: Vec3;
-  /** 'sun' | 'ssb' | 'earth' | 'venus' | 'jupiter' | 'saturn' | 'uranus' | 'neptune' | 'pluto' | 'arrokoth'. */
+  /** 'sun' | 'ssb' | 'earth' | 'venus' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune' | 'pluto' | 'arrokoth'. */
   centre: string;
   regime: Regime;
   /**

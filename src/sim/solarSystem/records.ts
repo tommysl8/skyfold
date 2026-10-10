@@ -122,6 +122,9 @@ const ALIASES: Record<string, string[]> = {
   pioneer10: ['Pioneer', 'Pioneer F'],
   'parker-solar-probe': ['Parker', 'PSP', 'Solar Probe Plus'],
   jwst: ['JWST', 'Webb', 'James Webb'],
+  juno: ['Juno spacecraft', 'Juno probe'],
+  'europa-clipper': ['Clipper'],
+  soho: ['Solar and Heliospheric Observatory'],
 };
 
 /** What some bodies are, in a few words, where the kind alone says too little. */
@@ -131,7 +134,15 @@ const KIND_TEXT: Record<string, string> = {
   'hale-bopp': 'Comet C/1995 O1',
   borisov: 'Interstellar comet',
   'atlas-3i': 'Interstellar comet',
+  juno: 'Jupiter orbiter',
+  'europa-clipper': 'On its way to Jupiter and Europa',
+  soho: 'Solar observatory',
 };
+
+/** Spacecraft drawn as a point of light and a label only: their shapes are not modelled. */
+const POINT_CRAFT = new Set(['juno', 'europa-clipper', 'soho']);
+/** Spacecraft with no orbit line: a heliocentric conic would repeat Earth's (Webb, SOHO) or mean nothing at Jupiter (Juno). */
+const NO_ORBIT_LINE = new Set(['jwst', 'soho', 'juno']);
 
 /**
  * Comets whose coma and tails are drawn (the interstellar comets had them too; ʻOumuamua showed none), with the
@@ -346,6 +357,7 @@ export function ringSpec(sys: RingSystem): { spec: RingSpec; boosted: boolean } 
 }
 
 function visualOf(b: DataBody, rings: RingsFile): BodyVisual {
+  if (b.kind === 'spacecraft' && POINT_CRAFT.has(b.id)) return { renderer: 'point' };
   if (b.kind === 'spacecraft') return { renderer: 'spacecraft', craft: b.id === 'jwst' ? 'jwst' : b.id === 'parker-solar-probe' ? 'parker' : 'probe' };
   const v: BodyVisual = {};
   const tex = b.assets.texture;
@@ -406,7 +418,9 @@ function drawingNotes(b: DataBody): string[] {
   const info = b.assets.textureInfo;
   if (b.kind === 'spacecraft') {
     out.push(
-      b.id === 'jwst'
+      POINT_CRAFT.has(b.id)
+        ? 'Drawn as a point of light: its shape is not modelled.'
+        : b.id === 'jwst'
         ? 'Drawn as a simple sunshield and mirror at Webb’s size, sunshield towards the Sun.'
         : b.id === 'parker-solar-probe'
           ? 'Drawn as a simple heat shield and bus at Parker’s size, shield towards the Sun.'
@@ -459,6 +473,7 @@ export function fittedMoonProvider(m: MoonModel): PositionProvider {
 export const TRACK_CENTRES: Record<string, string> = {
   earth: 'earth',
   venus: 'venus',
+  mars: 'mars',
   jupiter: 'jupiter',
   saturn: 'saturn',
   uranus: 'uranus',
@@ -559,7 +574,7 @@ function trackPositionNote(tracks: Tracks, id: string, kind: DataBody['kind']): 
   const acc = info.accuracy as { maxKm: number; flyby?: { maxKm: number } };
   const y0 = yearOf(info.precise[0]);
   const y1 = yearOf(info.precise[1] - 1e-6);
-  const flyby = acc.flyby && kind === 'spacecraft' && id !== 'jwst' ? ` (within ${twoFigures(acc.flyby.maxKm)} km near its flybys)` : '';
+  const flyby = acc.flyby && kind === 'spacecraft' && id !== 'jwst' && id !== 'soho' ? ` (within ${twoFigures(acc.flyby.maxKm)} km near its flybys)` : '';
   let after: string;
   if (info.after.regime === 'unknown') after = `; not modelled after ${longDate(preciseEndIso(info))}`;
   else if (kind === 'spacecraft') after = `; after ${y1} a two-body extrapolation`;
@@ -575,6 +590,9 @@ const TRACK_CAVEATS: Record<string, string> = {
   pioneer10: 'JPL’s historical trajectory, for general purposes rather than precision; it steps by up to 126,500 km where files join.',
   'parker-solar-probe': 'Reconstructed to 27 January 2026, then NASA’s planning trajectory; no Venus flybys after 2030.',
   jwst: 'A prediction after 20 September 2026 (Goddard’s station-keeping plan), to September 2031.',
+  juno: 'Tracked to 23 September 2026, then JPL’s plan to September 2028; at Jupiter fitted to 250 km rather than 25.',
+  'europa-clipper': 'Tracked to 22 September 2026, then the mission’s planned cruise and tour to 2034; at Jupiter fitted to 250 km rather than 25.',
+  soho: 'Goddard’s trajectory, with a ballistic arc over its lost months of 1998; a prediction after 26 August 2026.',
   encke: 'Where JPL’s orbit solutions hand over, at aphelion, the position steps by up to 13,300 km: the solutions differ by that much.',
   'churyumov-gerasimenko': 'Where JPL’s orbit solutions hand over, at aphelion, the position steps by up to 12,500 km: the solutions differ by that much.',
   arrokoth: 'Follows the New Horizons project orbit in 1995–2033 and JPL’s ground-based one outside it; they differ by 48,000–65,000 km at the switches.',
@@ -699,7 +717,7 @@ function flybyDatesMs(tracks: Tracks, id: string): number[] {
  * was): seen from inside the Solar System, long, steeply tilted orbits cross the whole sky.
  */
 function orbitLineOf(b: DataBody, tracks: Tracks, escaping: boolean): BodyRecord['orbitLine'] {
-  if (b.id === 'jwst') return false;
+  if (NO_ORBIT_LINE.has(b.id)) return false;
   if (escaping) return { muKm3S2: GM_SOLAR_SYSTEM_KM3_S2, trailFromMs: flybyDatesMs(tracks, b.id), onDemand: true };
   if (b.kind === 'spacecraft' || b.kind === 'tno') return { onDemand: true };
   return undefined;
@@ -731,7 +749,7 @@ function trackRecord(b: DataBody, data: SolarSystemData): BodyRecord {
     // Escaping craft: the conic about the whole Solar System's mass (as their extrapolation).
     orbitLine: orbitLineOf(b, data.tracks, escaping),
     // Pulse detectors: Webb's would repeat Earth's reading; the candidates are left out like moons of their size.
-    detector: b.id === 'jwst' || (b.kind === 'tno' && b.dwarfPlanetCandidate) ? false : undefined,
+    detector: b.id === 'jwst' || b.id === 'soho' || (b.kind === 'tno' && b.dwarfPlanetCandidate) ? false : undefined,
     dataSource:
       b.kind === 'spacecraft'
         ? 'NASA mission pages; trajectory fitted to JPL Horizons.'
