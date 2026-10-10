@@ -209,7 +209,7 @@ describe('journeys', () => {
       tracks: parseTracks(readJson<TracksIndex>('public/data/tracks.json'), readBytes('public/data/tracks.bin')),
     });
     updateEphemeris();
-    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'moon', 'neptune', 'halley', 'hale-bopp', 'visitors', 'edge', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'galaxy-rotation', 'bullet-mass', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'crab-magnetosphere', 'magnetar-field', 'double-pulsar-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'aurora', 'gannon-storm', 'carrington-event', 'galactic-field', 'galactic-field-sky', 'magnetic-uranus', 'magnetic-jupiter', 'magnetic-sun', 'sun-future', 'constellations-drift', 'stars-that-change', 'solar-eclipse', 'lunar-eclipse']);
+    expect(JOURNEYS.map((j) => j.id)).toEqual(['sunlight', 'saturn', 'split', 'voyager', 'proxima', 'trappist', 'year', 'orion-clouds', 'radcliffe-wave', 'moon', 'neptune', 'halley', 'hale-bopp', 'visitors', 'edge', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'famous-galaxies', 'virgo-cluster', 'galaxy-rotation', 'bullet-mass', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'crab-magnetosphere', 'magnetar-field', 'double-pulsar-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'aurora', 'gannon-storm', 'carrington-event', 'galactic-field', 'galactic-field-sky', 'magnetic-uranus', 'magnetic-jupiter', 'magnetic-sun', 'sun-future', 'constellations-drift', 'stars-that-change', 'solar-eclipse', 'lunar-eclipse']);
     for (const j of JOURNEYS) {
       expect(parseScene(j.scene), j.id).not.toBeNull();
       expect(j.look.length, j.id).toBeGreaterThan(40);
@@ -217,8 +217,9 @@ describe('journeys', () => {
       // into Sgr A* and its radio light need the Milky Way, Cygnus X-1's disc the stars (blackHoleScenes.test.ts runs them);
       // the supernovae and the kilonova their records, M87 the galaxies (articleScenes.test.ts runs every named scene);
       // the extreme stars' tour needs the stars (articleScenes.test.ts runs it from the Learn article), the magnetic
-      // field's two scenes the Milky Way.
-      if (['trappist', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'galactic-field', 'galactic-field-sky'].includes(j.id))
+      // field's two scenes the Milky Way, the dust clouds' journeys their records (registered with the app's start:
+      // articleScenes.test.ts runs them).
+      if (['trappist', 'orion-clouds', 'radcliffe-wave', 'black-hole', 'cyg-x-1-disk', 'black-hole-tour', 'lmc-x-1-disk', 'sgr-a-star-radio', 'monsters', 'sn-1054', 'sn-1572', 'sn-1604', 'sn-1987a', 'sn-1572-close', 'kilonova', 'merger-field', 'm87-star-field', 'sgr-a-star-field', 'm87-jet', 'galactic-field', 'galactic-field-sky'].includes(j.id))
         expect(sceneStatus(j.scene).reason).toBe(LATER);
       // The pulsars' fields wait for the pulsar catalogue (articleScenes.test.ts registers it and runs them).
       else if (['crab-magnetosphere', 'magnetar-field', 'double-pulsar-field'].includes(j.id)) expect(sceneStatus(j.scene).reason).toBe('Loading the pulsar catalogue…');

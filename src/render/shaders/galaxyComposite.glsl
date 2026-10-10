@@ -12,11 +12,16 @@
 // from brightening half-way through the handover (√(½) + √(½) > 1) and keeps the eye's threshold on the whole
 // model's light.
 //
-// Rules: includes nothing; declares only the three uniforms of the law.
+// The neighbourhood's dust (shaders/localDustRead.glsl) is applied to the light first, at the pixel: the model's own
+// smooth dust replaced by the 3D map's inside the map, and the light the clouds scatter added (as the model's).
+//
+// Rules: includes only lightspeed_localdust (whose uniforms every material of this chunk takes: galaxyLayer.ts
+// inputs); declares only the three uniforms of the law.
 //
 // Cost: a few operations a pixel.
 //
 // Twin: sim/galaxy/background.ts (patchFlux, modelShare: the thresholds and the share).
+#include <lightspeed_localdust>
 uniform vec2 uFade;
 uniform float uGain;
 uniform float uModelShare;
@@ -29,6 +34,7 @@ vec3 shown(vec3 c, float f) {
 
 // The Galaxy layer's summed light t (rgb; the model's share of its luminance in a) as drawn.
 vec3 galaxyDisplay(vec4 t) {
+  t = localDustModel(gl_FragCoord.xy * uLocalDustOn.yz, t);
   vec3 c = t.rgb;
   float f = dot(c, vec3(0.2126, 0.7152, 0.0722));
   vec3 withModel = shown(c, f);

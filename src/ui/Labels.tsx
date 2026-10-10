@@ -220,6 +220,9 @@ export function LabelSync() {
       if (beyondGalaxy && tier >= 3 && e.record.kind !== 'galaxy' && e.record.kind !== 'merger' && !insideHost && !(e.record.kind === 'cluster' && /galaxies/.test(e.record.kindText ?? ''))) continue;
       // A pulsar is labelled near it (or when chosen): from afar it is one faint marker among thousands.
       if (tier >= 3 && e.record.kind === 'pulsar' && b.distTrue > PULSAR_LABEL_KM) continue;
+      // A label with a range of its own (a dust cloud's near it, the Radcliffe Wave's from out there) only within it.
+      const range = e.record.labelRange;
+      if (tier >= 3 && range && (b.distTrue < (range.minKm ?? 0) || b.distTrue > (range.maxKm ?? Infinity))) continue;
       // A star nobody could see from here, or one that shares its pair's label, is left unlabelled.
       if (star && tier >= 3 && (b.magnitude > LABEL_MAG_LIMIT || pairs.hide.has(e.id))) continue;
       // A cluster, nebula or galaxy is labelled once it is big enough on screen or bright enough to

@@ -1,7 +1,9 @@
 // The 3D star catalogue (sim/stars; docs/data/stars.md). Each star is a point in parsecs from the
 // Sun at J2000 (J2000 ecliptic axes), moved in a straight line by its space velocity, taken
 // relative to the camera, and drawn with its apparent magnitude from there: M_V + 5 log10(d / 10 pc)
-// (no dust). Its colour is the blackbody at its temperature. On top, the exact relativistic
+// (no dust of its own: its catalogue magnitude is as seen from Earth, so it carries the dust between the Sun and it). Its
+// colour is the blackbody at its temperature. Away from the Sun the neighbourhood's 3D dust moves that dust: the camera's
+// column to the star less the Sun's (shaders/localDustRead.glsl, render/dustLayer.ts). On top, the exact relativistic
 // treatment of every point source: aberrated direction, Doppler-shifted blackbody colour
 // (T' = D T) and the visible-band brightness change, finite at any rapidity.
 //
@@ -12,6 +14,7 @@
 #include <logdepthbuf_pars_vertex>
 #include <lightspeed_relativity>
 #include <lightspeed_psf>
+#include <lightspeed_localdust>
 #ifdef LENS
 // Near a black hole (render/lensVariants.ts swaps in this shader compiled with LENS while the lens is
 // drawn) each star is drawn where the hole's lens puts its image, in this order: the source's direction
@@ -150,6 +153,17 @@ void main() {
   if (uPhi > 0.0) mag += dopplerMagnitudeShift(lnT, lnD, color);
   else color = blackbodyLn(lnT).rgb;
 #endif
+  // The neighbourhood's dust: what lies between the camera and the star, less what its magnitude has from the Sun's
+  // place (only for a star that could still be seen if made brighter by the most it can be).
+  if (uLocalDustOn.x > 0.0 && mag - uLocalDustOn.w <= uMagLimit + 0.5) {
+    vec4 clip = projectionMatrix * vec4(mat3(viewMatrix) * dShip, 1.0);
+    if (clip.w > 0.0) {
+      float aDust = localDustStar(clip.xy / clip.w * 0.5 + 0.5, d, uLocalDustEclToGal * position);
+      vec3 tr = localDustTransmission(aDust);
+      mag += aDust;
+      color *= tr / tr.g;
+    }
+  }
   float fade = limitFade(mag);
   if (fade <= 0.0) {
     cull();

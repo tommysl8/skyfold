@@ -616,7 +616,9 @@ The rows for these files are in `CREDITS.md`, and the About page lists the sourc
 ## 10. Known limitations
 
 - The dust model has no Local Bubble (too much extinction towards high latitudes near the Sun) and no central
-  molecular zone (too little towards the centre). See the table in section 2.
+  molecular zone (too little towards the centre). See the table in section 2. Within 1,250 pc of the Sun (and 400 pc
+  of the plane) the app replaces it, along each line of sight, with the 3D dust map of Edenhofer et al. (2024), which
+  has the Bubble and the clouds (`docs/data/dust.md` §6).
 - The arms are extrapolations away from the parallax data (`betaData` in `model.json`). The warp and arm widths
   beyond about 15 kpc are poorly constrained.
 - The disc has no flare, and the X-shaped bulge lobes are not explicit.

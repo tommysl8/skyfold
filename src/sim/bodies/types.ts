@@ -408,6 +408,11 @@ export interface BodyRecord {
   /** Label priority: lower wins (the Sun is 0). Default from the kind and size. */
   labelRank?: number;
   /**
+   * The camera's distance from the body, km, within which its label may show unless it is chosen (a dust cloud's
+   * label near it, the Radcliffe Wave's only from out there). Default: no limit.
+   */
+  labelRange?: { minKm?: number; maxKm?: number };
+  /**
    * Camera framing: distance in radii (default 4; 5 for stars, 16 for spacecraft), or in km; and
    * the closest approach, km (default just outside the body: 1.015 radii, or `maxRadiusKm`, or a
    * spacecraft's model).

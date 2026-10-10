@@ -43,6 +43,9 @@ import { bodyName, bodyPositionAt, bodyStateAt, childrenOf, displayRadiusKm, get
 import { blackHoleRsKm, controller, type HoldStep } from '../controls/cameraController';
 import { framingDistance, systemFramingDistance } from '../controls/framing';
 import { galacticToWorld } from '../sim/frames';
+import { apply as applyMat3, GAL_TO_WORLD } from '../sim/galaxy/frames';
+import { RADCLIFFE_ID } from '../sim/dust/clouds';
+import { RADCLIFFE_FIT } from '../sim/dust/radcliffe';
 import { blackHoleStatus } from '../sim/blackholes';
 import { STELLAR_FRAMING_RS } from '../sim/blackholes/records';
 import { SGRA_FLOW } from '../sim/blackholes/accretion';
@@ -266,6 +269,8 @@ export const NAMED_SCENES = [
   'jupiter-moons',
   'galactic-centre-orbits',
   'milky-way-outside',
+  'into-the-orion-clouds',
+  'radcliffe-wave',
   'local-group',
   'cosmic-web',
   'famous-galaxies',
@@ -428,6 +433,8 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'jupiter-moons': 'Jupiter’s moons',
   'galactic-centre-orbits': 'Stars orbiting the centre of the Galaxy',
   'milky-way-outside': 'The Milky Way from outside',
+  'into-the-orion-clouds': 'Into the Orion clouds',
+  'radcliffe-wave': 'The Radcliffe Wave',
   'local-group': 'The Local Group',
   'cosmic-web': 'The cosmic web',
   'famous-galaxies': 'Famous galaxies, as photographed',
@@ -1408,6 +1415,39 @@ defineScene('milky-way-outside', {
     scene(note, () => {
       useUI.setState({ showLabels: true });
       frameMilkyWay();
+    }),
+});
+
+// ─── The neighbourhood's dust (sim/dust) ──────────────────────────────────────────────
+
+/** A heliocentric galactic direction (x towards l = 0°, y towards l = 90°, z north) in world axes, normalised. */
+const galDir = (x: number, y: number, z: number): Vector3 => new Vector3(...applyMat3(GAL_TO_WORLD, [x, y, z])).normalize();
+
+defineScene('into-the-orion-clouds', {
+  label: 'Into the Orion clouds',
+  note: 'The Orion clouds, about 1,400 light-years from the Sun, seen from 260 light-years beyond them and off to one side, looking back towards the inner Galaxy: dark lanes of dust and gas against the Milky Way, with the Orion Nebula glowing in Orion A. The clouds are the 3D dust map of Edenhofer et al. (2024), sharp to about 4 parsecs here; their faint brown glow is starlight the dust scatters.',
+  unavailable: needs('orion-a-cloud'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ showLabels: true });
+      // From beyond the clouds and off to one side, looking back: they stand against the brighter inner Galaxy.
+      const away = sim.bodies['orion-a-cloud'].pos.clone().normalize();
+      const side = new Vector3().crossVectors(galDir(0, 0, 1), away).normalize();
+      controller.goTo('orion-a-cloud', { distance: 0.08 * KPC_KM, direction: away.multiplyScalar(0.55).addScaledVector(side, 0.85).normalize() });
+    }),
+});
+
+defineScene('radcliffe-wave', {
+  label: 'The Radcliffe Wave',
+  note: 'The Radcliffe Wave from the side, about 10,000 light-years out: a chain of the Sun’s nearest star-forming clouds 2.5 kiloparsecs long, from Canis Major through Orion and Perseus to Cygnus, rising and falling through the plane of the Galaxy by up to 220 parsecs. Its faint line is the model fitted to its clouds and young stars by Konietzka et al. (2024), who found it is oscillating, like a wave travelling outwards.',
+  unavailable: needs(RADCLIFFE_ID),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ showLabels: true });
+      // Across the Wave's length in the plane, from its outer side and a little above it: the inner Galaxy behind it.
+      const f = RADCLIFFE_FIT;
+      const along = new Vector3(f.x2 - f.x0, f.y2 - f.y0, 0).normalize();
+      controller.goTo(RADCLIFFE_ID, { distance: 3.2 * KPC_KM, direction: galDir(-along.y, along.x, 0.12) });
     }),
 });
 
