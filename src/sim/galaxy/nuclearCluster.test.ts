@@ -129,7 +129,8 @@ describe('the field’s file', () => {
       prev = Math.max(prev, m);
     }
     expect(rMin).toBeGreaterThanOrEqual(0.04 * (1 - 1e-6));
-    expect(rMax).toBeLessThan(60);
+    // The farthest are the nuclear disc's few supergiants of M_V −7 to −7.7, out to 85 pc.
+    expect(rMax).toBeLessThan(100);
     // The brightest are the young stars of the central half parsec: dozens brighter than the full Moon from the hole.
     const p = field.positionsPc;
     const m0 = field.absMagInt16[0] / 100 + 5 * Math.log10(Math.hypot(p[0], p[1], p[2])) - 5;
@@ -356,8 +357,10 @@ describe('the field’s shares', () => {
   it('the point share: most of the light near the hole, little beyond 10 pc, none outside the field', () => {
     expect(pointShare(0.01)).toBe(0);
     expect(pointShare(0.1)).toBeGreaterThan(0.9);
-    expect(pointShare(20)).toBeLessThan(0.2);
-    expect(pointShare(100)).toBe(0);
+    expect(pointShare(20)).toBeLessThan(0.3);
+    // Out at 100 pc only the disc's rare supergiants are bright enough from the hole.
+    expect(pointShare(100)).toBeLessThan(0.001);
+    expect(pointShare(400)).toBe(0);
     for (let r = 0.04; r < 300; r *= 1.3) {
       const s = pointShare(r);
       expect(s).toBeGreaterThanOrEqual(0);

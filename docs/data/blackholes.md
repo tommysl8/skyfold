@@ -59,8 +59,7 @@ Every builder is deterministic: run again, it writes the same bytes.
 ```
 node scripts/build-blackholes.mjs                  # blackholes.json from the table in the script (instant; no download)
 npm run data:nsc                                   # python scripts/build-nsc.py: nsc-stars.bin.gz and nuclearGlow.json
-                                                   #   (numpy; about a minute; downloads the MIST isochrones once, 160 MB,
-                                                   #   into data-raw/nsc/)
+                                                   #   (numpy and Node; about half a minute; no download)
 python scripts/build-nsc.py --verify               # rebuild both in memory and compare with the files on disk
 python scripts/sgra-flow/flow_tables.py            # sgraFlow.json and scripts/sgra-flow/ref/ (numpy, scipy; about 33
                                                    #   minutes on three processes; --quick two minutes; --angles-from-json)
@@ -345,11 +344,11 @@ holes: edit the table in `scripts/build-blackholes.mjs`, run it, and run `npx vi
 
 ## 6. The nuclear cluster model
 
-**Files.** `public/data/nsc-stars.bin.gz` (876 kB; 60,000 stars) and `src/sim/galaxy/nuclearGlow.json` (21 kB; format
-`lightspeed.nuclear-glow`, version 1), both written by `python scripts/build-nsc.py` (Python 3.10+ and numpy; about a
-minute). The script downloads the MIST isochrones once (160 MB, from mist.science, into `data-raw/nsc/`, which git
-ignores and nothing redistributes), is deterministic (numpy's PCG64 stream, seed 20260929, gzip with no timestamp), and
-`--verify` rebuilds both files in memory and compares them with those on disk. The JSON holds the laws, the share
+**Files.** `public/data/nsc-stars.bin.gz` (877 kB; 60,000 stars) and `src/sim/galaxy/nuclearGlow.json` (22 kB; format
+`lightspeed.nuclear-glow`, version 1), both written by `python scripts/build-nsc.py` (Python 3.10+, numpy and Node; about
+half a minute; nothing is downloaded). Its isochrones come from `scripts/nsc-isochrones.mjs`, which it runs. It is
+deterministic (numpy's PCG64 stream, seed 20260929, gzip with no timestamp), and `--verify` rebuilds both files in
+memory and compares them with those on disk. The JSON holds the laws, the share
 tables, M87's light profile, the SHA-256 of the unzipped star file and every check below.
 
 **What it is.** A statistical model of the stars round Sagittarius A*, not a catalogue: no star in it is a real,
@@ -359,32 +358,66 @@ few hundred particles on a 2-pc lattice there.
 
 | Component | Law (pc from Sgr A*, frame G: z to the north galactic pole) | Light (V) | Sources |
 | --- | --- | --- | --- |
-| Nuclear star cluster | Nuker law in m² = R² + (z/q)²: r_b 3.1, γ 1.13, β 3.5, α 10, q 0.71; from r = 0.04 to m = 50 | 1.318 × 10⁷ L☉ (the Galaxy model's cluster share, 1.812 × 10⁷, less the young stars') | Schödel et al. 2018 (mean model), Schödel et al. 2014 (flattening) |
+| Nuclear star cluster | Nuker law in m² = R² + (z/q)²: r_b 3.1, γ 1.13, β 3.5, α 10, q 0.71; from r = 0.04 to m = 50 | 1.340 × 10⁷ L☉ (the Galaxy model's cluster share, 1.812 × 10⁷, less the young stars') | Schödel et al. 2018 (mean model), Schödel et al. 2014 (flattening) |
 | Nuclear stellar disc | the Galaxy model's own: (R/90)^−1.3 inside 90, (R/90)^−3 to 230, e^(−\|z\|/45), R ≥ 3, r ≤ 300 | 4.53 × 10⁸ L☉ (the model's share) | `model.json`; Launhardt et al. 2002; Sormani et al. 2022 |
-| Young stars of the central half parsec | every star above 1 M☉ of 2.5 × 10⁴ M☉ drawn from dN/dm ∝ m^−1.7 (to 150 M☉), aged 3.2 or 3.5 Myr; 20 % in the clockwise disc (normal i 130°, Ω 96°, ±10°, surface density ∝ R^−1.9), the rest isotropic (∝ R^−1.14), 0.04–0.5 pc | 4.94 × 10⁶ L☉: 3,140 stars alive (671 in the disc), 30 of them Wolf–Rayet stars, the brightest M_V −7.24 | Lu et al. 2013, Yelda et al. 2014, Paumard et al. 2006 |
+| Young stars of the central half parsec | every star above 1 M☉ of 2.5 × 10⁴ M☉ drawn from dN/dm ∝ m^−1.7 (to 150 M☉), aged 4.0 or 4.2 Myr; 20 % in the clockwise disc (normal i 130°, Ω 96°, ±10°, surface density ∝ R^−1.9), the rest isotropic (∝ R^−1.14), 0.04–0.5 pc | 4.72 × 10⁶ L☉: 3,109 stars alive (665 in the disc), 46 of them naked helium stars, the brightest M_V −7.65 | Lu et al. 2013, Yelda et al. 2014, Paumard et al. 2006 |
 
-The stars' ages, brightness and colours come from MIST v1.2 isochrones (Choi et al. 2016; Dotter 2016; v/v_crit 0.4,
-[Fe/H] +0.25 for the old stars after Feldmeier-Krause et al. 2017, 0.00 for the young) with a Kroupa (2001) mass function,
-over the star-formation histories of Schödel et al. 2020 for the cluster (82 % 13 Gyr old, 13 % 3 Gyr, the rest
-30 Myr–1 Gyr; M/L_V 3.76 per solar mass formed, B − V 0.56) and after Nogueras-Lara et al. 2020 for the disc (90 %
-older than 8 Gyr, 5 % about 1 Gyr, the rest in the last 500 Myr; M/L_V 2.05, B − V 0.28). The two ages of the young
-stars make MIST's Wolf–Rayet count match the thirty or so seen there (at 4 Myr MIST gives a dozen yellow supergiants the
-Galactic Centre does not have).
+The stars' ages, brightness and colours come from isochrones of the single-star formulae of Hurley, Pols & Tout 2000
+(HPT; the app's own `src/sim/stars/sse.ts`, stars.md §14, at Z = 0.02) with a Kroupa (2001) mass function, over the
+star-formation histories of Schödel et al. 2020 for the cluster (82 % 13 Gyr old, 13 % 3 Gyr, the rest 30 Myr–1 Gyr;
+M/L_V 3.21 per solar mass formed, B − V 0.54) and after Nogueras-Lara et al. 2020 for the disc (90 % older than 8 Gyr,
+5 % about 1 Gyr, the rest in the last 500 Myr; M/L_V 1.70, B − V 0.27). `scripts/nsc-isochrones.mjs` reads each star's
+state at an age off its track, adds what `sse.ts` leaves out and young massive stars need, all from HPT: the
+main-sequence winds above 4,000 L☉ (Nieuwenhuijzen & de Jager's and the LBV-like wind, the star keeping its fractional
+age as its mass falls) and the naked helium main sequence of stars stripped to their cores (eqs. 76–83, with the
+Wolf–Rayet-like wind); white dwarfs are left out (they add no light). Magnitudes: M_V = 4.73 − 2.5 log L − BC_V with
+Flower's bolometric corrections as corrected by Torres 2010 (stars.md §11), held below 3,100 K and continued above
+50,000 K by a blackbody's V flux; B − V from Flower's colour–temperature relation for dwarfs, subgiants and giants
+(Torres 2010, Table 2); V − K_s, for the star-count check only, from Pecaut & Mamajek 2013's dwarf sequence. The
+formulae are solar in metallicity: the old stars' +0.26 dex (Feldmeier-Krause et al. 2017) is not modelled.
+
+The young stars' ages sit by Lu et al.'s older solution, 3.9 Myr (2.5–5.8 Myr at 95 %). Without the rotation of
+detailed models, HPT strips its most massive stars later: at 3.2–3.5 Myr they are still on the main sequence and the
+young cluster is twice as bright in V as at 4 Myr, brighter than anything seen there; at 4.0–4.2 Myr the stars above
+about 60 M☉ are naked helium stars, some 45 against the thirty or so Wolf–Rayet stars and blue supergiants seen
+(Paumard et al. 2006); from 4.3 Myr HPT makes red supergiants, of which the central half parsec has one (IRS 7).
+
+**A check against detailed models** (not shipped). Until this version the populations came from the MIST v1.2
+isochrones (Choi et al. 2016; [Fe/H] +0.25 for the old stars, 0.00 for the young, v/v_crit 0.4), which state no licence
+for redistribution; read locally, against the formulae:
+
+| | MIST v1.2 | Hurley et al. 2000 |
+| --- | --- | --- |
+| Cluster's old stars: M/L_V per M☉ formed, B − V | 3.76, 0.56 | 3.21, 0.54 |
+| Disc: M/L_V, B − V | 2.05, 0.28 | 1.70, 0.27 |
+| Young stars: ages, V light, alive, stripped | 3.2 and 3.5 Myr, 4.94 × 10⁶ L☉, 3,140, 30 Wolf–Rayet | 4.0 and 4.2 Myr, 4.72 × 10⁶ L☉, 3,109, 46 naked helium |
+| Cluster's old light | 1.318 × 10⁷ L☉ | 1.340 × 10⁷ L☉ |
+| Split m_hole at 60,000, 30,000, 10,000 points | −2.446, −3.307, −4.725 | −2.397, −3.290, −4.766 |
+| Share of the light in points (cluster, disc), 60,000 points | 21.1 %, 2.8 % | 26.7 %, 4.9 % |
+| Glow B − V (cluster, disc), 60,000 points | 0.620, 0.278 | 0.587, 0.273 |
+| Points brighter than M_V −5; cooler than 4,000 K | 833; 2,997 | 1,314; 2,073 |
+| Farthest point | 44.4 pc | 84.8 pc |
+
+Most of the difference is metallicity, which the formulae (here at Z = 0.02) cannot follow: MIST's own solar
+isochrones give the cluster M/L_V 3.23 and B − V 0.547 and the disc 1.81 and 0.279, and put 4.7 % and 19 % of their
+light in stars brighter than M_V −4 (HPT 5.3 % and 23 %, metal-rich MIST 2.5 % and 12 %). Solar stars are brighter for
+their mass, so more of the light is in points; metal-rich giants are cooler. The rest is HPT's populations of
+30–100 Myr, 10–27 % brighter per solar mass than MIST's, whose supergiants make a few disc stars points out to 85 pc.
+The light of every component is unchanged (each is normalised to the Galaxy model).
 
 **Points and glow.** A star at r from the hole looks as bright from it as m_hole = M_V + 5 log10(r / 10 pc). The file
-holds every young star and every old star brighter than m_hole = −2.446, 60,000 in all (53,805 of the cluster, 3,055
+holds every young star and every old star brighter than m_hole = −2.397, 60,000 in all (53,423 of the cluster, 3,468
 of the disc), sampled exactly from each law times its luminosity function's count of stars bright enough at each
-radius, sorted brightest first as seen from the hole. The nearest is 0.040 pc from the hole, the farthest 44.4 pc (no
-disc star beyond that is bright enough from the hole); 72 are brighter than m_hole = −15, 763 than −10 and 8,241 than
-−5. Everything else is a glow: each law times 1 − s(r), with s(r) the share of its light in the points, tabulated at 64
+radius, sorted brightest first as seen from the hole. The nearest is 0.040 pc from the hole, the farthest 84.8 pc (a
+disc supergiant; two lie beyond 60 pc); 66 are brighter than m_hole = −15, 712 than −10 and 8,469 than −5. Everything else is a glow: each law times 1 − s(r), with s(r) the share of its light in the points, tabulated at 64
 radii from 0.04 to 300 pc. The app draws the first 60,000, 30,000 or 10,000 points (the lens's quality rungs 0, 1 and
 2), and each count has its own share table, so the light is the same at every rung:
 
 | Points drawn | Split (m_hole) | Cluster: realised / expected light in points, share of its light | Disc: the same | Young stars left out | Glow B − V (cluster, disc) |
 | --- | --- | --- | --- | --- | --- |
-| 60,000 | −2.446 | 0.951, 21.1 % | 1.027, 2.8 % | none | 0.620, 0.278 |
-| 30,000 | −3.307 | 0.941, 14.2 % | 1.044, 1.4 % | 478 (540 L☉, 0.011 %) | 0.603, 0.278 |
-| 10,000 | −4.725 | 0.903, 7.3 % | 1.140, 0.4 % | 899 (1,560 L☉, 0.032 %) | 0.581, 0.278 |
+| 60,000 | −2.397 | 0.960, 26.7 % | 1.000, 4.9 % | none | 0.587, 0.273 |
+| 30,000 | −3.290 | 0.950, 18.3 % | 0.954, 2.5 % | 250 (373 L☉, 0.008 %) | 0.579, 0.272 |
+| 10,000 | −4.766 | 0.954, 9.8 % | 0.957, 0.7 % | 609 (1,910 L☉, 0.040 %) | 0.565, 0.272 |
 
 Each table is scaled by its realised-to-expected ratio (a few per cent, the brightest stars being rare), so points and
 glow add up to each law's light exactly; the faint young stars a smaller count leaves out are not moved into the glow
@@ -395,10 +428,10 @@ glow add up to each law's light exactly; the faint young stars a smaller count l
 | Check | Result |
 | --- | --- |
 | V light within 50 pc, points and glow against the Galaxy model's cluster and disc | × 1.000 (the test: within 1 % at each count) |
-| Within 5 pc | × 0.984 (the model's cluster is a Plummer sphere of half-light radius 4.2 pc; this one Schödel's cusp) |
-| μ_V seen from Earth without dust, in the plane and across it | at 0.1 pc 11.47 and 11.57 against the model's 11.58 and 11.58; at 1 pc 12.34 and 12.54 against 11.76 and 11.93 (the cusp holds less light at 1 pc and more at 0.1); from 10 pc out within 0.03 |
-| Stars of observed K_s 17.5–18.5 per pc² at 0.5 and 1 pc, against Gallego-Cano et al. 2018's fit | × 0.92 and 0.99 for A_Ks 2.7; × 1.09 and 1.16 for 2.5; × 0.71 and 0.76 for 2.9: within the stated × 1.5 |
-| Stars brighter than V = 6.5 seen from Sgr A* (points and glow, no dust) | 1.6 × 10⁷ |
+| Within 5 pc | × 0.975 (the model's cluster is a Plummer sphere of half-light radius 4.2 pc; this one Schödel's cusp) |
+| μ_V seen from Earth without dust, in the plane and across it | at 0.1 pc 11.45 and 11.56 against the model's 11.58 and 11.58; at 1 pc 12.33 and 12.52 against 11.76 and 11.93 (the cusp holds less light at 1 pc and more at 0.1); from 10 pc out within 0.03 |
+| Stars of observed K_s 17.5–18.5 per pc² at 0.5 and 1 pc, against Gallego-Cano et al. 2018's fit | × 0.83 and 0.88 for A_Ks 2.7; × 0.95 and 1.02 for 2.5; × 0.68 and 0.73 for 2.9: within the stated × 1.5 |
+| Stars brighter than V = 6.5 seen from Sgr A* (points and glow, no dust) | 1.4 × 10⁷ |
 | No point within 0.04 pc of the hole | 0.0400 pc |
 
 **In the app** (`src/sim/galaxy/nuclearCluster.ts`, `src/scene/NuclearCluster.tsx`, the glow in
@@ -709,9 +742,11 @@ The main sources:
 - **The nuclear star cluster and M87's light** (§6): Schödel et al. 2014, 2018, 2020 (A&A 566, A47; 609, A27; 641,
   A102); Gallego-Cano et al. 2018 (A&A 609, A26); Feldmeier-Krause et al. 2017 (MNRAS 464, 194); Nogueras-Lara et al.
   2020 (Nature Astronomy 4, 377); Launhardt, Zylka & Mezger 2002 (A&A 384, 112); Sormani et al. 2022 (MNRAS 512,
-  1857); Lu et al. 2013 (ApJ 764, 155); Yelda et al. 2014 (ApJ 783, 131); Paumard et al. 2006 (ApJ 643, 1011); the
-  MIST v1.2 isochrones (Choi et al. 2016, ApJ 823, 102; Dotter 2016, ApJS 222, 8); Kroupa 2001 (MNRAS 322, 231);
-  Ferrarese et al. 2006 (ApJS 164, 334) and Kormendy et al. 2009 (ApJS 182, 216).
+  1857); Lu et al. 2013 (ApJ 764, 155); Yelda et al. 2014 (ApJ 783, 131); Paumard et al. 2006 (ApJ 643, 1011); Hurley,
+  Pols & Tout 2000 (MNRAS 315, 543); Flower 1996 (ApJ 469, 355) and Torres 2010 (AJ 140, 1158); Pecaut & Mamajek 2013
+  (ApJS 208, 9); Kroupa 2001 (MNRAS 322, 231); Ferrarese et al. 2006 (ApJS 164, 334) and Kormendy et al. 2009 (ApJS
+  182, 216). The MIST v1.2 isochrones (Choi et al. 2016, ApJ 823, 102; Dotter 2016, ApJS 222, 8) only for the check, read
+  locally.
 - **The accretion flow** (§7): Broderick & Loeb 2006 (MNRAS 367, 905); Broderick et al. 2009 (ApJ 697, 45); Yuan,
   Quataert & Narayan 2003 (ApJ 598, 301); Leung, Gammie & Noble 2011 (ApJ 737, 21); Pandya et al. 2016 (ApJ 822, 34);
   GRAVITY Collaboration 2020 (A&A 638, A2) and 2023 (A&A 677, L10); Paugnat et al. 2024 (ApJ 977, 228); Bower et al.
@@ -724,7 +759,7 @@ The main sources:
 | --- | --- | --- |
 | `src/sim/blackholes/blackholes.json` | published values quoted with citation; **non-commercial use only**, with the Gaia credit | the astrometry of Gaia BH1, BH2, A0620-00, MAXI J1820+070 and XTE J1118+480 is from Gaia DR3 ([CC BY-NC 3.0 IGO](https://www.cosmos.esa.int/web/gaia-users/license), ESA/Gaia/DPAC), as for the star and exoplanet files |
 | `src/sim/blackholes/sgraFlow.json`, `scripts/sgra-flow/ref/`, `riaf_results.json` | the project's own (MIT) | a model fitted for Skyfold; the measured fluxes it is fitted to are quoted with citation |
-| `public/data/nsc-stars.bin.gz`, `src/sim/galaxy/nuclearGlow.json` | the project's own (MIT) | generated by `scripts/build-nsc.py` from published fits; the MIST isochrones it reads are downloaded at build time and not redistributed |
+| `public/data/nsc-stars.bin.gz`, `src/sim/galaxy/nuclearGlow.json` | the project's own (MIT) | generated by `scripts/build-nsc.py` from published fits, formulae and coefficients, quoted with citation; nothing is downloaded |
 | `src/physics/__fixtures__/schwarzschild.json`, `scripts/lens-check/ref/` | the project's own (MIT) | computed by the project's own reference |
 | The Event Horizon Telescope's pictures (ESO [eso2208-eht-mwa](https://www.eso.org/public/images/eso2208-eht-mwa/), [eso1907a](https://www.eso.org/public/images/eso1907a/)) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), credit "EHT Collaboration" ([ESO's terms](https://www.eso.org/public/outreach/copyright/)) | not in the tree: the records name `public/images/eht/sgra-2017.jpg` and `m87-2017.jpg`, to be resized copies ("Image modified for Skyfold: resized."); until then the cards give the credit and link to ESO's pages, without the modification note |
 

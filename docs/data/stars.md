@@ -1283,6 +1283,6 @@ separations within a quarter, Dubhe–Alkaid changes by more than a degree eithe
 | Input | Use | Licence / terms |
 | --- | --- | --- |
 | Hurley, Pols & Tout 2000, MNRAS 315, 543 (arXiv:astro-ph/0001295), and Tout, Pols, Eggleton & Han 1996, MNRAS 281, 257 | The stellar-evolution formulae and their coefficients (`sse.ts`) | Equations and coefficients quoted from the papers, cited; implemented here from the papers |
-| MIST v1.2 (Choi et al. 2016) | Only the check in §14, read locally; nothing shipped | — |
+| MIST v1.2 (Choi et al. 2016) | Only the checks in §14 and in blackholes.md §6 (the nuclear cluster's populations, also from `sse.ts`), read locally; nothing shipped | — |
 | GCVS (Samus et al. 2017, VizieR B/gcvs) | Ephemerides and ranges | Catalogue values, cited; VizieR asks for acknowledgement |
 | The papers of §14–15 (Baron et al. 2012; Kolbas et al. 2015; Harmanec & Scholz 1993; Harmanec 2002; Nardetto et al. 2016; Woodruff et al. 2004; Bruntt et al. 2008; Turner et al. 2005; Jetsu 2021; Joyce et al. 2020; Montargès et al. 2021; Levesque & Massey 2020; ATel 13341, 13512, 13601; Bond et al. 2017; Nauenberg 1972; Schröder & Smith 2008; Sackmann et al. 1993; Gesicki et al. 2018; Bouvier & Wadhwa 2010) | Values and facts | Values from the literature, each cited in `variables.ts`, `evolution.ts` and the cards |
