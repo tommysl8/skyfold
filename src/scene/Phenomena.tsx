@@ -139,6 +139,9 @@ function Aurora() {
     u.uKr.value = greenKr;
     u.uRedShare.value = redShare;
     u.uFluxPerKr.value = flux.g;
+    // The display's roll-off: from a column of 20 kR of the green line (a bright quiet-night arc seen overhead is 15)
+    // towards 60 kR.
+    u.uSoftS.value.set(20 * flux.g, 60 * flux.g);
     u.uEffRed.value = flux.r / flux.g;
     u.uEffBlue.value = flux.b / flux.g;
     u.uGreen.value.setRGB(green[0], green[1], green[2]);

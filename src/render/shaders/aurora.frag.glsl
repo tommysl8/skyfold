@@ -32,6 +32,7 @@ uniform float uScale;     // uStarGain² Ω_psf 10^(0.4 m0): luminance = √(uSc
 uniform float uTime;      // s (wall clock): the curtains' slow motion
 uniform float uOpacity;
 uniform float uMinSinLat; // sin of the lowest geomagnetic latitude the oval reaches, less a margin (sin 50° but in great storms)
+uniform vec2 uSoftS;      // the flux per sr (S) where the display's roll-off begins, and the S it rolls off towards
 uniform vec3 uGreen;      // the lines' colours, luminance 1 (linear sRGB)
 uniform vec3 uRed;
 uniform vec3 uBlue;
@@ -48,11 +49,12 @@ float noise1(float x) {
   f = f * f * (3.0 - 2.0 * f);
   return mix(hash1(i), hash1(i + 1.0), f);
 }
-// Smooth noise of two variables, periodic in x with period px (MLT wraps round the pole).
+// Smooth noise of two variables (quintic between the lattice points), periodic in x with period px, a whole number of
+// lattice cells (MLT wraps round the pole, at magnetic midnight).
 float noise2(vec2 p, float px) {
   vec2 i = floor(p);
   vec2 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
+  f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
   float i0 = mod(i.x, px);
   float i1 = mod(i.x + 1.0, px);
   float a = hash1(i0 + 57.0 * i.y);
@@ -100,14 +102,16 @@ Oval ovalAt(vec3 n, vec3 e1, vec3 e2) {
   // Night only: the ground below in darkness (the Sun more than about 6° below the horizon there).
   o.night = smoothstep(0.1, -0.1, dot(n, uSun));
   float hemi = s > 0.0 ? 0.0 : 37.0;
-  // Curtains: lanes running east–west across the band, their positions folding slowly with MLT and time.
-  o.fold = (noise2(vec2(mlt * 1.5 + hemi, uTime * 0.003), 36.0) - 0.5) * 0.3
-         + (noise2(vec2(mlt * 4.0 + hemi, uTime * 0.01 + 3.0), 96.0) - 0.5) * 0.03;
-  // Each arc comes and goes along the oval.
+  // Curtains: lanes running east–west across the band, their positions folding slowly with MLT and time: a gentle
+  // swing of up to about 2° (a fifth of a quiet night's band; less of a storm's wide one) and a small ripple.
+  float swing = min(0.22, 1.8 / max(o.width, 0.5));
+  o.fold = (noise2(vec2(mlt + hemi, uTime * 0.003), 24.0) - 0.5) * swing
+         + (noise2(vec2(mlt * 3.0 + hemi, uTime * 0.01 + 3.0), 72.0) - 0.5) * 0.15 * swing;
+  // Each arc comes and goes along the oval (whole lattice periods round the clock: no seam at midnight).
   o.arcs = edge.b * vec3(
-    smoothstep(0.25, 0.7, noise2(vec2(mlt * 1.2 + hemi + 11.0, uTime * 0.002), 28.8)),
-    smoothstep(0.3, 0.75, noise2(vec2(mlt * 1.2 + hemi + 23.0, uTime * 0.002 + 5.0), 28.8)),
-    smoothstep(0.35, 0.8, noise2(vec2(mlt * 1.2 + hemi + 41.0, uTime * 0.002 + 9.0), 28.8)));
+    smoothstep(0.25, 0.7, noise2(vec2(mlt * 1.25 + hemi + 11.0, uTime * 0.002), 30.0)),
+    smoothstep(0.3, 0.75, noise2(vec2(mlt * 1.25 + hemi + 23.0, uTime * 0.002 + 5.0), 30.0)),
+    smoothstep(0.35, 0.8, noise2(vec2(mlt * 1.25 + hemi + 41.0, uTime * 0.002 + 9.0), 30.0)));
   // Rays: striations along the nearly vertical field, flickering slowly.
   o.rays = 0.55 + 0.45 * noise2(vec2(mlt * 180.0 + hemi, uTime * 0.25), 4320.0);
   return o;
@@ -172,11 +176,15 @@ void main() {
     if (night <= 0.0) continue;
     float uf = u + dot(L, vec3(oa.fold, om.fold, ob.fold));
     vec3 arcs = L.x * oa.arcs + L.y * om.arcs + L.z * ob.arcs;
-    float lanes = arcs.x * exp(-pow((uf - 0.25) / 0.04, 2.0)) + 0.8 * arcs.y * exp(-pow((uf - 0.5) / 0.055, 2.0)) + 0.6 * arcs.z * exp(-pow((uf - 0.72) / 0.07, 2.0));
+    // The arcs keep their own width (a third to half a degree, as on a quiet night's 8° band) however wide the oval
+    // grows in a storm: it gains room between them, not thicker ones.
+    float thin = min(1.0, 8.0 / width);
+    float lanes = arcs.x * exp(-pow((uf - 0.25) / (0.04 * thin), 2.0)) + 0.8 * arcs.y * exp(-pow((uf - 0.5) / (0.055 * thin), 2.0)) + 0.6 * arcs.z * exp(-pow((uf - 0.72) / (0.07 * thin), 2.0));
     float rays = dot(L, vec3(oa.rays, om.rays, ob.rays));
-    // The diffuse glow over the whole band, the arcs brightest where the oval holds them (the evening and midnight sectors).
+    // The diffuse glow over the whole band (as faint per degree in a wide storm oval as in a quiet one, so its light
+    // spreads rather than piles up), the arcs brightest where the oval holds them (the evening and midnight sectors).
     float band = smoothstep(-0.25, 0.15, u) * (1.0 - smoothstep(0.85, 1.25, u));
-    float column = band * (0.08 + 1.2 * lanes * rays);
+    float column = band * (0.05 * thin + 1.2 * lanes * rays);
     // Height profiles, per km (each integrates to 1 over height): green 557.7 nm, red 630.0 nm.
     float hb = h - 114.0 + 6.0 * lanes; // the lower edge is lower in the brighter, harder arcs
     float g = hb < 0.0 ? exp(-hb * hb / 100.0) : exp(-hb * hb / 1225.0);
@@ -184,7 +192,10 @@ void main() {
     float rr = exp(-pow((h - 250.0) / 60.0, 2.0)) * 0.0094; // 1 / (√π 60) km
     float w = column * night * dt * R;
     green += w * g;
-    red += w * (rr + 0.6 * g * smoothstep(0.6, 1.2, u)); // the diffuse aurora's equatorward edge carries more red
+    // Red: the high, faint glow above the green; within the bright arcs' own columns little of it (the arcs from above
+    // are the green line's colour, their red a fringe above them, seen towards the limb), and more at the diffuse
+    // aurora's equatorward edge.
+    red += w * (rr * (1.0 - 0.7 * min(lanes, 1.0)) + 0.3 * g * smoothstep(0.6, 1.2, u));
     blue += w * g * lanes;
   }
   // Column brightnesses, kR, along this ray: green, red, and N2+ 427.8 nm (a fifth of the green in the arcs).
@@ -197,6 +208,9 @@ void main() {
   float lB = uEffBlue * sB;
   float S = uFluxPerKr * (lG + lR + lB);
   if (S <= 0.0) discard;
+  // A soft roll-off before the display law: the brightest columns (a storm's arcs, the limb seen edge-on) saturate
+  // gracefully instead of piling up into an opaque blanket; a quiet night's arcs are below the knee and untouched.
+  if (S > uSoftS.x) S = uSoftS.x + (uSoftS.y - uSoftS.x) * (1.0 - exp(-(S - uSoftS.x) / (uSoftS.y - uSoftS.x)));
   vec3 col = (uGreen * lG + uRed * lR + uBlue * lB) / max(lG + lR + lB, 1e-12);
   // The emission lines' saturated colours, eased against the tone mapping's greying as the stars' are (point.frag.glsl).
   float l = dot(col, vec3(0.2126, 0.7152, 0.0722));

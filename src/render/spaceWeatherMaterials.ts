@@ -111,7 +111,7 @@ void main() {
   float behind = 1.0 - layer / float(${LAYERS});
   // Faded where the camera is near the front for its size: from close by a real front, a sheath some 0.1 au thick at
   // Earth, would be all round, not a surface (and at a planet's scale it would only be a wall across the view).
-  float near = smoothstep(0.25, 0.6, d / max(r, 1.0));
+  float near = smoothstep(0.35, 0.8, d / max(r, 1.0));
   vA = uOpacity * edgeOn * spread * edge * mottle * behind * near * uGain;
   gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
   #include <logdepthbuf_vertex>

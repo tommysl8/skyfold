@@ -124,13 +124,23 @@ Earth's two auroral ovals, on the night side (`aurora.ts`; `shaders/aurora.frag.
   dipole (a degree or two off in places);
 - the green 557.7 nm line peaking at 114 km (Whiter et al. 2023), the red 630.0 nm line near 250 km (Hayakawa et al.
   2018), the blue N₂⁺ band with the green; arcs of about 12 kR at Kp 3 (15 kR on average: Knudsen et al. 2001), the red
-  a tenth to a half of the green, more in storms (a model of the activity); each line's light turned into V-band flux by
-  its luminous efficacy, and its colour from the CIE observer;
-- the curtains (where the arcs lie in the oval, their folds, their rays and their slow motion on the wall clock) are a
-  model; the arcs are strongest in the evening and midnight sectors.
+  0.12 to 0.27 of the green (a model of the activity); each line's light turned into V-band flux by its
+  luminous efficacy, and its colour from the CIE observer;
+- storms: above Kp 3 the arcs' brightness rolls off softly towards 30 kR and the red share is held at Kp 3's, and above
+  Kp 6 the oval is stretched south (to May 2024's 35.5° at Kp 9: `docs/data/space-weather.md` §5). The arcs keep a
+  quiet night's width (a third to half a degree) and the diffuse glow its brightness per degree however wide the oval
+  grows, so a storm's oval is wider and holds more room between its arcs, not a brighter blanket; seen from above, the
+  red glow is mostly kept off the arcs' own columns (they show the green line's colour, with the red as a fringe above
+  them towards the limb). Before the display law, a soft roll-off from a column of 20 kR towards 60 kR keeps the
+  brightest columns (a storm's arcs, the limb seen edge-on) from saturating into an opaque band; a quiet night's arcs
+  are below it. (A model: the brightest storm arcs do reach 100 kR and more, over a small part of the oval.)
+- the curtains (where the arcs lie in the oval, their gentle folds of up to about 2°, their rays and their slow motion on
+  the wall clock) are a model; the arcs are strongest in the evening and midnight sectors. The noise along the oval
+  repeats a whole number of times round the clock of magnetic local time, so it has no seam at magnetic midnight.
 
-View › Aurora turns it on or off and sets the activity: Kp 1, 3 (the default: a moderate night, somewhat above the
-median, Kp 2, of 1932–2026 in GFZ's record), 5 or 7. Each pixel's ray is marched through the shell from 90 to 320 km,
+View › Aurora turns it on or off and sets the activity: Auto (the default: the Kp measured at the date, GFZ, since 1932;
+`docs/data/space-weather.md`), Quiet (Kp 1), 3 (a moderate night, somewhat above the median, Kp 2, of 1932–2026 in
+GFZ's record), 5, 7 or 9. Each pixel's ray is marched through the shell from 90 to 320 km,
 with the oval's state worked out at three points of the ray.
 
 ## 5. Cost

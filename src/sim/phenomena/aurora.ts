@@ -202,10 +202,20 @@ export function ovalTable(kp: number, n = 48): Float32Array {
  * The green line's brightness in a bright arc, kR, and the red line's share of it, for an activity (a model): arcs average
  * 15 kR (0.2–200 kR; Knudsen et al. 2001), quiet arcs a few, storms tens; red is a tenth to a half of the green in night-
  * side arcs (Hu, Ai & Zhang 2012's photometry) and more in storms, whose aurora at low latitudes is red.
+ *
+ * Above Kp 3 the arcs' brightness rolls off softly towards 30 kR (AURORA_KNEE_KR, AURORA_MAX_KR) and the red share is
+ * held at Kp 3's: in a storm the oval grows wider and its arcs more numerous, as seen from space, not a blanket
+ * brighter by the same factor everywhere (a model choice; the brightest storm arcs do reach 100 kR and more, but over a
+ * small part of the oval).
  */
+export const AURORA_KNEE_KR = 12;
+export const AURORA_MAX_KR = 30;
 export function auroraBrightness(kp: number): { greenKr: number; redShare: number } {
   const k = Math.min(9, Math.max(0, kp));
-  return { greenKr: 3 * 10 ** (k / 5), redShare: 0.12 + 0.05 * k };
+  const x = 3 * 10 ** (k / 5);
+  const span = AURORA_MAX_KR - AURORA_KNEE_KR;
+  const greenKr = x <= AURORA_KNEE_KR ? x : AURORA_KNEE_KR + span * -Math.expm1(-(x - AURORA_KNEE_KR) / span);
+  return { greenKr, redShare: 0.12 + 0.05 * Math.min(k, 3) };
 }
 
 /** Wavelengths of the lines, nm. */

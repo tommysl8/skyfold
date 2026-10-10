@@ -281,5 +281,11 @@ describe('the aurora', () => {
     const r = lineColour(630);
     expect(r[0]).toBeGreaterThan(r[1]);
     expect(auroraBrightness(3).greenKr).toBeGreaterThan(auroraBrightness(1).greenKr);
+    // Storms: brighter arcs only up to a soft limit, the red share held at Kp 3's; Kp 3 itself as before.
+    expect(auroraBrightness(3).greenKr).toBeCloseTo(3 * 10 ** 0.6, 9);
+    expect(auroraBrightness(5).greenKr).toBeGreaterThan(auroraBrightness(3).greenKr);
+    expect(auroraBrightness(5).greenKr).toBeLessThan(auroraBrightness(9).greenKr);
+    expect(auroraBrightness(9).greenKr).toBeLessThan(30);
+    expect(auroraBrightness(9).redShare).toBeCloseTo(auroraBrightness(3).redShare, 12);
   });
 });

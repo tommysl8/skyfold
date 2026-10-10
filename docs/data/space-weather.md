@@ -155,7 +155,10 @@ equatorward edge is still at 59.7° at midnight), while in great storms the oval
 Kp 6 the ovals are those of Kp 6, their colatitudes stretched linearly in Kp so that at Kp 9 the equatorward edge
 reaches 35.5° at midnight: the edge of the northern oval reconstructed from naked-eye reports on 10–11 May 2024, when
 Kp was 9 (Hayakawa et al. 2025; 29.8° in the south). Kp 7 puts it at about 52°. A model of the stretch, anchored on
-that storm. The rays are rejected below the oval's lowest latitude less 3° (50° until then). The View menu's selector:
+that storm. The rays are rejected below the oval's lowest latitude less 3° (50° until then). A storm's oval grows wider, not
+brighter: above Kp 3 the arcs' brightness rolls off towards 30 kR, the arcs keep their width and the diffuse glow its
+brightness per degree, and a soft roll-off before the display keeps the brightest columns from saturating, so the
+night side's cities still show through (`docs/data/phenomena.md` §4). The View menu's selector:
 Auto, Quiet (1), 3, 5, 7, 9.
 
 ## 6. Cost
