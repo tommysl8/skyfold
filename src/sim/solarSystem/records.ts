@@ -50,6 +50,7 @@ import type { BodyIndex, Tracks } from '../tracks';
 import { barycentreFromSun } from '../voyager';
 import { Vector3 } from 'three';
 import type { BodiesFile, DataBody, DataRing, DataRotation, RingSystem, RingsFile } from './data';
+import { visitorFact, VISITORS } from './interstellar';
 
 export interface SolarSystemData {
   bodies: BodiesFile;
@@ -121,6 +122,9 @@ const ALIASES: Record<string, string[]> = {
   pioneer10: ['Pioneer', 'Pioneer F'],
   'parker-solar-probe': ['Parker', 'PSP', 'Solar Probe Plus'],
   jwst: ['JWST', 'Webb', 'James Webb'],
+  juno: ['Juno spacecraft', 'Juno probe'],
+  'europa-clipper': ['Clipper'],
+  soho: ['Solar and Heliospheric Observatory'],
 };
 
 /** What some bodies are, in a few words, where the kind alone says too little. */
@@ -130,10 +134,30 @@ const KIND_TEXT: Record<string, string> = {
   'hale-bopp': 'Comet C/1995 O1',
   borisov: 'Interstellar comet',
   'atlas-3i': 'Interstellar comet',
+  juno: 'Jupiter orbiter',
+  'europa-clipper': 'On its way to Jupiter and Europa',
+  soho: 'Solar observatory',
 };
 
-/** Comets whose coma and tails are drawn (the interstellar comets had them too; ʻOumuamua showed none). */
-const TAILS = new Set(['halley', 'encke', 'churyumov-gerasimenko', 'hale-bopp', 'borisov', 'atlas-3i']);
+/** Spacecraft drawn as a point of light and a label only: their shapes are not modelled. */
+const POINT_CRAFT = new Set(['juno', 'europa-clipper', 'soho']);
+/** Spacecraft with no orbit line: a heliocentric conic would repeat Earth's (Webb, SOHO) or mean nothing at Jupiter (Juno). */
+const NO_ORBIT_LINE = new Set(['jwst', 'soho', 'juno']);
+
+/**
+ * Comets whose coma and tails are drawn (the interstellar comets had them too; ʻOumuamua showed none), with the
+ * magnitude law that sets how strong and long they are: total magnitude M1 + 5 log10 Δ + K1 log10 r, from JPL's
+ * Small-Body Database (retrieved 2026-10-09; Halley's from the ICQ Comet Handbook 2005, the others fitted with JPL's
+ * orbit solutions: Encke K273/21, 67P K284/1, Hale–Bopp 226, Borisov 54, 3I/ATLAS 54).
+ */
+const TAILS: Record<string, { m1: number; k1: number }> = {
+  halley: { m1: 5.5, k1: 8 },
+  encke: { m1: 15.7, k1: 4.5 },
+  'churyumov-gerasimenko': { m1: 12.9, k1: 7.5 },
+  'hale-bopp': { m1: 4.8, k1: 4 },
+  borisov: { m1: 13.8, k1: 4.5 },
+  'atlas-3i': { m1: 12.5, k1: 4.5 },
+};
 
 /** Shorter names for labels. */
 const SHORT: Record<string, string> = {
@@ -198,6 +222,9 @@ function kindOf(b: DataBody): { kind: BodyKind; kindText?: string } {
  */
 const TUMBLES: Record<string, { periodH: number; precessionH: number; coneDeg: number }> = {
   halley: { periodH: 7.1 * 24, precessionH: 3.7 * 24, coneDeg: 60 },
+  // ʻOumuamua: its long axis turning end over end every 8.67 h, the light curve's main period, and wobbling every
+  // 54.48 h, its likeliest second period (Belton et al. 2018, ApJL 856, L21); the cone is illustrative.
+  oumuamua: { periodH: 8.67, precessionH: 54.48, coneDeg: 25 },
   hyperion: { periodH: 5 * 24, precessionH: 21 * 24, coneDeg: 30 },
 };
 
@@ -330,6 +357,7 @@ export function ringSpec(sys: RingSystem): { spec: RingSpec; boosted: boolean } 
 }
 
 function visualOf(b: DataBody, rings: RingsFile): BodyVisual {
+  if (b.kind === 'spacecraft' && POINT_CRAFT.has(b.id)) return { renderer: 'point' };
   if (b.kind === 'spacecraft') return { renderer: 'spacecraft', craft: b.id === 'jwst' ? 'jwst' : b.id === 'parker-solar-probe' ? 'parker' : 'probe' };
   const v: BodyVisual = {};
   const tex = b.assets.texture;
@@ -347,7 +375,10 @@ function visualOf(b: DataBody, rings: RingsFile): BodyVisual {
     v.atmoStrength = 0.55;
     v.mapMix = 0.3;
   }
-  if (TAILS.has(b.id)) v.tails = true;
+  if (TAILS[b.id]) {
+    v.tails = true;
+    v.tailMagnitudes = TAILS[b.id];
+  }
   const ringRef = b.assets.rings?.split('#')[1];
   const sys = ringRef ? rings.systems.find((s) => s.parent === ringRef) : undefined;
   if (sys) v.rings = ringSpec(sys).spec;
@@ -387,7 +418,9 @@ function drawingNotes(b: DataBody): string[] {
   const info = b.assets.textureInfo;
   if (b.kind === 'spacecraft') {
     out.push(
-      b.id === 'jwst'
+      POINT_CRAFT.has(b.id)
+        ? 'Drawn as a point of light: its shape is not modelled.'
+        : b.id === 'jwst'
         ? 'Drawn as a simple sunshield and mirror at Webb’s size, sunshield towards the Sun.'
         : b.id === 'parker-solar-probe'
           ? 'Drawn as a simple heat shield and bus at Parker’s size, shield towards the Sun.'
@@ -440,6 +473,7 @@ export function fittedMoonProvider(m: MoonModel): PositionProvider {
 export const TRACK_CENTRES: Record<string, string> = {
   earth: 'earth',
   venus: 'venus',
+  mars: 'mars',
   jupiter: 'jupiter',
   saturn: 'saturn',
   uranus: 'uranus',
@@ -540,7 +574,7 @@ function trackPositionNote(tracks: Tracks, id: string, kind: DataBody['kind']): 
   const acc = info.accuracy as { maxKm: number; flyby?: { maxKm: number } };
   const y0 = yearOf(info.precise[0]);
   const y1 = yearOf(info.precise[1] - 1e-6);
-  const flyby = acc.flyby && kind === 'spacecraft' && id !== 'jwst' ? ` (within ${twoFigures(acc.flyby.maxKm)} km near its flybys)` : '';
+  const flyby = acc.flyby && kind === 'spacecraft' && id !== 'jwst' && id !== 'soho' ? ` (within ${twoFigures(acc.flyby.maxKm)} km near its flybys)` : '';
   let after: string;
   if (info.after.regime === 'unknown') after = `; not modelled after ${longDate(preciseEndIso(info))}`;
   else if (kind === 'spacecraft') after = `; after ${y1} a two-body extrapolation`;
@@ -556,6 +590,9 @@ const TRACK_CAVEATS: Record<string, string> = {
   pioneer10: 'JPL’s historical trajectory, for general purposes rather than precision; it steps by up to 126,500 km where files join.',
   'parker-solar-probe': 'Reconstructed to 27 January 2026, then NASA’s planning trajectory; no Venus flybys after 2030.',
   jwst: 'A prediction after 20 September 2026 (Goddard’s station-keeping plan), to September 2031.',
+  juno: 'Tracked to 23 September 2026, then JPL’s plan to September 2028; at Jupiter fitted to 250 km rather than 25.',
+  'europa-clipper': 'Tracked to 22 September 2026, then the mission’s planned cruise and tour to 2034; at Jupiter fitted to 250 km rather than 25.',
+  soho: 'Goddard’s trajectory, with a ballistic arc over its lost months of 1998; a prediction after 26 August 2026.',
   encke: 'Where JPL’s orbit solutions hand over, at aphelion, the position steps by up to 13,300 km: the solutions differ by that much.',
   'churyumov-gerasimenko': 'Where JPL’s orbit solutions hand over, at aphelion, the position steps by up to 12,500 km: the solutions differ by that much.',
   arrokoth: 'Follows the New Horizons project orbit in 1995–2033 and JPL’s ground-based one outside it; they differ by 48,000–65,000 km at the switches.',
@@ -680,7 +717,7 @@ function flybyDatesMs(tracks: Tracks, id: string): number[] {
  * was): seen from inside the Solar System, long, steeply tilted orbits cross the whole sky.
  */
 function orbitLineOf(b: DataBody, tracks: Tracks, escaping: boolean): BodyRecord['orbitLine'] {
-  if (b.id === 'jwst') return false;
+  if (NO_ORBIT_LINE.has(b.id)) return false;
   if (escaping) return { muKm3S2: GM_SOLAR_SYSTEM_KM3_S2, trailFromMs: flybyDatesMs(tracks, b.id), onDemand: true };
   if (b.kind === 'spacecraft' || b.kind === 'tno') return { onDemand: true };
   return undefined;
@@ -712,7 +749,7 @@ function trackRecord(b: DataBody, data: SolarSystemData): BodyRecord {
     // Escaping craft: the conic about the whole Solar System's mass (as their extrapolation).
     orbitLine: orbitLineOf(b, data.tracks, escaping),
     // Pulse detectors: Webb's would repeat Earth's reading; the candidates are left out like moons of their size.
-    detector: b.id === 'jwst' || (b.kind === 'tno' && b.dwarfPlanetCandidate) ? false : undefined,
+    detector: b.id === 'jwst' || b.id === 'soho' || (b.kind === 'tno' && b.dwarfPlanetCandidate) ? false : undefined,
     dataSource:
       b.kind === 'spacecraft'
         ? 'NASA mission pages; trajectory fitted to JPL Horizons.'
@@ -720,6 +757,33 @@ function trackRecord(b: DataBody, data: SolarSystemData): BodyRecord {
     positionNote: trackPositionNote(data.tracks, b.id, b.kind),
     modelNotes: caveat ? [caveat, ...(c.modelNotes ?? [])] : c.modelNotes,
   };
+}
+
+/**
+ * ʻOumuamua's shape, a model: never resolved, but its light varied tenfold as it turned, so it is long or flat. Drawn
+ * as the cigar of Meech et al. (2017, Nature 552, 378) for an albedo of 0.04, about 230 × 35 m, its long axis the
+ * body's x axis, square to the axis the tumble spins it about.
+ */
+const OUMUAMUA_RADII_KM: readonly [number, number, number] = [0.115, 0.0175, 0.0175];
+const OUMUAMUA_NOTE =
+  'Shape a model: a cigar about 230 × 35 m (Meech et al. 2017, for a dark surface). It was never resolved; a flat disc about 115 × 111 × 19 m fits the light curve as well (Mashchenko 2019). Its tumble is drawn with the light curve’s periods, end over end every 8.67 hours and wobbling every 54.5 hours (Belton et al. 2018), at an illustrative phase.';
+
+/** An interstellar visitor's own parts: where it came from and how fast on the card, and ʻOumuamua's shape. */
+function visitorRecord(r: BodyRecord): BodyRecord {
+  const v = VISITORS[r.id as keyof typeof VISITORS];
+  if (!v) return r;
+  const out: BodyRecord = {
+    ...r,
+    facts: [...(r.facts ?? []), visitorFact(v)],
+    factSources: r.factSources ? [...r.factSources, `https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=${r.id === 'oumuamua' ? '1I' : r.id === 'borisov' ? '2I' : '3I'}`] : r.factSources,
+    // Its path through the Solar System is drawn by scene/VisitorPaths.tsx, from its track.
+    orbitLine: false,
+  };
+  if (r.id === 'oumuamua') {
+    out.physical = { ...r.physical, triaxialRadiiKm: OUMUAMUA_RADII_KM, maxRadiusKm: OUMUAMUA_RADII_KM[0] };
+    out.modelNotes = [OUMUAMUA_NOTE, ...(r.modelNotes ?? []).filter((n) => !n.startsWith('Rotation illustrative'))];
+  }
+  return out;
 }
 
 /** Rings for a built-in planet, with the note they need. */
@@ -753,7 +817,7 @@ export function solarSystemRecords(data: SolarSystemData, core: CoreRecords): { 
       if (!data.tracks.has(b.id)) throw new Error(`solar system: no track for '${b.id}'`);
       const r = trackRecord(b, data);
       if (b.id === 'voyager1') voyager1 = r;
-      else add.push(r);
+      else add.push(b.kind === 'interstellar' ? visitorRecord(r) : r);
     }
   }
 

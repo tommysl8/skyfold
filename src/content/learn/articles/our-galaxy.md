@@ -130,6 +130,14 @@ In 2017 Alberto Sanna's team measured a water maser in the Scutum–Centaurus ar
 This is a model, not a photograph. No camera has ever left the Sun's neighbourhood; every view of our galaxy from outside is built from measurements like those in this article. Look for the central bar, the arms, and the Sun about halfway out.
 :::
 
+::: note A magnetic galaxy
+The disc is threaded by a magnetic field of a few millionths of a gauss, about a hundred-thousandth of the strength of Earth's field at the ground. It shows in radio light: electrons spiralling round the field lines shine polarised across them, and the field twists the polarisation of distant radio sources behind it (Faraday rotation), one way where it points towards us and the other way where it points away. In 2024 Michael Unger and Glennys Farrar fitted models of the large-scale field to both. In the disc the field follows the spiral arms at a pitch of about 11°, the arms' own, and reverses between them; above and below the disc a halo field circles the Galaxy one way in the north and the other way in the south; and an X-shaped field rises through the inner disc, as in other spiral galaxies seen edge-on. A tangled field about as strong again is too small-scale to map.[^uf2024]
+:::
+
+::: see-it galactic-field
+The model's field lines: amber where the field runs clockwise seen from the north, blue the other way. View › Magnetic field lines draws them anywhere; from the Solar System it shows the field across the sky instead, as WMAP measured it.
+:::
+
 ## Something heavy in Sagittarius
 
 On 13 and 15 February 1974, Bruce Balick and Robert Brown observed the radio source in Sagittarius with the National Radio Astronomy Observatory's interferometer at Green Bank, West Virginia, which linked dishes there with a 45-foot antenna 35 km away. They found a compact source less than an arcsecond (1/3,600 of a degree) across and argued that it marked the centre of the Galaxy.[^goss2003][^balick1974] Theorists had asked for something like it. In 1971 Donald Lynden-Bell and Martin Rees had compared the violent cores of quasars with the centre of our galaxy and listed tests, among them using long-baseline radio interferometry to "determine the size of any central black hole that there may be in our galaxy".[^goss2003] That test would take until 2022.
@@ -233,7 +241,15 @@ If most of the Galaxy's mass were in its stars, which crowd towards the middle, 
 
 The real speed is about twice that. Anna-Christina Eilers and colleagues found the rotation speed falling only gently, by about 1.7 km/s per kiloparsec, from 229 km/s at the Sun to about 200 km/s at 25 kpc.[^eilers2019] That speed at that radius needs $2.3 \times 10^{11}$ solar masses inside, nearly four times the mass of the stars and gas. The rest is dark matter, which pulls but neither shines nor blocks light. Kapteyn and Oort used the same name for dim stars and dust; the modern dark matter is spread through a roughly round halo reaching far beyond the disc, and nobody knows what it is. Near the Sun it is thin, about 0.3 GeV per cubic centimetre: a third of a proton's mass in a sugar-cube-sized volume.[^eilers2019]
 
+::: see-it galaxy-rotation
+Gold stars go round at the speed of a mass model fitted to the Galaxy's measured rotation, Paul McMillan's of 2017; beside each, a grey one goes round at the speed the stars and gas alone would give, and far out it falls further and further behind. The gap is the dark matter's pull. The model is not the Galaxy: beyond about 18 kpc it turns a little faster than Eilers's measurements.[^mcmillan2017][^eilers2019]
+:::
+
 The total is honestly uncertain. From the motions of distant globular clusters, Laura Watkins and colleagues found about 1.5 trillion solar masses, with a likely range of about 1.1 to 2.3 trillion.[^watkins2019] In 2023 a team using Gaia's third release found the rotation speed dropping by about 30 km/s between 19.5 and 26.5 kpc, and a total of only about 200 billion.[^jiao2023] The two estimates differ by a factor of more than seven. One problem is that $v^2 = GM/r$ assumes steady orbits, and the outer Galaxy is not settled: the Large Magellanic Cloud may weigh 140 billion solar masses by itself, enough to set the outer halo moving.[^erkal2019]
+
+::: see-it milky-way-dark-halo
+The same model's dark halo, drawn as a faint fog of its density summed along each line of sight: a picture of where the mass is, not of anything that shines. In this model it holds about 95 % of the Galaxy's mass within 200 kpc, some 1.3 trillion Suns; the lighter halos the newest rotation curves allow would hold far less.[^mcmillan2017]
+:::
 
 ## What comes next
 
@@ -291,6 +307,7 @@ With current measurements it is close to a coin toss. In 2025 Till Sawala and co
 - A. Helmi, C. Babusiaux, H. H. Koppelman et al., "The merger that led to the formation of the Milky Way's inner stellar halo and thick disk", *Nature* 563, 85-88 (2018). https://doi.org/10.1038/s41586-018-0625-x (open access at https://arxiv.org/abs/1806.06038)
 - G. Edenhofer, C. Zucker, P. Frank et al., "A parsec-scale Galactic 3D dust map out to 1.25 kpc from the Sun", *Astronomy & Astrophysics* 685, A82 (2024). https://doi.org/10.1051/0004-6361/202347628 (open access; the map is at https://doi.org/10.5281/zenodo.8187942)
 - J. Alves, C. Zucker, A. A. Goodman et al., "A Galactic-scale gas wave in the solar neighbourhood", *Nature* 578, 237-239 (2020). https://doi.org/10.1038/s41586-019-1874-z (open access at https://arxiv.org/abs/2001.08748)
+- P. J. McMillan, "The mass distribution and gravitational potential of the Milky Way", *Monthly Notices of the Royal Astronomical Society* 465, 76-94 (2017). https://doi.org/10.1093/mnras/stw2759 (open access at https://arxiv.org/abs/1608.00971)
 - A.-C. Eilers, D. W. Hogg, H.-W. Rix and M. K. Ness, "The circular velocity curve of the Milky Way from 5 to 25 kpc", *Astrophysical Journal* 871, 120 (2019). https://doi.org/10.3847/1538-4357/aaf648 (open access at https://arxiv.org/abs/1810.09466)
 - J. Bland-Hawthorn and O. Gerhard, "The Galaxy in context: structural, kinematic, and integrated properties", *Annual Review of Astronomy and Astrophysics* 54, 529-596 (2016). https://doi.org/10.1146/annurev-astro-081915-023441 (open access at https://arxiv.org/abs/1602.07702; the standard reference for the Galaxy's vital statistics)
 
@@ -346,6 +363,7 @@ With current measurements it is close to a coin toss. In 2025 Till Sawala and co
 [^alves2020]: J. Alves, C. Zucker, A. A. Goodman et al., "A Galactic-scale gas wave in the solar neighbourhood", Nature 578, 237-239 (2020). https://doi.org/10.1038/s41586-019-1874-z
 [^konietzka2024]: R. Konietzka, A. A. Goodman, C. Zucker et al., "The Radcliffe Wave is oscillating", Nature 628, 62-65 (2024). https://doi.org/10.1038/s41586-024-07127-3
 [^oort1927]: J. H. Oort, "Observational evidence confirming Lindblad's hypothesis of a rotation of the galactic system", Bulletin of the Astronomical Institutes of the Netherlands 3, 275-282 (No. 120, 14 April 1927). https://adsabs.harvard.edu/pdf/1927BAN.....3..275O
+[^mcmillan2017]: P. J. McMillan, "The mass distribution and gravitational potential of the Milky Way", Monthly Notices of the Royal Astronomical Society 465, 76-94 (2017): best-fitting model with an NFW halo, v0 = 233.1 km/s at R0 = 8.21 kpc, virial mass 1.37 × 10¹² solar masses. https://doi.org/10.1093/mnras/stw2759
 [^eilers2019]: A.-C. Eilers, D. W. Hogg, H.-W. Rix and M. K. Ness, "The circular velocity curve of the Milky Way from 5 to 25 kpc", Astrophysical Journal 871, 120 (2019). https://doi.org/10.3847/1538-4357/aaf648
 [^gravity2019]: GRAVITY Collaboration, "A geometric distance measurement to the Galactic center black hole with 0.3% uncertainty", Astronomy & Astrophysics 625, L10 (2019). https://doi.org/10.1051/0004-6361/201935656
 [^nobelpop]: The Royal Swedish Academy of Sciences, "The Nobel Prize in Physics 2020: Popular science background". https://www.nobelprize.org/prizes/physics/2020/popular-information/
@@ -402,4 +420,5 @@ With current measurements it is close to a coin toss. In 2025 Till Sawala and co
 [^skamid]: SKA Observatory, "SKA-Mid". https://www.skao.int/en/explore/telescopes/ska-mid
 [^skatimeline]: SKA Observatory, "Timeline to Science" (checked 25 September 2026). https://www.skao.int/en/science-users/647/timeline-science
 [^skagoals]: SKA Observatory, "Science goals" (checked 25 September 2026). https://www.skao.int/en/explore/science-goals
+[^uf2024]: M. Unger and G. R. Farrar, "The coherent magnetic field of the Milky Way", Astrophysical Journal 970, 95 (2024), sections 5 and 7 and Table 3. https://doi.org/10.3847/1538-4357/ad4a54 (open access at https://arxiv.org/abs/2311.12120)
 [^sawala2025]: T. Sawala, J. Delhomelle, A. J. Deason, C. S. Frenk et al., "No certainty of a Milky Way–Andromeda collision", Nature Astronomy 9, 1206-1217 (2025). https://doi.org/10.1038/s41550-025-02563-1

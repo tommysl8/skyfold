@@ -55,7 +55,9 @@ import { DiskControls } from './DiskControls';
 import { PictureCreditLine, SourceLinks, Sources } from './Sources';
 import type { ControlMode } from '../../state/ui';
 import { TRANSIENT_SCENES, transientNow } from '../../sim/phenomena';
+import { fieldDrawnNote, fieldLine, fieldSource } from '../../sim/fields';
 import { runScene } from '../../content/scenes';
+import { StarTrack, SunAge, VariableLine } from './StarTime';
 
 /** The camera modes in which it is at a body it is centred on (a black hole's own modes included). */
 const AT_TARGET: readonly ControlMode[] = ['orbit', 'fall', 'circular', 'hold'];
@@ -141,6 +143,32 @@ function TransientLine({ id }: { id: string }) {
           Watch it
         </button>
       )}
+    </div>
+  );
+}
+
+/** A body's magnetic field, its source, and the switch that draws it (sim/fields; View › Magnetic field lines). */
+function FieldLine({ id }: { id: string }) {
+  const on = useUI((s) => s.fieldLines);
+  const text = fieldLine(id, 1970 + sim.timeMs / (365.2425 * 86_400_000));
+  const src = fieldSource(id);
+  if (!text) return null;
+  return (
+    <div className="mt-2 text-[11.5px] leading-snug text-fg-2">
+      {text}{' '}
+      {src && (
+        <a className="underline decoration-line-2 underline-offset-2 hover:text-fg" href={src.url} target="_blank" rel="noreferrer" title={src.label}>
+          Source
+        </a>
+      )}
+      <button
+        className="btn btn-q btn-sm ml-1 !h-5 !px-1.5 align-baseline"
+        onClick={() => useUI.setState({ fieldLines: !on })}
+        title={on ? 'Hide the magnetic field lines (View › Magnetic field lines)' : 'Draw the magnetic field lines (View › Magnetic field lines)'}
+      >
+        {on ? 'Hide lines' : 'Show lines'}
+      </button>
+      {on && <div className="mt-0.5 text-[11px] text-fg-3">{fieldDrawnNote(id)}</div>}
     </div>
   );
 }
@@ -265,6 +293,9 @@ export function BodyCard() {
               <div className="text-fg-3">{starDistanceWords(d.star)}</div>
             </div>
           )}
+          {d.star?.variable && <VariableLine id={id} line={d.star.variable} />}
+          {id === 'sun' && <SunAge />}
+          {d.star?.massMsun !== undefined && <StarTrack star={d.star} />}
           {d.exoplanet && (
             <div className="mono mt-0.5 text-[10.5px] leading-[15px] text-fg-2">
               <div>{exoplanetPhysicalLine(d.exoplanet)}</div>
@@ -349,6 +380,7 @@ export function BodyCard() {
           </p>
         ))}
         {d.exoplanet?.statusNote && <p className="mb-1.5 text-[11.5px] leading-snug text-fg-2">{cardFact(d.exoplanet.statusNote)}</p>}
+        <FieldLine id={id} />
         {origin && <p className="mt-2 text-[11.5px] leading-snug text-fg-2">{cardFact(origin)}</p>}
         {status && <p className="mt-1 text-[11.5px] leading-snug text-fg-2">{status}</p>}
         {modelLine && <p className="mt-2 text-[11px] leading-snug text-fg-3">{modelLine}</p>}

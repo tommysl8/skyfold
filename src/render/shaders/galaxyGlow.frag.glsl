@@ -89,9 +89,21 @@ float erfA(float x) {
   return s * y;
 }
 
-// ∫ e^(−|z|/h) dz from 0 to z.
-float layerInt(float z, float h) {
-  return sign(z) * h * (1.0 - exp(-abs(z) / h));
+// 1 − e^(−x) for x ≥ 0, without the cancellation of the plain form for small x.
+float oneMinusExp(float x) {
+  return x < 1e-3 ? x * (1.0 - 0.5 * x * (1.0 - x / 3.0)) : 1.0 - exp(-x);
+}
+
+// ∫ e^(−|z|/h) dz from za to zb (sim/galaxy/glow.ts layerColumn). Not as the difference of the integrals from 0:
+// many scale heights from the midplane both are h to within float32's precision, and their difference was noise
+// of either sign (the young arm stars' 60-pc layer seen from a kiloparsec above or below it), which the colour's
+// normalisation below divided by: a saturated white band across the sky. On one side of the midplane the column is
+// h e^(−|z|near/h) (1 − e^(−Δ/h)), positive and exact to a few ulp.
+float layerColumn(float za, float zb, float h) {
+  float a = abs(za) / h;
+  float b = abs(zb) / h;
+  float m = za * zb >= 0.0 ? h * exp(-min(a, b)) * oneMinusExp(abs(zb - za) / h) : h * (oneMinusExp(a) + oneMinusExp(b));
+  return zb >= za ? m : -m;
 }
 
 // Ship-frame direction → rest-frame direction, and ln D: the inverse of relAberrate. With the
@@ -315,9 +327,9 @@ void main() {
     float hT = uGlowThin.z;
     float hK = uGlowThick.z;
     float hY = uGlowYoungHz;
-    float cT = level ? L * exp(-abs(za) / hT) : (layerInt(zb, hT) - layerInt(za, hT)) * L / dz;
-    float cK = level ? L * exp(-abs(za) / hK) : (layerInt(zb, hK) - layerInt(za, hK)) * L / dz;
-    float cY = level ? L * exp(-abs(za) / hY) : (layerInt(zb, hY) - layerInt(za, hY)) * L / dz;
+    float cT = level ? L * exp(-abs(za) / hT) : layerColumn(za, zb, hT) * L / dz;
+    float cK = level ? L * exp(-abs(za) / hK) : layerColumn(za, zb, hK) * L / dz;
+    float cY = level ? L * exp(-abs(za) / hY) : layerColumn(za, zb, hY) * L / dz;
     float sT = R > uGlowThin.w ? 0.0 : uGlowThin.x * exp(-R / uGlowThin.y);
     float sK = R > uGlowThick.w ? 0.0 : uGlowThick.x * exp(-R / uGlowThick.y);
     vec3 e = vec3(wDisc * sT * cT / (2.0 * hT), wYoung * wy.y * cY / (2.0 * hY), wDisc * sK * cK / (2.0 * hK));

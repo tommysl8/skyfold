@@ -24,7 +24,7 @@ import {
 } from 'three';
 import { blackbodyLut, blackbodyRgb, bvToTemperature } from '../physics/blackbody';
 import { buildDopplerLut, DOPPLER_LUT_LN_MAX, DOPPLER_LUT_LN_MIN, DOPPLER_LUT_SIZE } from '../physics/dopplerColor';
-import { MPC_KM, SATURN_RING_INNER_KM, SATURN_RING_OUTER_KM, SUN_TEFF_K } from '../physics/constants';
+import { MPC_KM, SATURN_RING_INNER_KM, SATURN_RING_OUTER_KM, SUN_RADIUS_KM, SUN_TEFF_K } from '../physics/constants';
 import { cosmicSky, type SkyTable } from '../sim/cosmos/expansion';
 import { STAR_MAG_LIMIT } from '../sim/stars/visibility';
 import { MW_MU_FADE } from '../sim/galaxy/background';
@@ -520,6 +520,12 @@ export function createPlanetMaterial(o: PlanetMaterialOptions): ShaderMaterial {
       uCenterW: { value: new Vector3() },
       uRingInner: { value: 1 },
       uRingOuter: { value: 2 },
+      // Eclipses (shaders/planet.frag.glsl; set by scene/Bodies.tsx for bodies that have eclipsers).
+      uOccluderCount: { value: 0 },
+      uOccluders: { value: [new Vector4(), new Vector4(), new Vector4(), new Vector4()] },
+      uOccluderGlow: { value: [new Vector3(), new Vector3(), new Vector3(), new Vector3()] },
+      uSunRadiusKm: { value: SUN_RADIUS_KM },
+      uTrueScale: { value: 1 },
       ...surfaceUniforms,
     },
     vertexShader: planetVert,
@@ -1142,7 +1148,10 @@ void main() {
 }
 `;
 
-/** Quaia's quasars as streaks along the line of sight (shaders/quaiaStreak.vert.glsl): one draw a node, added as the survey's points. */
+/**
+ * Quaia's quasars and Gaia's galaxies as streaks along the line of sight (shaders/quaiaStreak.vert.glsl): one draw a
+ * node, added as the survey's points; the galaxies (grey: no measured colour) in the survey's class colours.
+ */
 export function createQuaiaStreakMaterial(): ShaderMaterial {
   initBlackbodyUniforms();
   return new ShaderMaterial({
@@ -1154,6 +1163,8 @@ export function createQuaiaStreakMaterial(): ShaderMaterial {
       uDepthMpc: { value: MAP_DEPTH_NEAR_MPC },
       uColor: { value: QUAIA_COLOR },
       uLnT: { value: SURVEY_CLASS_LN_T[3] },
+      uClassColor: { value: SURVEY_CLASS_COLORS },
+      uClassLnT: { value: SURVEY_CLASS_LN_T },
       uLum: { value: new Vector2(LUM_LOG_MIN, LUM_LOG_STEP) },
       uSigmaCode: { value: new Vector2(SIGMA_LOG2_MIN, SIGMA_STEPS_PER_OCTAVE) },
       uFade: { value: new Vector3(QUAIA_FADE_MPC[0], QUAIA_FADE_MPC[1], QUAIA_FADE_MIN) },
@@ -1170,6 +1181,10 @@ export function createQuaiaStreakMaterial(): ShaderMaterial {
     depthTest: false,
     depthWrite: false,
     transparent: false,
+    // Both faces: a node's model matrix carries its numbers, not a transform (scene/Surveys.tsx), and three.js flips
+    // a mesh's winding where that matrix's determinant is negative, which with the default front side culled every
+    // streak of a node from some places (the 9.4-billion-light-year view home among them). The quads face the screen.
+    side: DoubleSide,
   });
 }
 

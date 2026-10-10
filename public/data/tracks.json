@@ -2,7 +2,7 @@
  "format": "lightspeed-tracks",
  "version": 1,
  "binary": "tracks.bin",
- "generated": "2026-09-26",
+ "generated": "2026-10-09",
  "source": "JPL Horizons API (https://ssd.jpl.nasa.gov/horizons/), NASA/JPL-Caltech",
  "frame": "Ecliptic and mean equinox of J2000 (Horizons REF_PLANE=ECLIPTIC, REF_SYSTEM=ICRF; obliquity 84381.448″)",
  "time": "TDB days since J2000.0 (JD 2451545.0 TDB)",
@@ -29,6 +29,10 @@
   "venus": {
    "horizons": "@299",
    "label": "Venus (body centre)"
+  },
+  "mars": {
+   "horizons": "@499",
+   "label": "Mars (body centre)"
   },
   "jupiter": {
    "horizons": "@599",
@@ -904,9 +908,9 @@
        "to": "2486958",
        "jumpKm": 47930,
        "jump": [
-        9675.78,
-        -46485.4,
-        6532.75
+        9675.777733,
+        -46485.38095,
+        6532.753317
        ],
        "rampDays": 18.5
       },
@@ -918,9 +922,9 @@
        "to": "486958",
        "jumpKm": 65450,
        "jump": [
-        16102.8,
-        -63222.4,
-        5169.42
+        16102.82595,
+        -63222.39168,
+        5169.422534
        ],
        "rampDays": 24.6
       }
@@ -1292,9 +1296,9 @@
        "to": "90000083",
        "jumpKm": 13320,
        "jump": [
-        -9922.11,
-        7541.15,
-        4687.45
+        -9922.112571,
+        7541.153565,
+        4687.452957
        ],
        "rampDays": 4.01
       },
@@ -1306,9 +1310,9 @@
        "to": "90000084",
        "jumpKm": 772.3,
        "jump": [
-        765.576,
-        -98.7089,
-        -25.1043
+        765.5763763,
+        -98.7089324,
+        -25.10426221
        ],
        "rampDays": 0.234
       },
@@ -1320,9 +1324,9 @@
        "to": "90000085",
        "jumpKm": 3023,
        "jump": [
-        1500.02,
-        2552.37,
-        611.258
+        1500.023977,
+        2552.365582,
+        611.2584062
        ],
        "rampDays": 0.92
       },
@@ -1334,9 +1338,9 @@
        "to": "90000086",
        "jumpKm": 5047,
        "jump": [
-        -1730.56,
-        3512.16,
-        3184.05
+        -1730.55749,
+        3512.156908,
+        3184.051804
        ],
        "rampDays": 1.54
       },
@@ -1348,9 +1352,9 @@
        "to": "90000088",
        "jumpKm": 3748,
        "jump": [
-        -1777.26,
-        3090.72,
-        -1155.53
+        -1777.263717,
+        3090.715117,
+        -1155.534371
        ],
        "rampDays": 1.14
       },
@@ -1362,9 +1366,9 @@
        "to": "90000089",
        "jumpKm": 2054,
        "jump": [
-        195.778,
-        -1252.98,
-        1615.5
+        195.7781615,
+        -1252.979052,
+        1615.504197
        ],
        "rampDays": 0.62
       },
@@ -1376,9 +1380,9 @@
        "to": "90000090",
        "jumpKm": 2412,
        "jump": [
-        -1224.42,
-        -1168.12,
-        1718.64
+        -1224.418224,
+        -1168.123289,
+        1718.642771
        ],
        "rampDays": 0.728
       },
@@ -1390,9 +1394,9 @@
        "to": "90000091",
        "jumpKm": 1211,
        "jump": [
-        -454.162,
-        77.8541,
-        1119.87
+        -454.1622488,
+        77.85409129,
+        1119.865605
        ],
        "rampDays": 0.366
       }
@@ -1593,9 +1597,9 @@
        "to": "90000698",
        "jumpKm": 8355,
        "jump": [
-        -8247.92,
-        726.653,
-        1117.77
+        -8247.918844,
+        726.6526154,
+        1117.769423
        ],
        "rampDays": 1.91
       },
@@ -1607,9 +1611,9 @@
        "to": "90000699",
        "jumpKm": 11350,
        "jump": [
-        -10913.9,
-        2906.68,
-        1114.72
+        -10913.88432,
+        2906.679087,
+        1114.724487
        ],
        "rampDays": 2.6
       },
@@ -1621,9 +1625,9 @@
        "to": "90000700",
        "jumpKm": 12460,
        "jump": [
-        -12390.8,
-        -148.364,
-        1303.94
+        -12390.79914,
+        -148.3644228,
+        1303.942285
        ],
        "rampDays": 2.86
       },
@@ -1635,9 +1639,9 @@
        "to": "90000701",
        "jumpKm": 10110,
        "jump": [
-        -9871.2,
-        -451.386,
-        2158.55
+        -9871.201767,
+        -451.3859243,
+        2158.552066
        ],
        "rampDays": 2.33
       },
@@ -1649,9 +1653,9 @@
        "to": "90000703",
        "jumpKm": 2813,
        "jump": [
-        -2641.62,
-        900.073,
-        -354.971
+        -2641.618285,
+        900.0727037,
+        -354.9708503
        ],
        "rampDays": 0.653
       }
@@ -2259,9 +2263,9 @@
        "cause": "source",
        "jumpKm": 65180,
        "jump": [
-        -12977.9,
-        59523.1,
-        23164.6
+        -12977.85028,
+        59523.07634,
+        23164.57267
        ],
        "rampDays": 5.27
       }
@@ -2615,9 +2619,9 @@
        "cause": "source",
        "jumpKm": 609.9,
        "jump": [
-        -153.064,
-        490.086,
-        329.263
+        -153.064195,
+        490.0862122,
+        329.2627078
        ],
        "rampDays": 0.063
       }
@@ -2829,9 +2833,9 @@
        "cause": "source",
        "jumpKm": 1205,
        "jump": [
-        1056.23,
-        480.09,
-        324.196
+        1056.225029,
+        480.089737,
+        324.1963733
        ],
        "rampDays": 0.104
       }
@@ -2897,9 +2901,9 @@
        "cause": "source",
        "jumpKm": 193.7,
        "jump": [
-        90.0235,
-        -66.4291,
-        158.18
+        90.02348859,
+        -66.42907765,
+        158.1798617
        ],
        "rampDays": 0.022
       },
@@ -2909,9 +2913,9 @@
        "cause": "source",
        "jumpKm": 193.4,
        "jump": [
-        -42.3967,
-        -187.065,
-        -24.8274
+        -42.39674774,
+        -187.0650736,
+        -24.82736644
        ],
        "rampDays": 0.0229
       }
@@ -2977,9 +2981,9 @@
        "cause": "source",
        "jumpKm": 331.7,
        "jump": [
-        26.3566,
-        329.045,
-        32.3379
+        26.35655123,
+        329.0450813,
+        32.33792497
        ],
        "rampDays": 0.0399
       }
@@ -3044,9 +3048,9 @@
        "cause": "source",
        "jumpKm": 4719,
        "jump": [
-        -1817.57,
-        3283.59,
-        2860.35
+        -1817.5729,
+        3283.588681,
+        2860.350363
        ],
        "rampDays": 0.592
       }
@@ -3222,9 +3226,9 @@
        "cause": "source",
        "jumpKm": 6478,
        "jump": [
-        -403.827,
-        -6461.18,
-        222.128
+        -403.8268984,
+        -6461.182052,
+        222.1284089
        ],
        "rampDays": 0.297
       },
@@ -3234,9 +3238,9 @@
        "cause": "source",
        "jumpKm": 743.1,
        "jump": [
-        -601.358,
-        -353.503,
-        -256.156
+        -601.3582433,
+        -353.503338,
+        -256.1559134
        ],
        "rampDays": 0.0624
       },
@@ -3246,9 +3250,9 @@
        "cause": "source",
        "jumpKm": 754.1,
        "jump": [
-        454.052,
-        -198.147,
-        568.533
+        454.0524947,
+        -198.1471882,
+        568.5328585
        ],
        "rampDays": 0.0975
       }
@@ -3289,9 +3293,9 @@
        "cause": "source",
        "jumpKm": 2531,
        "jump": [
-        -1480.37,
-        1846.8,
-        -897.557
+        -1480.373477,
+        1846.802202,
+        -897.5572002
        ],
        "rampDays": 0.445
       },
@@ -3301,9 +3305,9 @@
        "cause": "source",
        "jumpKm": 19360,
        "jump": [
-        18980.2,
-        -3827.84,
-        50.7247
+        18980.23287,
+        -3827.841285,
+        50.72471201
        ],
        "rampDays": 3.62
       }
@@ -3340,9 +3344,9 @@
        "cause": "source",
        "jumpKm": 126500,
        "jump": [
-        -61010.6,
-        -104330,
-        37392.1
+        -61010.56003,
+        -104330.3223,
+        37392.09968
        ],
        "rampDays": 16.1
       },
@@ -3352,9 +3356,9 @@
        "cause": "source",
        "jumpKm": 31020,
        "jump": [
-        -26467.9,
-        -15990.3,
-        2509.75
+        -26467.92819,
+        -15990.27136,
+        2509.745306
        ],
        "rampDays": 4.19
       }
@@ -3882,9 +3886,9 @@
        "cause": "source",
        "jumpKm": 79880,
        "jump": [
-        -57348.9,
-        55610,
-        -375.571
+        -57348.89019,
+        55609.96426,
+        -375.570914
        ],
        "rampDays": 2.19
       },
@@ -3894,9 +3898,9 @@
        "cause": "source",
        "jumpKm": 491.6,
        "jump": [
-        -383.894,
-        302.238,
-        54.2756
+        -383.8937048,
+        302.2375881,
+        54.27555678
        ],
        "rampDays": 0.0169
       }
@@ -4128,6 +4132,664 @@
     "Stored relative to the Earth (geocentre) because JWST orbits near the Sun–Earth L2 point. Definitive ephemeris to the Horizons tracking cut-off, then Goddard FDF predictions (station-keeping schedule) to 2031-09-21.",
     "After the data end the position is flagged \"unknown\" (the app hides it)."
    ]
+  },
+  "juno": {
+   "name": "Juno",
+   "kind": "spacecraft",
+   "horizons": {
+    "command": "-61",
+    "target": "Juno (spacecraft) (-61)",
+    "ephemeris": "Juno_merged",
+    "coverage": [
+     "A.D. 2011-AUG-05 17:19:12.1832 TDB",
+     "A.D. 2028-SEP-02 01:39:03.1619 TDB"
+    ]
+   },
+   "precise": [
+    4234.222363232169,
+    10471.56809215201
+   ],
+   "preciseIso": [
+    "2011-08-05 17:20:12.183",
+    "2028-09-02 01:38:03.161"
+   ],
+   "pieces": [
+    {
+     "centre": "earth",
+     "role": "inner",
+     "t0": 4234.222363232169,
+     "t1": 4236.050071600825,
+     "seg0": 2294,
+     "segCount": 2,
+     "blendIn": 0,
+     "blendOut": 0.15589861836269972,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 495,
+      "fitMaxKm": 20.9,
+      "independent": {
+       "points": 100,
+       "maxKm": 20.7,
+       "rmsKm": 10
+      },
+      "flyby": {
+       "points": 60,
+       "maxKm": 0.0775,
+       "rmsKm": 0.0465
+      }
+     },
+     "fineRadiusKm": 63781.4,
+     "fineTolKm": 1,
+     "switchRadiusKm": 929200,
+     "appPlanetOffsetKm": 761
+    },
+    {
+     "centre": "sun",
+     "role": "outer",
+     "t0": 4235.894172980916,
+     "t1": 5029.338223897852,
+     "seg0": 2296,
+     "segCount": 15,
+     "blendIn": 0,
+     "blendOut": 0,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 885,
+      "fitMaxKm": 24.8,
+      "independent": {
+       "points": 100,
+       "maxKm": 22.4,
+       "rmsKm": 9.42
+      }
+     }
+    },
+    {
+     "centre": "earth",
+     "role": "inner",
+     "t0": 5029.289325425867,
+     "t1": 5031.325196428224,
+     "seg0": 2311,
+     "segCount": 6,
+     "blendIn": 0.04889847227664358,
+     "blendOut": 0.04889847227664358,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 699,
+      "fitMaxKm": 24.5,
+      "independent": {
+       "points": 100,
+       "maxKm": 22.9,
+       "rmsKm": 8.37
+      },
+      "flyby": {
+       "points": 61,
+       "maxKm": 0.239,
+       "rmsKm": 0.108
+      }
+     },
+     "fineRadiusKm": 63781.4,
+     "fineTolKm": 1,
+     "switchRadiusKm": 929200,
+     "appPlanetOffsetKm": 441,
+     "closestApproach": {
+      "t": 5030.307315228515,
+      "iso": "2013-10-09 19:22:32.035",
+      "distanceKm": 6932.487
+     }
+    },
+    {
+     "centre": "sun",
+     "role": "outer",
+     "t0": 5031.276297955774,
+     "t1": 5951.322094446048,
+     "seg0": 2317,
+     "segCount": 11,
+     "blendIn": 0,
+     "blendOut": 0,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 921,
+      "fitMaxKm": 25,
+      "independent": {
+       "points": 100,
+       "maxKm": 24.3,
+       "rmsKm": 11.4
+      }
+     }
+    },
+    {
+     "centre": "jupiter",
+     "role": "inner",
+     "t0": 5946.322094446048,
+     "t1": 10471.56809215201,
+     "seg0": 2328,
+     "segCount": 567,
+     "blendIn": 5,
+     "blendOut": 0,
+     "tolKm": 1000,
+     "accuracy": {
+      "fitSamples": 87112,
+      "fitMaxKm": 250,
+      "independent": {
+       "points": 100,
+       "maxKm": 241,
+       "rmsKm": 110
+      }
+     },
+     "switchRadiusKm": 48220000,
+     "appPlanetOffsetKm": 26400
+    }
+   ],
+   "before": {
+    "regime": "before-launch",
+    "centre": "earth",
+    "epoch": 4234.222363232169,
+    "pos": [
+     7050.669206354165,
+     -3625.559070994775,
+     -1292.205735670806
+    ]
+   },
+   "after": {
+    "regime": "unknown",
+    "centre": "jupiter",
+    "epoch": 10471.56809215201,
+    "pos": [
+     232491.0883267542,
+     941327.4698299435,
+     -3724735.503828108
+    ]
+   },
+   "accuracy": {
+    "requirementKm": 1000,
+    "independentPoints": 621,
+    "maxKm": 250,
+    "rmsKm": 45,
+    "fitSamples": 90112,
+    "fitMaxKm": 250,
+    "flyby": {
+     "requirementKm": 1,
+     "points": 121,
+     "maxKm": 0.239,
+     "rmsKm": 0.0836
+    }
+   },
+   "appSwitchOffsetsKm": [
+    {
+     "centre": "earth",
+     "t": 4235.972122291643,
+     "iso": "2011-08-07 11:19:51",
+     "offsetKm": 610.7
+    },
+    {
+     "centre": "earth",
+     "t": 5029.313774662005,
+     "iso": "2013-10-08 19:31:50",
+     "offsetKm": 445.3
+    },
+    {
+     "centre": "earth",
+     "t": 5031.300747192086,
+     "iso": "2013-10-10 19:13:04",
+     "offsetKm": 442.6
+    },
+    {
+     "centre": "jupiter",
+     "t": 5948.822094446048,
+     "iso": "2016-04-15 07:43:48",
+     "offsetKm": 25210
+    }
+   ]
+  },
+  "europa-clipper": {
+   "name": "Europa Clipper",
+   "kind": "spacecraft",
+   "horizons": {
+    "command": "-159",
+    "target": "Europa Clipper (spacecraft) (-159)",
+    "ephemeris": "Europa_Clipper_merged",
+    "coverage": [
+     "A.D. 2024-OCT-14 16:15:03.7124 TDB",
+     "A.D. 2034-SEP-03 04:46:13.0131 TDB"
+    ]
+   },
+   "precise": [
+    9053.177820744924,
+    12663.69806728093
+   ],
+   "preciseIso": [
+    "2024-10-14 16:16:03.712",
+    "2034-09-03 04:45:13.013"
+   ],
+   "pieces": [
+    {
+     "centre": "earth",
+     "role": "inner",
+     "t0": 9053.177820744924,
+     "t1": 9054.825553487055,
+     "seg0": 2895,
+     "segCount": 8,
+     "blendIn": 0,
+     "blendOut": 0.22526577675223114,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 759,
+      "fitMaxKm": 24.2,
+      "independent": {
+       "points": 100,
+       "maxKm": 24.1,
+       "rmsKm": 11.3
+      },
+      "flyby": {
+       "points": 61,
+       "maxKm": 0.133,
+       "rmsKm": 0.0724
+      }
+     },
+     "fineRadiusKm": 63781.4,
+     "fineTolKm": 1,
+     "switchRadiusKm": 929200,
+     "appPlanetOffsetKm": 1250,
+     "jumps": [
+      {
+       "t": 9053.21508380345,
+       "iso": "2024-10-14 17:09:43",
+       "cause": "source",
+       "jumpKm": 50.31,
+       "jump": [
+        -0.4724481222,
+        -40.13536341,
+        -30.33318658
+       ],
+       "rampDays": 0.00802
+      }
+     ],
+     "closestApproach": {
+      "t": 9053.204957268563,
+      "iso": "2024-10-14 16:55:08.308",
+      "distanceKm": 6546.283
+     }
+    },
+    {
+     "centre": "sun",
+     "role": "outer",
+     "t0": 9054.600287710782,
+     "t1": 9190.369474957231,
+     "seg0": 2903,
+     "segCount": 14,
+     "blendIn": 0,
+     "blendOut": 0,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 249,
+      "fitMaxKm": 25,
+      "independent": {
+       "points": 100,
+       "maxKm": 25.1,
+       "rmsKm": 11
+      }
+     },
+     "jumps": [
+      {
+       "t": 9092.500802149701,
+       "iso": "2024-11-23 00:01:09",
+       "cause": "source",
+       "jumpKm": 163.5,
+       "jump": [
+        -160.2784322,
+        18.05715915,
+        26.75495069
+       ],
+       "rampDays": 0.00822
+      }
+     ]
+    },
+    {
+     "centre": "mars",
+     "role": "inner",
+     "t0": 9190.14922417188,
+     "t1": 9192.348073148169,
+     "seg0": 2917,
+     "segCount": 7,
+     "blendIn": 0.22025078406346252,
+     "blendOut": 0.22025078406346252,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 747,
+      "fitMaxKm": 24.7,
+      "independent": {
+       "points": 100,
+       "maxKm": 24.1,
+       "rmsKm": 13
+      },
+      "flyby": {
+       "points": 61,
+       "maxKm": 0.242,
+       "rmsKm": 0.0964
+      }
+     },
+     "fineRadiusKm": 33961.9,
+     "fineTolKm": 1,
+     "switchRadiusKm": 973300,
+     "appPlanetOffsetKm": 1950,
+     "closestApproach": {
+      "t": 9191.248647911149,
+      "iso": "2025-03-01 17:58:03.179",
+      "distanceKm": 4274.402
+     }
+    },
+    {
+     "centre": "sun",
+     "role": "outer",
+     "t0": 9192.127822362818,
+     "t1": 9832.484113831073,
+     "seg0": 2924,
+     "segCount": 20,
+     "blendIn": 0,
+     "blendOut": 0,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 851,
+      "fitMaxKm": 24.9,
+      "independent": {
+       "points": 100,
+       "maxKm": 22.3,
+       "rmsKm": 9.48
+      }
+     },
+     "jumps": [
+      {
+       "t": 9685.500801732811,
+       "iso": "2026-07-09 00:01:09",
+       "cause": "source",
+       "jumpKm": 8843,
+       "jump": [
+        -8748.863162,
+        -912.3379873,
+        912.1084413
+       ],
+       "rampDays": 0.593
+      },
+      {
+       "t": 9715.500804303956,
+       "iso": "2026-08-08 00:01:09",
+       "cause": "source",
+       "jumpKm": 8467,
+       "jump": [
+        7837.645017,
+        2917.655149,
+        -1323.40078
+       ],
+       "rampDays": 0.494
+      }
+     ]
+    },
+    {
+     "centre": "earth",
+     "role": "inner",
+     "t0": 9832.425604443997,
+     "t1": 9834.262414838187,
+     "seg0": 2944,
+     "segCount": 6,
+     "blendIn": 0.058509386601181844,
+     "blendOut": 0.058509386601181844,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 853,
+      "fitMaxKm": 24.4,
+      "independent": {
+       "points": 100,
+       "maxKm": 24.3,
+       "rmsKm": 11.8
+      },
+      "flyby": {
+       "points": 61,
+       "maxKm": 0.136,
+       "rmsKm": 0.0524
+      }
+     },
+     "fineRadiusKm": 63781.4,
+     "fineTolKm": 1,
+     "switchRadiusKm": 929200,
+     "appPlanetOffsetKm": 586,
+     "closestApproach": {
+      "t": 9833.343989574956,
+      "iso": "2026-12-03 20:15:20.699",
+      "distanceKm": 9605.332
+     }
+    },
+    {
+     "centre": "sun",
+     "role": "outer",
+     "t0": 9834.203905452043,
+     "t1": 10981.46506344201,
+     "seg0": 2950,
+     "segCount": 13,
+     "blendIn": 0,
+     "blendOut": 0,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 1302,
+      "fitMaxKm": 24.2,
+      "independent": {
+       "points": 100,
+       "maxKm": 23.9,
+       "rmsKm": 8.88
+      }
+     },
+     "jumps": [
+      {
+       "t": 9883.500802250494,
+       "iso": "2027-01-23 00:01:09",
+       "cause": "source",
+       "jumpKm": 3993,
+       "jump": [
+        329.0297127,
+        3808.584309,
+        -1153.567946
+       ],
+       "rampDays": 0.217
+      }
+     ]
+    },
+    {
+     "centre": "jupiter",
+     "role": "inner",
+     "t0": 10978.720167309977,
+     "t1": 12663.69806728093,
+     "seg0": 2963,
+     "segCount": 269,
+     "blendIn": 2.744896132303915,
+     "blendOut": 0,
+     "tolKm": 1000,
+     "accuracy": {
+      "fitSamples": 28641,
+      "fitMaxKm": 250,
+      "independent": {
+       "points": 100,
+       "maxKm": 249,
+       "rmsKm": 125
+      }
+     },
+     "switchRadiusKm": 48220000,
+     "appPlanetOffsetKm": 14900
+    }
+   ],
+   "before": {
+    "regime": "before-launch",
+    "centre": "earth",
+    "epoch": 9053.177820744924,
+    "pos": [
+     -5456.428285830048,
+     -1512.189890149727,
+     3288.122820183351
+    ]
+   },
+   "after": {
+    "regime": "unknown",
+    "centre": "jupiter",
+    "epoch": 12663.69806728093,
+    "pos": [
+     -735954.8012919137,
+     -782771.6773136209,
+     -41991.41505010385
+    ]
+   },
+   "accuracy": {
+    "requirementKm": 1000,
+    "independentPoints": 883,
+    "maxKm": 250,
+    "rmsKm": 43.1,
+    "fitSamples": 33402,
+    "fitMaxKm": 250,
+    "flyby": {
+     "requirementKm": 1,
+     "points": 183,
+     "maxKm": 0.242,
+     "rmsKm": 0.0759
+    }
+   },
+   "appSwitchOffsetsKm": [
+    {
+     "centre": "earth",
+     "t": 9054.712920598678,
+     "iso": "2024-10-16 05:06:36",
+     "offsetKm": 1179
+    },
+    {
+     "centre": "mars",
+     "t": 9190.259349563912,
+     "iso": "2025-02-28 18:13:27",
+     "offsetKm": 1962
+    },
+    {
+     "centre": "mars",
+     "t": 9192.237947756137,
+     "iso": "2025-03-02 17:42:38",
+     "offsetKm": 1931
+    },
+    {
+     "centre": "earth",
+     "t": 9832.454859137299,
+     "iso": "2026-12-02 22:54:59",
+     "offsetKm": 534.1
+    },
+    {
+     "centre": "earth",
+     "t": 9834.233160144886,
+     "iso": "2026-12-04 17:35:45",
+     "offsetKm": 632.7
+    },
+    {
+     "centre": "jupiter",
+     "t": 10980.092615376128,
+     "iso": "2030-01-23 14:13:21",
+     "offsetKm": 14620
+    }
+   ]
+  },
+  "soho": {
+   "name": "SOHO",
+   "kind": "spacecraft",
+   "horizons": {
+    "command": "-21",
+    "target": "SOHO (spacecraft) (-21)",
+    "ephemeris": "SOHO_merged",
+    "coverage": [
+     "A.D. 1995-DEC-02 00:01:01.1831 TDB",
+     "A.D. 2026-NOV-02 23:51:09.1825 TDB"
+    ]
+   },
+   "precise": [
+    -1491.498597417958,
+    9802.493161833845
+   ],
+   "preciseIso": [
+    "1995-12-02 00:02:01.183",
+    "2026-11-02 23:50:09.182"
+   ],
+   "pieces": [
+    {
+     "centre": "earth",
+     "role": "inner",
+     "t0": -1491.498597417958,
+     "t1": 9802.493161833845,
+     "seg0": 3232,
+     "segCount": 524,
+     "blendIn": 0,
+     "blendOut": 0,
+     "tolKm": 100,
+     "accuracy": {
+      "fitSamples": 49011,
+      "fitMaxKm": 25,
+      "independent": {
+       "points": 100,
+       "maxKm": 24.2,
+       "rmsKm": 12.2
+      },
+      "flyby": {
+       "points": 61,
+       "maxKm": 0.221,
+       "rmsKm": 0.103
+      }
+     },
+     "fineRadiusKm": 63781.4,
+     "fineTolKm": 1,
+     "jumps": [
+      {
+       "t": -500.49930524920296,
+       "iso": "1998-08-19 00:01:00",
+       "cause": "source",
+       "jumpKm": 25790,
+       "jump": [
+        -25739.56162,
+        984.1375229,
+        1179.929279
+       ],
+       "rampDays": 83.1
+      }
+     ],
+     "closestApproach": {
+      "t": -1491.1006484897807,
+      "iso": "1995-12-02 09:35:03.970",
+      "distanceKm": 6523.069
+     }
+    }
+   ],
+   "before": {
+    "regime": "before-launch",
+    "centre": "earth",
+    "epoch": -1491.498597417958,
+    "pos": [
+     36078.35324088122,
+     -113125.6345688181,
+     -10855.65875784472
+    ]
+   },
+   "after": {
+    "regime": "unknown",
+    "centre": "earth",
+    "epoch": 9802.493161833845,
+    "pos": [
+     -1225299.978425999,
+     -505106.121781857,
+     75597.62737439632
+    ]
+   },
+   "accuracy": {
+    "requirementKm": 100,
+    "independentPoints": 161,
+    "maxKm": 25,
+    "rmsKm": 9.59,
+    "fitSamples": 49011,
+    "fitMaxKm": 25,
+    "flyby": {
+     "requirementKm": 1,
+     "points": 61,
+     "maxKm": 0.221,
+     "rmsKm": 0.103
+    }
+   }
   }
  }
 }

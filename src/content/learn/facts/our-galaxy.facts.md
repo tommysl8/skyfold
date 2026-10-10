@@ -146,6 +146,8 @@ One line per fact: claim | value | source | status. "computed" means recomputed 
 - M(<25 kpc) 2.3 x 10^11 is 3.7 times stars + cold gas | computed | verified
 - Dark matter density 0.30 GeV/cm^3 = 0.32 proton masses per cm^3 (proton 0.938 GeV) | computed from Eilers et al. 2019 | verified
 - Stars (5 x 10^10) are ~4% of 1.3 x 10^12, ~24% of 2.1 x 10^11 | computed | verified
+- McMillan 2017 best-fitting model (Table 3): NFW halo rho_0 = 0.00854 Msun/pc^3, r_h = 19.6 kpc; R0 = 8.21 kpc, v0 = 233.1 km/s; rho_h,sun = 0.0101 Msun/pc^3; M_v = 1.37 x 10^12; M_* = 5.43 x 10^10 | 2017 | P. J. McMillan, MNRAS 465, 76 (2017), https://doi.org/10.1093/mnras/stw2759 (arXiv:1608.00971 text) | verified (primary)
+- In McMillan's model, dark share of the mass within 200 kpc 95% (halo 1.22 x 10^12 against 6.6 x 10^10 of stars and gas); the model's v_c is 3-14% above Eilers et al.'s points beyond 13 kpc (within 6.5% to 18 kpc) | computed (src/sim/galaxy/darkMatter.test.ts) | verified
 
 ## Future (status as of 25 Sep 2026)
 - Gaia DR4 (66 months of data) scheduled 2 December 2026; DR5 (all mission data) not before end of 2030 | 2026 | ESA, https://www.cosmos.esa.int/web/gaia/release | verified
@@ -231,3 +233,10 @@ Numbers shared with other Learn articles were compared across all 16 articles; c
 ## See-it captions checked in the app (29 September 2026)
 
 - galactic-centre-orbits: the bright point at the orbits' shared focus is the model of the gas falling into the black hole, and near the centre the model star cluster's glow makes the orbit lines faint, so the caption now says the S-stars are picked out by their labels and names the point | measured in the app | corrected
+
+## The magnetic field
+- Unger & Farrar 2024 fit parametric models of the coherent field to extragalactic rotation measures and WMAP/Planck polarised synchrotron; local pitch angle of the disc field (11.0 ± 0.3 stat ± 1.0) deg, close to the local arm's 11.4 ± 1.9 deg (Reid et al. 2019) | 2024 | M. Unger & G. R. Farrar, ApJ 970, 95 (2024), arXiv:2311.12120 (LaTeX source read), section 7 (Results) | verified (primary)
+- In the grand-design fit the field reverses between magnetic arms, the reversals at the matter arms' tracers; a toroidal halo of opposite sense north and south (B_N = 3.26, B_S = -3.09 microgauss in the base model); a poloidal "X-field" (B_p = 0.98 microgauss in the plane) | 2024 | Unger & Farrar 2024, Table 3 and sections 5 and 7 | verified (primary)
+- Compatibility of rotation measures and polarised intensity needs a striated random field of about the same energy as the coherent field (or an n_e-B anticorrelation) | 2024 | Unger & Farrar 2024, summary | verified (primary); article: "a tangled field about as strong again"
+- Earth's surface field 25-65 microtesla = 0.25-0.65 gauss; a few microgauss (3-6) is 0.5-2.4 x 10^-5 of it: "about a hundred-thousandth" | computed | verified
+- X-shaped radio polarisation haloes in edge-on spiral galaxies | 2020 | Krause et al. 2020, A&A 639, A112, as cited by Unger & Farrar 2024 section 5.3 | verified (secondary, via the paper)

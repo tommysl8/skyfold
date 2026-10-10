@@ -453,7 +453,10 @@ function Sources() {
             by redshift in the Planck 2018 cosmology, classed by colour, rounded to 5″ and 0.125 Mpc and tiled (docs/data/surveys.md
             in the source). And <Ext href="https://doi.org/10.5281/zenodo.10403370">Quaia</Ext>, the Gaia–unWISE quasar catalogue
             (Storey-Fisher et al. 2024, ApJ 964, 69; CC BY 4.0), without the quasars the surveys have, placed the same way with
-            each redshift’s error kept as a distance error. Their acknowledgements:
+            each redshift’s error kept as a distance error; and the galaxies of{' '}
+            <Ext href="https://www.cosmos.esa.int/web/gaia/dr3">Gaia DR3</Ext> with a redshift from their BP/RP spectra
+            (Gaia Collaboration, Bailer-Jones et al. 2023, A&amp;A 674, A41; Delchambre et al. 2023, A&amp;A 674, A31; ESA/Gaia/DPAC,
+            CC BY-NC 3.0 IGO), without those the surveys or Quaia have, placed the same way. Their acknowledgements:
             <span className="mt-1 block">DESI: “{DESI_ACKNOWLEDGEMENT}”</span>
             {SDSS_ACKNOWLEDGEMENTS.map((a) => (
               <span key={a.phase} className="mt-1 block">
@@ -543,6 +546,11 @@ function Sources() {
           <>
             M. L. Finson, R. F. Probstein (1968), ApJ 154, 327: dust tails as syndynes; L. Biermann (1951), Z. Astrophys. 29,
             274: ion tails along the solar wind. Both in simplified form for the comet tails.
+          </>,
+          <>
+            E. N. Parker (1961), ApJ 134, 20: the heliopause's shape, fitted to the Voyager crossings; D. J. McComas et al.
+            (2019), ApJ 884, 145: the termination shock's sphere; D. J. McComas et al. (2015), ApJS 220, 22: the interstellar
+            flow; M. J. Duncan, T. Quinn, S. Tremaine (1987), AJ 94, 1330: the Oort cloud's density, for its model.
           </>,
           <>
             E. F. Taylor, J. A. Wheeler, Spacetime Physics, 2nd ed. (1992); W. Rindler, Relativity: Special, General, and
@@ -662,7 +670,9 @@ function Limitations() {
           along our line of sight, so clusters are drawn as spikes pointing at the Solar System. They cover about a third of the
           sky and thin out with distance, and the galaxies too small to draw from where you are are shown as glows holding their
           light. Quaia’s quasars, over the whole sky but the Milky Way’s plane, have redshifts from Gaia’s low-resolution spectra,
-          uncertain by about 200 Mpc in distance: each is drawn as a streak along our line of sight over its likely distances.
+          uncertain by about 200 Mpc in distance, and so are Gaia’s galaxies, out to about 2 billion parsecs: each is drawn as a
+          streak along our line of sight over its likely distances. Behind the Milky Way’s plane, where its dust and stars hide
+          what lies beyond, no survey sees galaxies: that band stays empty.
         </li>
         <li>Planets are lit without the 1/r² dimming of sunlight, and the relativistic view uses automatic exposure.</li>
         <li>The superluminal drive is fiction, provided for comparison; nothing measured during it has physical meaning.</li>
@@ -670,7 +680,8 @@ function Limitations() {
           Moons, dwarf planets, comets and spacecraft are as good as their data: outside 1981–2199 the moons follow their mean
           orbits and the small bodies two-body orbits, both labelled; spacecraft do not exist before launch. Rotations nobody
           can predict (Hyperion, Halley, Nix), surfaces never mapped, Quaoar’s ring plane and the Adams arcs’ positions are
-          illustrative, faint rings are drawn more visible than they are, and comet tails come from a simple physical model.
+          illustrative, faint rings are drawn more visible than they are, comet tails come from a simple physical model, and
+          the heliosphere and the Oort cloud are models (the Oort cloud has never been seen).
           Each body’s card says which.
         </li>
       </ol>

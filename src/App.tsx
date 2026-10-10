@@ -18,6 +18,8 @@ import { StellarNebulae } from './scene/StellarNebulae';
 import { Orbits } from './scene/Orbits';
 import { Asteroids } from './scene/Asteroids';
 import { CometTails } from './scene/CometTails';
+import { Heliosphere } from './scene/Heliosphere';
+import { VisitorPaths } from './scene/VisitorPaths';
 import { Glints } from './scene/Glints';
 import { NuclearCluster } from './scene/NuclearCluster';
 import { LensRings } from './scene/LensRings';
@@ -31,6 +33,7 @@ import { AdaptiveQuality } from './render/AdaptiveQuality';
 import { LabelSync, LabelsLayer } from './ui/Labels';
 import { HoverSync, HoverTagLayer } from './ui/HoverTag';
 import { ConstellationNameSync, ConstellationNamesLayer } from './ui/ConstellationNames';
+import { RegionNameSync, RegionNamesLayer } from './ui/RegionNames';
 import { Header } from './ui/layout/Header';
 import { Footer } from './ui/layout/Footer';
 import { ReferenceDock } from './ui/reference/ReferenceDock';
@@ -55,6 +58,8 @@ import { useUI } from './state/ui';
 import { useDocRoute } from './state/route';
 import { deepSkyGate, subscribeDeepSky } from './sim/deepsky';
 import { phenomena, subscribePhenomena } from './sim/phenomena';
+import { darkLayer, subscribeDarkLayer } from './sim/galaxy/darkLayer';
+import { satellites, subscribeSatellites } from './sim/satellites';
 
 // The reading pages (with KaTeX) load on first use.
 const DocView = lazy(() => import('./ui/docs/DocView'));
@@ -62,12 +67,70 @@ const DocView = lazy(() => import('./ui/docs/DocView'));
 const DeepSky = lazy(() => import('./scene/DeepSky'));
 // And the phenomena's models (supernovae, the kilonova, the jets, the aurora), once one is first near (sim/phenomena).
 const Phenomena = lazy(() => import('./scene/Phenomena'));
+// And the dark-matter layer (the halo, the rotation tracers, the Bullet Cluster's mass), once View › Dark matter is first on.
+const DarkMatter = lazy(() => import('./scene/DarkMatter'));
+
+// And the satellites' (the ISS's trace, the swarm behind the View menu's switch), once the app is idle (sim/satellites).
+const Satellites = lazy(() => import('./scene/Satellites'));
+
+function SatellitesLayer() {
+  const started = useSyncExternalStore(subscribeSatellites, () => satellites.started);
+  return started ? (
+    <Suspense fallback={null}>
+      <Satellites />
+    </Suspense>
+  ) : null;
+}
+// And the field lines threading the black holes, while View › Magnetic field lines is on (sim/blackholes/holeField.ts).
+const HoleFieldLines = lazy(() => import('./scene/HoleFieldLines'));
+
+function HoleFieldLayer() {
+  const on = useUI((s) => s.fieldLines);
+  return on ? (
+    <Suspense fallback={null}>
+      <HoleFieldLines />
+    </Suspense>
+  ) : null;
+}
+
+// And the Milky Way's magnetic field, while View › Magnetic field lines is on (nothing of it loads or runs before).
+const GalacticField = lazy(() => import('./scene/GalacticField'));
+
+function GalacticFieldLayer() {
+  const on = useUI((s) => s.fieldLines);
+  return on ? (
+    <Suspense fallback={null}>
+      <GalacticField />
+    </Suspense>
+  ) : null;
+}
+// And the magnetic field lines, the first time View › Magnetic field lines is turned on (sim/fields).
+const FieldLines = lazy(() => import('./scene/FieldLines'));
 
 function PhenomenaLayer() {
   const started = useSyncExternalStore(subscribePhenomena, () => phenomena.started);
   return started ? (
     <Suspense fallback={null}>
       <Phenomena />
+    </Suspense>
+  ) : null;
+}
+
+function DarkMatterLayer() {
+  const started = useSyncExternalStore(subscribeDarkLayer, () => darkLayer.started);
+  return started ? (
+    <Suspense fallback={null}>
+      <DarkMatter />
+    </Suspense>
+  ) : null;
+}
+
+/** Mounted only while the view is on: off, nothing of it draws (what it traced is kept for next time). */
+function FieldLinesLayer() {
+  const on = useUI((s) => s.fieldLines);
+  return on ? (
+    <Suspense fallback={null}>
+      <FieldLines />
     </Suspense>
   ) : null;
 }
@@ -155,6 +218,9 @@ export default function App() {
           <Surveys />
           <DeepSkyLayer />
           <PhenomenaLayer />
+          <DarkMatterLayer />
+          <GalacticFieldLayer />
+          <FieldLinesLayer />
           <Constellations />
           <PlanetHosts />
           <EclipticGrid />
@@ -162,21 +228,27 @@ export default function App() {
           <StellarNebulae />
           <Orbits />
           <CometTails />
+          <Heliosphere />
+          <VisitorPaths />
           <Asteroids />
+          <SatellitesLayer />
           <Glints />
           <LensRings />
           <AccretionFlow />
           <AccretionDisk />
+          <HoleFieldLayer />
           <BlackHoleLens />
           <LightPulses />
           <LabelSync />
           <HoverSync />
           <ConstellationNameSync />
+          <RegionNameSync />
           <OverlaySync />
           <AdaptiveQuality />
           <RenderPipeline />
         </Canvas>
         <ConstellationNamesLayer />
+        <RegionNamesLayer />
         <LabelsLayer />
         <HoverTagLayer />
         <ViewportInstruments />

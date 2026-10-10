@@ -16,6 +16,52 @@ import { SkyIndex, SURVEY_MATCH_ARCSEC } from './match.ts';
 
 /** Quaia's catalogue code in the kind byte (format.ts packKind; the surveys' own are 0–9). */
 export const QUAIA_SOURCE = { code: 10, key: 'quaia', name: 'Quaia (Gaia–unWISE quasars)' } as const;
+
+// ─── Gaia DR3's galaxies ────────────────────────────────────────────────────────────────
+
+/**
+ * The galaxies of Gaia DR3 with a redshift from their BP/RP spectra (docs/data/surveys.md §11), in Quaia's tiles beside
+ * its quasars and drawn the same way, as streaks along the line of sight: the "purer" galaxy candidates of Gaia
+ * Collaboration, Bailer-Jones et al. 2023 (A&A 674, A41, §9; about 95 % galaxies) that the Unresolved Galaxy
+ * Classifier gave a redshift (Delchambre et al. 2023, A&A 674, A31), less those DESI, the SDSS or Quaia have. Like
+ * Quaia's they cover the whole sky away from the Milky Way's plane, south of declination −20° too, but only to z = 0.6.
+ */
+export const GAIA_GALAXY_SOURCE = { code: 11, key: 'gaia-galaxies', name: 'Gaia DR3 galaxies (redshifts from BP/RP spectra)' } as const;
+
+/**
+ * The redshifts kept: the classifier predicts 0 to 0.6, and the Gaia DR3 data model (its galaxy_candidates table)
+ * says its performance is particularly low below 0.02, between 0.28 and 0.30 and above 0.58, and that the
+ * interval 0.070–0.071 holds several thousand bright galaxies whose redshifts are probably below 0.04: those are left out.
+ */
+export const GAIA_UGC_Z_RANGE: readonly [number, number] = [0.02, 0.58];
+export const GAIA_UGC_Z_BAD: readonly (readonly [number, number])[] = [
+  [0.07, 0.071],
+  [0.28, 0.3],
+];
+export function gaiaRedshiftKept(z: number): boolean {
+  if (!(z >= GAIA_UGC_Z_RANGE[0] && z <= GAIA_UGC_Z_RANGE[1])) return false;
+  for (const [a, b] of GAIA_UGC_Z_BAD) if (z >= a && z < b) return false;
+  return true;
+}
+
+/**
+ * A Gaia redshift's 1σ error: half its quoted prediction interval (redshift_ugc_upper − redshift_ugc_lower), the
+ * estimate the Gaia DR3 documentation gives; the interval is the training set's mean error and scatter in the
+ * redshift's bin of 0.02 (typically ±0.03).
+ */
+export const gaiaSigmaZ = (lower: number, upper: number): number => 0.5 * (upper - lower);
+
+/**
+ * log10 L/L* of a Gaia galaxy, as the survey's (scripts/build-surveys.mjs): M = G − DM + 2.5 log10(1 + z), the
+ * bandwidth term of the K-correction only, against M*_r = −21.2, with Gaia's G standing in for r (for a galaxy G − r is
+ * a few tenths: smaller than the error of G itself, which Gaia measures in a window of a few arcseconds and so misses
+ * the outer light of a large galaxy). `chiMpc` its comoving distance: DM = 5 log10((1 + z) χ / 10 pc).
+ */
+export function gaiaLogL(gMag: number, z: number, chiMpc: number, mStar = -21.2): number {
+  const dm = 5 * Math.log10(((1 + z) * chiMpc * 1e6) / 10);
+  const m = gMag - dm + 2.5 * Math.log10(1 + z);
+  return -0.4 * (m - mStar);
+}
 /** Extra bytes each Quaia point has in its tiles (format.ts NODE_EXTRA_AT): its distance error's code. */
 export const QUAIA_EXTRA_PER = 1;
 
@@ -148,9 +194,11 @@ export function streakCost(dMpc: number, pxPerRad: number, pointPx: number, pixe
  * Quaia's share of the point budget at most (its streaks counted at streakCost): the rest, and whatever Quaia does not
  * use, is the survey's. The two are not chosen by one law (lod.ts selectNodesOf can): Quaia's quasars are sparse and
  * their streaks costly, and by one law they took two thirds of the budget from 2 Gpc out, leaving the survey's own
- * map a third of its points.
+ * map a third of its points. A quarter left the two thirds of the sky the surveys did not see thin from gigaparsecs
+ * out (about 3,000 streaks against 150,000 points, at the 9.4-billion-light-year view home); with Gaia's galaxies in
+ * these tiles too, 0.4 (about 5,000 against 120,000).
  */
-export const QUAIA_BUDGET_SHARE = 0.25;
+export const QUAIA_BUDGET_SHARE = 0.4;
 
 // ─── Duplicates ─────────────────────────────────────────────────────────────────────────
 

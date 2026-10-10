@@ -24,7 +24,7 @@ import { LIGHT_YEAR_KM, PARSEC_KM, JULIAN_YEAR_S } from '../../physics/constants
 import { findStar } from './names';
 import { JD_J2000, besselianToJd } from './constants';
 import { orbitRelativeState } from './orbits';
-import { catalogueStarId, plausibleSpectralType, starKindText } from './records';
+import { catalogueStarId, plausibleSpectralType, starKindText, variableStarRecords } from './records';
 import { EXTREME_STARS } from './extremeStars';
 import { borrowCompanionTemperatures, decodeStars3D, teffIsBorrowed } from './catalogue';
 import { gunzipFile } from '../../test/stars';
@@ -101,8 +101,10 @@ describe('registration', () => {
     for (const id of ['alpha-centauri-barycentre', 'alpha-centauri-ab-barycentre', 'sirius-barycentre', 'procyon-barycentre', '61-cygni-barycentre', 'capella-barycentre'])
       expect(getBody(id)?.kind, id).toBe('barycentre');
     for (const id of ['sirius-b', 'procyon', 'procyon-b', '61-cygni-b', 'capella', 'capella-ab', 'canopus', 'spica', 'luytens-star']) expect(isBody(id), id).toBe(true);
-    // Proxima is replaced, not added; the extreme stars (extremeStars.ts) join them.
-    expect(starIds().length).toBe(file.systems.length + 1 + file.stars.filter((s) => s.id !== 'sun').length - 1 + EXTREME_STARS.length);
+    // Proxima is replaced, not added; the extreme stars (extremeStars.ts) and the variables (variables.ts: Algol's
+    // centre of mass, its pair's and its three stars, δ Cep, Mira, RR Lyr and β Lyr) join them.
+    expect(variableStarRecords(stars).map((r) => r.id)).toEqual(['algol-barycentre', 'algol-ab-barycentre', 'algol-a', 'algol-b', 'algol-c', 'delta-cephei', 'mira', 'rr-lyrae', 'beta-lyrae']);
+    expect(starIds().length).toBe(file.systems.length + 1 + file.stars.filter((s) => s.id !== 'sun').length - 1 + EXTREME_STARS.length + 9);
   });
 
   it('replaces the built-in Proxima with its place in the Alpha Centauri system, keeping what the app gave it', () => {

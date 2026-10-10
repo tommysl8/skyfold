@@ -318,6 +318,7 @@ const CENTRES = {
   ssb: { code: '0', label: 'Solar System barycentre' },
   earth: { code: '399', label: 'Earth (geocentre)', radius: 6378.137, a: 149598023, gm: GM.emb },
   venus: { code: '299', label: 'Venus (body centre)', radius: 6051.8, a: 108208930, gm: GM.venus },
+  mars: { code: '499', label: 'Mars (body centre)', radius: 3396.19, a: 227939200, gm: GM.mars },
   jupiter: { code: '599', label: 'Jupiter (body centre)', radius: 71492, a: 778570000, gm: GM.jupiter },
   saturn: { code: '699', label: 'Saturn (body centre)', radius: 60268, a: 1433530000, gm: GM.saturn },
   uranus: { code: '799', label: 'Uranus (body centre)', radius: 25559, a: 2872460000, gm: GM.uranus },
@@ -918,7 +919,7 @@ function pieceEval(piece, t) {
 
 const EPS = (84381.448 / 3600) * (Math.PI / 180);
 const eqjToEcl = (x, y, z) => [x, Math.cos(EPS) * y + Math.sin(EPS) * z, -Math.sin(EPS) * y + Math.cos(EPS) * z];
-const AE_BODY = { ssb: 'SSB', earth: 'Earth', venus: 'Venus', jupiter: 'Jupiter', saturn: 'Saturn', uranus: 'Uranus', neptune: 'Neptune', pluto: 'Pluto' };
+const AE_BODY = { ssb: 'SSB', earth: 'Earth', venus: 'Venus', mars: 'Mars', jupiter: 'Jupiter', saturn: 'Saturn', uranus: 'Uranus', neptune: 'Neptune', pluto: 'Pluto' };
 /** Heliocentric ecliptic-J2000 km position of a centre according to astronomy-engine. */
 function aeHelio(key, t) {
   const time = Astronomy.AstroTime.FromTerrestrialTime(t);
@@ -1043,6 +1044,29 @@ const SPACECRAFT = [
     h0: 0.5,
   },
   { id: 'jwst', name: 'James Webb Space Telescope', command: '-170', earthOnly: true, after: 'unknown' },
+  // Orbiters: after their flybys they stay with a planet to the end of their data (`orbit`): one planet-centred
+  // piece from where they cross its switch radius on the way in, fitted to the small bodies' tolerance (250 km
+  // target, 1,000 km bound), to keep the file small: Juno's 70 close passes would need many more segments at 25 km.
+  {
+    id: 'juno',
+    name: 'Juno',
+    command: '-61',
+    encounters: [['earth', '2013-10-09']],
+    orbit: { centre: 'jupiter', arrive: '2016-07-05' },
+    after: 'unknown',
+  },
+  {
+    id: 'europa-clipper',
+    name: 'Europa Clipper',
+    command: '-159',
+    encounters: [
+      ['mars', '2025-03-01'],
+      ['earth', '2026-12-03'],
+    ],
+    orbit: { centre: 'jupiter', arrive: '2030-04-11' },
+    after: 'unknown',
+  },
+  { id: 'soho', name: 'SOHO', command: '-21', earthOnly: true, after: 'unknown' },
 ];
 
 // ─── Edge states for extrapolation ────────────────────────────────────────────────────────
@@ -1196,7 +1220,8 @@ async function buildSmallBody(cfg, kind) {
 }
 
 function encounterSearch(key) {
-  if (key === 'venus') return { D: 3, step: 0.005 };
+  if (key === 'venus' || key === 'mars') return { D: 3, step: 0.005 };
+  if (key === 'earth') return { D: 4, step: 0.005 };
   if (key === 'pluto') return { D: 60, step: 0.05 };
   if (key === 'arrokoth') return { D: 3, step: 0.002 };
   return { D: 220, step: 0.5 };
@@ -1252,6 +1277,25 @@ async function findEncounter(src, key, near, cov) {
   const vrel = Math.min(norm(rows[i].v), norm(rows[j].v)); // km/day
   const beta = clamp(offset / (BLEND_SPEED_FRACTION * vrel), 0.02, 0.25 * (tout - tin));
   return { key, tin, tout, rMin, beta, switchRadius: R, offset };
+}
+
+/**
+ * An orbiter's arrival: where it crosses the planet's switch radius (as for a flyby, from the app's planet offset
+ * at arrival) for the last time on the way in, and the blend there. It stays planet-centred from then on.
+ */
+async function findArrival(src, key, arrive, cov) {
+  const C = CENTRES[key];
+  const ta = tdb(arrive);
+  const a = Math.max(cov.start + 1 / 1440, ta - 400);
+  const rows = await fetchGrid(src, C.code, a, ta, 800);
+  const offset = await centreOffset(key, ta);
+  const R = Math.max(C.soi, offset / SWITCH_FRACTION);
+  let j = rows.length - 1;
+  while (j > 0 && norm(rows[j - 1].p) < R) j--;
+  if (j === 0) throw new Error(`${src.label}: ${key} arrival switch radius not bracketed`);
+  const tin = crossing(rows[j - 1], rows[j], R);
+  const beta = clamp(offset / (BLEND_SPEED_FRACTION * norm(rows[j].v)), 0.02, 5);
+  return { key, tin, beta, switchRadius: R, offset };
 }
 
 async function launchExit(src, start) {
@@ -1330,7 +1374,27 @@ async function buildCraft(cfg) {
       pieces.push(await inner(w.key, w.tin, w.tout, fine, { blendIn: w.beta, blendOut: w.beta, window: meta(w) }));
       prev = w.tout - w.beta;
     }
-    pieces.push(await outer(prev, end));
+    if (cfg.orbit) {
+      const A = await findArrival(src, cfg.orbit.centre, cfg.orbit.arrive, cov);
+      console.log(`${cfg.id}: arrives at ${A.key} ${isoOf(A.tin).slice(0, 16)} (switch ${round(A.switchRadius)} km, blend ${A.beta.toFixed(2)} d)`);
+      pieces.push(await outer(prev, A.tin + A.beta));
+      pieces.push(
+        await buildPiece({
+          body: cfg.id,
+          centre: A.key,
+          role: 'inner',
+          t0: A.tin,
+          t1: end,
+          h0: 0.5,
+          provider: new Provider([{ src, a: A.tin, b: end }], CENTRES[A.key].code),
+          blendIn: A.beta,
+          blendOut: 0,
+          window: { switchRadiusKm: A.switchRadius, appOffsetKm: A.offset },
+          tolKm: TOL.small.req,
+          ...constTol(TOL.small),
+        }),
+      );
+    } else pieces.push(await outer(prev, end));
   }
   console.log(`${cfg.id}: ${pieces.length} pieces, ${pieces.reduce((s, p) => s + p.segs.length, 0)} segments, ${((Date.now() - tick) / 1000).toFixed(1)} s`);
   const first = pieces[0];
@@ -1559,7 +1623,7 @@ function bodyJson(b, appOffsets) {
       segCount: p.segs.length,
       blendIn: p.blendIn ?? 0,
       blendOut: p.blendOut ?? 0,
-      tolKm: p.role === 'inner' || b.kind === 'spacecraft' ? TOL.cruise.req : TOL.small.req,
+      tolKm: p.tolKm ?? (p.role === 'inner' || b.kind === 'spacecraft' ? TOL.cruise.req : TOL.small.req),
       accuracy: {
         fitSamples: p.stats.samples,
         fitMaxKm: round(p.stats.maxErrKm),
@@ -1591,7 +1655,7 @@ function bodyJson(b, appOffsets) {
         cause: d.cause,
         ...(d.from ? { from: d.from, to: d.to } : {}),
         jumpKm: round(d.jumpKm, 4),
-        jump: d.jump.map((x) => round(x, 6)),
+        jump: d.jump.map((x) => round(x, 10)), // to ~0.1 m: the smoothing's ramp is continuous only if this is the jump itself
         rampDays: rampDays(d),
       }));
     }
@@ -1632,7 +1696,7 @@ function bodyJson(b, appOffsets) {
     before: b.before,
     after: b.after,
     accuracy: {
-      requirementKm: b.kind === 'spacecraft' ? TOL.cruise.req : TOL.small.req,
+      requirementKm: Math.max(...b.pieces.map((p) => p.tolKm ?? 0), b.kind === 'spacecraft' ? TOL.cruise.req : TOL.small.req),
       independentPoints: s.points,
       maxKm: round(Math.max(s.maxKm, fitMax)),
       rmsKm: round(s.rmsKm),

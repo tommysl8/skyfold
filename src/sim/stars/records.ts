@@ -35,6 +35,18 @@ import { STAR_FACTS } from './facts';
 import { starSurface } from './closeup';
 import { CLOSE_UPS, EXTREME_REFS, EXTREME_STARS, type ExtremeStarDef } from './extremeStars';
 import { catalogueNumber, starDisplayName, starLabels, type StarNameTable } from './names';
+import {
+  addMags,
+  ALGOL_STARS,
+  algolAbsMags,
+  algolOrbits,
+  BETA_LYR_DEF,
+  BETELGEUSE_VARIABILITY,
+  POLARIS_PULSATION,
+  PULSATORS,
+  VARIABLE_REFS,
+} from './variables';
+import { bolometricCorrection, SUN_M_BOL } from './photometry';
 
 /** Registry ids of the systems.json stars whose app id differs (the primaries take the system's name, as the articles do). */
 export const STAR_APP_IDS: Readonly<Record<string, string>> = {
@@ -317,6 +329,20 @@ interface StarBasis {
   facts?: readonly (readonly [string, string])[];
 }
 
+/** The sources of the stars' own facts (extremeStars.ts, variables.ts), by key. */
+const FACT_REFS: Record<string, { cite: string; url: string }> = { ...EXTREME_REFS, ...VARIABLE_REFS };
+
+/** The card's line on each variable star (variables.ts); their records' light is rewritten each frame. */
+export const VARIABLE_LINES: Readonly<Record<string, string>> = {
+  ...Object.fromEntries(PULSATORS.map((d) => [d.id, d.line])),
+  [BETA_LYR_DEF.id]: BETA_LYR_DEF.line,
+  polaris: POLARIS_PULSATION.line,
+  betelgeuse: BETELGEUSE_VARIABILITY.line,
+  'algol-a': 'Algol A, the bright one: every 2.87 days Algol B passes in front of it and Algol fades from V = 2.1 to 3.4 for about ten hours.',
+  'algol-b': 'Algol B: in front of Algol A every 2.87 days (the primary eclipse); behind it half a period later (a slight dip).',
+  'algol-c': 'Algol C: it circles the eclipsing pair every 680 days, its light constant.',
+};
+
 /** The physical side of a star record, from the catalogue row and (for the named stars) the literature. */
 function starRecord(stars: Stars3D, b: StarBasis): BodyRecord {
   const i = b.index === null ? null : (b.local ?? b.index);
@@ -324,7 +350,9 @@ function starRecord(stars: Stars3D, b: StarBasis): BodyRecord {
   const flags = i !== null ? stars.flags[i] : 0;
   const pos: Vec3 = b.place ? b.place.posPc : i !== null ? [stars.positions[3 * i], stars.positions[3 * i + 1], stars.positions[3 * i + 2]] : [0, 0, 0];
   const distancePc = Math.hypot(pos[0], pos[1], pos[2]);
-  const absMagV = b.place ? b.place.absMagV : i !== null ? stars.absMag[i] : NaN;
+  // A star of a system whose light the catalogue gives only as the sum (Algol's): its own M_V.
+  const ownAbs = typeof j?.absMagV === 'number' ? j.absMagV : undefined;
+  const absMagV = b.place ? b.place.absMagV : ownAbs !== undefined ? ownAbs : i !== null ? stars.absMag[i] : NaN;
   const vFromSun = absMagV + 5 * Math.log10(distancePc) - 5;
   const catTeff = i !== null ? stars.teff[i] : 0;
   const placed = b.place !== undefined;
@@ -368,6 +396,8 @@ function starRecord(stars: Stars3D, b: StarBasis): BodyRecord {
   if (vNote) notes.push(vNote);
   if (distancePc > 100) notes.push('Its brightness and colour are as seen from the Sun, with the dust in between.');
   if (j?.id === 'spica') notes.push('Spica is a close pair drawn as one star; its companion is left out.');
+  if (j?.id === 'polaris') notes.push(POLARIS_PULSATION.note);
+  if (j?.id === 'betelgeuse') notes.push(BETELGEUSE_VARIABILITY.note);
 
   const refs = j ? [...new Set(Object.values(j.refs))].map((k) => b.refs[k] ?? k) : undefined;
   const star: StarInfo = {
@@ -393,9 +423,10 @@ function starRecord(stars: Stars3D, b: StarBasis): BodyRecord {
     designations: b.designations,
     constellation: b.constellation,
     refs,
+    variable: VARIABLE_LINES[b.id],
   };
   const own = b.facts
-    ? { facts: b.facts.map((x) => x[0]), sources: b.facts.map((x) => EXTREME_REFS[x[1]].url), labels: b.facts.map((x) => EXTREME_REFS[x[1]].cite.replace(/ d{4},.*$/, (m) => m.match(/ d{4}/)![0])) }
+    ? { facts: b.facts.map((x) => x[0]), sources: b.facts.map((x) => FACT_REFS[x[1]].url), labels: b.facts.map((x) => FACT_REFS[x[1]].cite.replace(/ d{4},.*$/, (m) => m.match(/ d{4}/)![0])) }
     : undefined;
   const facts = own ?? (j ? STAR_FACTS[j.id] : undefined);
   // The close-up: its shape, limb darkening, cells, spots and flares (closeup.ts).
@@ -411,7 +442,8 @@ function starRecord(stars: Stars3D, b: StarBasis): BodyRecord {
   const physical: BodyRecord['physical'] = {
     radiusKm: radiusRsun * SUN_RADIUS_KM,
     colour: starColour(teffK),
-    luminous: { vmag: absMagV, atKm: TEN_PC_KM, teffK },
+    // A variable's light, colour and size are rewritten each frame (variability.ts).
+    luminous: { vmag: absMagV, atKm: TEN_PC_KM, teffK, variable: VARIABLE_LINES[b.id] !== undefined || undefined },
   };
   // A fast rotator keeps its mean radius here (it is drawn as a sphere); its two radii are in `star`.
   if (massMsun !== undefined) physical.gmKm3S2 = massMsun * GM_SUN_KM3_S2;
@@ -550,6 +582,12 @@ export function systemRecords(file: SystemsFile, sys: SystemJson, stars: Stars3D
         aliases: [...j.altNames, ...(j.hip ? [`HIP ${j.hip}`] : []), ...(id === '61-cygni' ? ['61 Cygni', '61 Cyg A'] : []), ...(id === 'alpha-centauri-a' ? ['Alpha Centauri', 'α Cen A'] : [])],
         orbitLine: true,
         refs,
+        // A star the catalogue does not list on its own (Algol B and C): at its system's place, with its own light.
+        place:
+          i === null && typeof j.absMagV === 'number'
+            ? { posPc: [...b.posPc] as Vec3, source: `its system’s: ${b.source ?? 'the catalogue'}`, precision: 'as its system’s', absMagV: j.absMagV }
+            : undefined,
+        facts: (j.facts as [string, string][] | undefined) ?? undefined,
       }),
     );
   }
@@ -643,8 +681,138 @@ export function extremeStarRecord(def: ExtremeStarDef, stars: Stars3D): BodyReco
 /** Every star record from the data: systems first (barycentres, then their stars), then the named stars, then the extreme stars. */
 export function starRecords(file: SystemsFile, stars: Stars3D): BodyRecord[] {
   const extreme = EXTREME_STARS.map((d) => extremeStarRecord(d, stars)).filter((r): r is BodyRecord => r !== null);
-  return [...file.systems.flatMap((s) => systemRecords(file, s, stars)), ...namedStarRecords(file, stars), ...extreme];
+  return [...file.systems.flatMap((s) => systemRecords(file, s, stars)), ...namedStarRecords(file, stars), ...extreme, ...variableStarRecords(stars)];
 }
+
+// ─── Variable stars (variables.ts) ───────────────────────────────────────────────────────
+
+/** Algol's catalogue row (HIP 14576): the three stars' light together, and the system's place and motion. */
+export const ALGOL_INDEX = 61;
+
+const VARIABLE_CITES: Record<string, string> = Object.fromEntries(Object.entries(VARIABLE_REFS).map(([k, v]) => [k, v.cite]));
+
+type AlgolStar = { radiusRsun: number; massMsun: number; teffK: number; spectralType: string };
+
+/**
+ * Algol as the triple it is (Baron et al. 2012): its centre of mass in straight-line motion from the catalogue row, A and
+ * B on the inner orbit, the pair and C on the outer, each star with its own light: M_V from its radius and temperature,
+ * shifted together (by a few hundredths of a magnitude) so the three add up to the catalogue's V. Their light during
+ * eclipses is variability.ts's.
+ */
+export function algolRecords(stars: Stars3D): BodyRecord[] {
+  const i = ALGOL_INDEX;
+  if (i >= stars.count) return [];
+  const pos: Vec3 = [stars.positions[3 * i], stars.positions[3 * i + 1], stars.positions[3 * i + 2]];
+  const vel: Vec3 = [0, 1, 2].map((k) => stars.velocitiesInt16[3 * i + k] * stars.velocityUnitKms) as Vec3;
+  const abs = algolAbsMags(bolometricCorrection, SUN_M_BOL);
+  const shift = stars.absMag[i] - addMags(abs.a, abs.b, abs.c);
+  const { a, b, c } = ALGOL_STARS;
+  const refs = { radius: 'baron2012', mass: 'baron2012', teff: 'kolbas2015' };
+  const member = (id: string, name: string, s: AlgolStar, absMag: number, altNames: string[], facts: [string, string][], index: number | null): StarJson => ({
+    id,
+    name,
+    altNames,
+    system: 'algol',
+    catalogueIndex: index,
+    hip: index === null ? null : 14576,
+    gaiaDr3: null,
+    spectralType: s.spectralType,
+    catalogueDistancePc: null,
+    radiusRsun: s.radiusRsun,
+    massMsun: s.massMsun,
+    teffK: s.teffK,
+    absMagV: absMag + shift,
+    refs,
+    facts,
+  });
+  const file: SystemsFile = {
+    format: 'lightspeed.star-systems',
+    version: 1,
+    refs: VARIABLE_CITES,
+    systems: [
+      {
+        id: 'algol',
+        name: 'Algol',
+        note: 'An eclipsing triple (Baron et al. 2012)',
+        members: ['algol-a', 'algol-b', 'algol-c'],
+        barycentre: { posPc: pos, velKms: vel, distancePc: Math.hypot(...pos), massMsun: a.massMsun + b.massMsun + c.massMsun, refs: ['baron2012'], source: 'the AT-HYG v4.0 catalogue' },
+        orbits: algolOrbits(),
+        checks: [],
+      },
+    ],
+    stars: [
+      member(
+        'algol-a',
+        'Algol',
+        a,
+        abs.a,
+        ['Algol A', 'Beta Persei', 'β Per', 'bet Per', 'Demon Star'],
+        [
+          ['The Demon Star: every 2 days 20 hours 49 minutes it fades to a third of its brightness for about ten hours, as its dim companion passes in front of it.', 'gcvs'],
+          ['Its two stars are 0.06 au apart, a sixth of Mercury’s distance from the Sun; CHARA’s images caught the companion crossing the bright star’s face.', 'baron2012'],
+        ],
+        i,
+      ),
+      member('algol-b', 'Algol B', b, abs.b, ['β Per B'], [['A subgiant that has given most of its mass to Algol A: the lighter star is the more evolved one, the “Algol paradox”.', 'baron2012']], null),
+      member('algol-c', 'Algol C', c, abs.c, ['β Per C'], [['It circles the eclipsing pair every 680 days at 2.7 au, its orbit nearly perpendicular to theirs.', 'baron2012']], null),
+    ],
+  };
+  // Their discs exposed together: each one's V-band surface brightness (Planck at 550 nm) against Algol A's.
+  const planck = (t: number) => 1 / Math.expm1(14_388 / (0.55 * t));
+  return systemRecords(file, file.systems[0], stars).map((r) => {
+    const lum = r.physical.luminous;
+    if (lum && (r.id === 'algol-b' || r.id === 'algol-c')) lum.discRadiance = planck(lum.teffK) / planck(a.teffK);
+    return r;
+  });
+}
+
+/** The pulsating variables and β Lyrae that systems.json lacks: catalogue stars in straight-line motion, with the papers' sizes and temperatures. */
+export function pulsatorRecords(stars: Stars3D): BodyRecord[] {
+  const defs = [
+    ...PULSATORS.map((d) => ({ ...d, teffK: d.teff ? Math.round((d.teff.max + d.teff.min) / 2) : undefined, radiusRsun: d.radius?.meanRsun })),
+    { ...BETA_LYR_DEF, teffK: undefined, radiusRsun: undefined },
+  ];
+  const out: BodyRecord[] = [];
+  for (const d of defs) {
+    const i = d.catalogueIndex;
+    if (i >= stars.count) continue;
+    const pos: Vec3 = [stars.positions[3 * i], stars.positions[3 * i + 1], stars.positions[3 * i + 2]];
+    const vel: Vec3 = [0, 1, 2].map((k) => stars.velocitiesInt16[3 * i + k] * stars.velocityUnitKms) as Vec3;
+    const paper = d.id === 'mira' ? 'woodruff2004' : 'nardetto2016';
+    const j: StarJson = {
+      id: d.id,
+      name: d.name,
+      altNames: [...d.aliases],
+      system: null,
+      catalogueIndex: i,
+      hip: d.hip,
+      gaiaDr3: null,
+      spectralType: null,
+      catalogueDistancePc: null,
+      teffK: d.teffK,
+      radiusRsun: d.radiusRsun,
+      refs: d.teffK ? { teff: paper, radius: paper } : {},
+    };
+    const rec = starRecord(stars, {
+      id: d.id,
+      name: d.name,
+      index: i,
+      json: j,
+      parent: null,
+      provider: linearStarProvider(pos, vel, 'Straight-line motion from the AT-HYG v4.0 / Gaia DR3 catalogue'),
+      positionNote: `${LINEAR_NOTE}; ${distanceWords(stars, i)}.`,
+      aliases: j.altNames,
+      refs: VARIABLE_CITES,
+      facts: d.facts as [string, string][],
+    });
+    out.push({ ...rec, modelNotes: [...d.notes, ...(rec.modelNotes ?? [])] });
+  }
+  return out;
+}
+
+/** Every variable star of variables.ts that is not already a named star (Polaris and Betelgeuse are systems.json's). */
+export const variableStarRecords = (stars: Stars3D): BodyRecord[] => [...algolRecords(stars), ...pulsatorRecords(stars)];
+
 
 /** The star-system records merged with the built-in Proxima's (its key, detector, short name, aliases and article stay). */
 export function mergeCoreProxima(records: BodyRecord[], core: BodyRecord): BodyRecord[] {

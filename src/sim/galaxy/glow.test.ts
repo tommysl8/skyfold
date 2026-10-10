@@ -17,6 +17,7 @@ import { erf } from './model';
 import {
   discSigma,
   glowDisc,
+  layerColumn,
   GLOW_DISC_RANGE_KPC,
   GLOW_YOUNG_RANGE_KPC,
   M87_PSI_MIN,
@@ -195,6 +196,64 @@ describe('the glow along a line of sight', () => {
       const want = reference(cam, u, GLOW_DISC_RANGE_KPC[1]);
       expect(Math.abs(got / want - 1), `${l}, ${b}`).toBeLessThan(0.05);
     }
+  });
+
+  // The shader's arithmetic is float32: each operation rounded (Math.fround), as the GPU does.
+  const f = Math.fround;
+  const exp32 = (x: number) => f(Math.exp(f(x)));
+  /** The old form, the difference of ∫ from 0 to zb and to za, in float32. */
+  const oldColumn32 = (za: number, zb: number, h: number) => {
+    const layer = (z: number) => f(Math.sign(z) * f(f(h) * f(1 - exp32(f(-f(Math.abs(z)) / f(h))))));
+    return f(layer(zb) - layer(za));
+  };
+  /** layerColumn as the shader computes it, in float32. */
+  const column32 = (za: number, zb: number, h: number) => {
+    const a = f(f(Math.abs(za)) / f(h));
+    const b = f(f(Math.abs(zb)) / f(h));
+    const ome = (x: number) => (x < 1e-3 ? f(x * f(1 - f(f(0.5 * x) * f(1 - f(x / 3))))) : f(1 - exp32(-x)));
+    const m = za * zb >= 0 ? f(f(f(h) * exp32(-Math.min(a, b))) * ome(f(f(Math.abs(f(zb - za))) / f(h)))) : f(f(h) * f(ome(a) + ome(b)));
+    return zb >= za ? m : -m;
+  };
+  /** The exact integral, float64, in closed form. */
+  const exact = (za: number, zb: number, h: number) => {
+    const F = (z: number) => (z >= 0 ? h * (1 - Math.exp(-z / h)) : -h * (1 - Math.exp(z / h)));
+    if (za * zb >= 0) {
+      const [lo, hi] = [Math.min(Math.abs(za), Math.abs(zb)), Math.max(Math.abs(za), Math.abs(zb))];
+      return Math.sign(zb - za) * h * (Math.exp(-lo / h) - Math.exp(-hi / h));
+    }
+    return F(zb) - F(za);
+  };
+
+  it('takes each step’s column through a layer without cancellation, so far from a thin layer it is small and positive, not noise', () => {
+    // float64: the closed form, on either side of the midplane, across it and backwards.
+    for (const [za, zb, h] of [
+      [-1, -0.98, 0.06],
+      [0.5, 0.7, 0.3],
+      [-0.2, 0.3, 0.06],
+      [0.7, 0.5, 0.3],
+      [2, 2.0001, 0.9],
+      [-0.01, 0.01, 0.3],
+    ] as const) {
+      expect(Math.abs(layerColumn(za, zb, h) / exact(za, zb, h) - 1), `${za} ${zb} ${h}`).toBeLessThan(1e-9);
+    }
+    // float32, the young arm stars' 60-pc layer a kiloparsec from the camera (where the white band was): steps of
+    // 1 pc to 300 pc rising towards it. Rounded as here, the old difference came out zero or twice too large in 9 of
+    // these 20 steps (on the GPU, whose exp is less exact than float32 rounding, also of the wrong sign); the new
+    // column stays within 1e-5 of the exact one and is never negative.
+    let oldBad = 0;
+    for (const z0 of [-1.2, -1, -0.8, 0.8, 1]) {
+      for (const dz of [0.001, 0.01, 0.1, 0.3]) {
+        const za = f(z0);
+        const zb = f(z0 + Math.sign(-z0) * dz);
+        const want = exact(za, zb, 0.06);
+        const got = column32(za, zb, 0.06);
+        expect(Math.abs(got / want - 1), `${za} → ${zb}`).toBeLessThan(1e-5);
+        expect(got * Math.sign(zb - za)).toBeGreaterThan(0);
+        const old = oldColumn32(za, zb, 0.06);
+        if (!(Math.abs(old / want - 1) < 0.5)) oldBad++;
+      }
+    }
+    expect(oldBad).toBeGreaterThanOrEqual(8);
   });
 });
 

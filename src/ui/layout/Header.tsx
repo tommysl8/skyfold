@@ -264,8 +264,12 @@ function ViewMenu() {
       pulsars: u.pulsars,
       gwEvents: u.gwEvents,
       showCmb: u.showCmb,
+      darkMatter: u.darkMatter,
       aurora: u.aurora,
       jets: u.jets,
+      satellites: u.satellites,
+      satelliteDebris: u.satelliteDebris,
+      fieldLines: u.fieldLines,
       retarded: u.retarded,
       showFps: u.showFps,
       shortcuts: u.shortcuts,
@@ -349,7 +353,7 @@ function ViewMenu() {
           </Check>
           <Check
             checked={!s.notesHidden}
-            onChange={(v) => useUI.setState({ hiddenNotes: v ? [] : ['cmb', 'web', 'surveys', 'flow', 'belts', 'nsc'] })}
+            onChange={(v) => useUI.setState({ hiddenNotes: v ? [] : ['cmb', 'web', 'surveys', 'flow', 'belts', 'nsc', 'sats', 'dark'] })}
             hint="The short notes on the data layers (the cosmic web, the galaxy surveys…) in the top left. Hide on a note puts that note away; this brings them all back"
           >
             Layer notes
@@ -364,6 +368,18 @@ function ViewMenu() {
           <Check checked={s.showBelts} onChange={() => t('showBelts')} kbd="B" hint="The named asteroids, the large ones and every comet (JPL SBDB), with a sample of the rest">
             Small bodies
           </Check>
+          <Check
+            checked={s.satellites}
+            onChange={() => t('satellites')}
+            hint="Every active satellite round Earth, about 15,000, from CelesTrak’s orbital elements: a map of the orbits people use. The ISS, Tiangong and Hubble are always shown"
+          >
+            Satellites
+          </Check>
+          {s.satellites && (
+            <Check checked={s.satelliteDebris} onChange={() => t('satelliteDebris')} hint="The tracked fragments of four break-ups: Fengyun-1C (2007), Cosmos 2251 and Iridium 33 (2009), Cosmos 1408 (2021)">
+              <span className="pl-4">Debris</span>
+            </Check>
+          )}
           <Check checked={s.showGrid} onChange={() => t('showGrid')} kbd="J">
             Ecliptic grid
           </Check>
@@ -449,6 +465,13 @@ function ViewMenu() {
             CMB map
           </Check>
           <Check
+            checked={s.darkMatter}
+            onChange={() => t('darkMatter')}
+            hint="Where the mass is, not light: the Milky Way’s dark halo as a faint fog of its density (seen from outside the Galaxy), stars orbiting with and without it, and the Bullet Cluster’s gas and lensing mass"
+          >
+            Dark matter
+          </Check>
+          <Check
             checked={s.aurora}
             onChange={() => t('aurora')}
             hint="Earth’s auroral ovals on the night side: green oxygen light at 100–150 km, red above it, round the geomagnetic poles of the date. The curtains are a model; the ovals follow a published model for the activity chosen below"
@@ -466,6 +489,13 @@ function ViewMenu() {
             hint="The jets of M87 and Centaurus A, beamed by their measured speeds: the side coming towards us brightened, the other faint"
           >
             Relativistic jets
+          </Check>
+          <Check
+            checked={s.fieldLines}
+            onChange={() => t('fieldLines')}
+            hint="Magnetic field lines: the Sun’s corona and wind (SDO/HMI maps of the date), the planets’ fields from spacecraft (to their magnetopauses) and the Milky Way’s, from measured models; pulsars’, magnetars’ and black holes’ as models"
+          >
+            Magnetic field lines
           </Check>
           <Check checked={s.showOverlays} onChange={() => t('showOverlays')} kbd="U" hint="Scale bar and camera readout; in flight the reticle and apex markers">
             Readouts over the view

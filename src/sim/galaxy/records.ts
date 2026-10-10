@@ -24,6 +24,7 @@ import {
 } from './clusters';
 import { loadOrbits, skyStateInto, skyToEclipticMatrix, type Orbit, type SStarsJson } from './sstars';
 import { HOVER_FLOOR_RADIUS_RS, SGR_A_BLACK_HOLE, sgrABlackHole } from '../blackholes/records';
+import { fieldFact } from '../blackholes/holeField';
 
 const J2000_MS = Date.UTC(2000, 0, 1, 12);
 const YEAR_MS = JULIAN_YEAR_S * 1000;
@@ -55,6 +56,8 @@ export function fixedGalacticProvider(galPc: Readonly<Vec3>, label: string, good
 // ─── Sagittarius A* ──────────────────────────────────────────────────────────────────────
 
 export const SGR_A_ID = 'sgr-a-star';
+/** Sgr A*'s field, as the EHT's polarisation shows it (its card's last line). */
+const SGR_A_FIELD = fieldFact(SGR_A_ID)!;
 export const MILKY_WAY_ID = 'milky-way';
 
 /** Sgr A*: GRAVITY Collaboration (2022) mass and distance, Reid & Brunthaler (2004) position. */
@@ -158,9 +161,10 @@ export function sgrARecord(s: SgrA): BodyRecord {
       `A black hole of ${sig(s.massMsun / 1e6, 3)} million solar masses, weighed by the orbits of the stars that swing round it; S2 goes round every 16 years.`,
       `Its shadow, the dark patch its gravity carves out of the light behind it, is ${sig((2 * shadow) / AU_KM, 2)} au across, smaller than Mercury’s orbit. From Earth that is ${Math.round(shadowMicroArcsec)} millionths of an arcsecond; the Event Horizon Telescope’s picture (observed in 2017, published in 2022) shows a glowing ring 51.8 ± 2.3 of them across.`,
       'Dust between us and the centre dims its light about a trillion times in visible light (30 magnitudes) but only about ten times in the near-infrared, where astronomers follow its stars.',
+      SGR_A_FIELD.text,
     ],
-    factSources: [doiUrl(GRAVITY_2022_DOI), doiUrl('10.3847/2041-8213/ac6674'), doiUrl('10.1103/RevModPhys.82.3121')],
-    factSourceLabels: ['GRAVITY 2022', 'EHT Collaboration 2022', 'Genzel, Eisenhauer & Gillessen 2010'],
+    factSources: [doiUrl(GRAVITY_2022_DOI), doiUrl('10.3847/2041-8213/ac6674'), doiUrl('10.1103/RevModPhys.82.3121'), SGR_A_FIELD.source],
+    factSourceLabels: ['GRAVITY 2022', 'EHT Collaboration 2022', 'Genzel, Eisenhauer & Gillessen 2010', SGR_A_FIELD.label],
     positionNote: 'Position: radio position (Reid & Brunthaler 2004) at the GRAVITY (2022) distance, held fixed; its apparent drift of 6.4 milliarcseconds a year, a reflection of the Sun’s own orbit, is left out.',
     // At most three one-line notes reach the card; the rest are the data sheet's (blackHole.sheetNotes).
     modelNotes: SGR_A_BLACK_HOLE.modelNotes.slice(0, 3),
@@ -359,6 +363,12 @@ export function milkyWayRecord(s: SgrA): BodyRecord {
         { l: 'Absolute magnitude M_V', v: '−21.37', title: 'Licquia, Newman & Brinchmann 2015, via Bland-Hawthorn & Gerhard 2016' },
         { l: 'Luminosity', v: '3.0 × 10¹⁰', u: 'L☉', title: 'V band, from M_V with M_V☉ = 4.83' },
         { l: 'Central black hole', v: `${sig(s.massMsun / 1e6, 4)} × 10⁶`, u: 'M☉', title: GRAVITY_2022 },
+        {
+          l: 'Mass within 200 kpc',
+          v: '1.3 × 10¹²',
+          u: 'M☉',
+          title: 'McMillan 2017, MNRAS 465, 76: about 95 % of it dark matter. Other estimates range from about 0.2 to 2 × 10¹² (Ou et al. 2024; Watkins et al. 2019)',
+        },
       ],
       refs: [
         'Reid et al. 2019, ApJ 885, 131 (spiral arms)',
@@ -366,6 +376,7 @@ export function milkyWayRecord(s: SgrA): BodyRecord {
         'Drimmel & Spergel 2001, ApJ 556, 181 (dust)',
         'Bland-Hawthorn & Gerhard 2016, ARA&A 54, 529 (discs, halo, light)',
         'Chen et al. 2019, Nature Astronomy 3, 320 (warp)',
+        'McMillan 2017, MNRAS 465, 76 (mass model and dark halo)',
         `${GRAVITY_2022}; Bennett & Bovy 2019, MNRAS 482, 1417 (the Sun's place)`,
       ],
     },
@@ -373,16 +384,18 @@ export function milkyWayRecord(s: SgrA): BodyRecord {
       'The Sun lies 8.28 kiloparsecs (27,000 light-years) from the centre and 21 parsecs above the midplane of the disc.',
       'A bar of old stars about 10 kpc long crosses the centre, and four major spiral arms wind outwards from it, traced by the parallaxes of about 200 masers in star-forming regions.',
       'All its stars together shine with the visible light of about 30 billion Suns.',
+      'Most of its mass is dark matter: about 95 % of the 1.3 × 10¹² Suns’ worth within 200 kpc, in a fitted mass model. Stars far out orbit too fast for the stars and gas alone to hold them; how heavy the dark halo is remains uncertain by a factor of several.',
     ],
-    factSources: [doiUrl(GRAVITY_2022_DOI), doiUrl('10.3847/1538-4357/ab4a11'), doiUrl('10.1146/annurev-astro-081915-023441')],
-    factSourceLabels: ['GRAVITY 2022; Bennett & Bovy 2019', 'Wegg et al. 2015; Reid et al. 2019', 'Bland-Hawthorn & Gerhard 2016'],
+    factSources: [doiUrl(GRAVITY_2022_DOI), doiUrl('10.3847/1538-4357/ab4a11'), doiUrl('10.1146/annurev-astro-081915-023441'), doiUrl('10.1093/mnras/stw2759')],
+    factSourceLabels: ['GRAVITY 2022; Bennett & Bovy 2019', 'Wegg et al. 2015; Reid et al. 2019', 'Bland-Hawthorn & Gerhard 2016', 'McMillan 2017'],
     positionNote: 'Its centre is Sgr A*.',
     modelNotes: [
       MILKY_WAY_MODEL_LABEL,
       'The dust dims each point by the model’s extinction along its line of sight (Drimmel & Spergel 2001). Near the camera the discs and the young stars of the arms are drawn as a smooth glow worked out from the model’s laws, and the points take over a few kiloparsecs out.',
       'Near the Sun the sky is the real one (NASA SVS, from Gaia, with the light of the star catalogue’s stars too faint to draw as points): the model takes over a few hundred parsecs out. Its dust is smooth, so it has none of the gaps through which the real sky shows the bright star clouds of Sagittarius and Scutum: that way the model is about a magnitude fainter.',
+      'View › Dark matter draws its dark halo (McMillan’s 2017 model, an NFW halo cut off at 224 kpc) as a faint blue fog of its density summed along each line of sight: where the mass is, not light. Dark matter gives out none.',
     ],
-    dataSource: 'Parametric model of the Galaxy (src/sim/galaxy/model.json)',
+    dataSource: 'Parametric model of the Galaxy (src/sim/galaxy/model.json); its mass model, McMillan 2017 (src/sim/galaxy/darkMatter.ts)',
     article: 'our-galaxy',
     provider: {
       label: 'Centred on Sgr A*',
