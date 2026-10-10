@@ -71,12 +71,15 @@ export { PLUTO_BARYCENTRE, coreBodyRecords } from './core';
 export { engineRotation, moonGeocentric, planetProvider, moonProvider, sunProvider, policyAvailability } from './providers/engine';
 export {
   ALWAYS,
+  OPEN_ORBIT_YEARS,
   VOYAGER1_LAUNCH_MS,
   VOYAGER1_MODEL_START_MS,
   atCentreProvider,
+  beyondOpenOrbit,
   fixedOffsetProvider,
   fixedStarProvider,
   keplerProvider,
+  openOrbitEnded,
   twoBodyProvider,
   voyager1Provider,
   type KeplerElements,

@@ -535,6 +535,15 @@ describe('S2 behind the black hole', () => {
     expect((tp - at.startMs) / 1000).toBeCloseTo((60 * S2_BEHIND_WARP) / alpha, 6);
   });
 
+  it('finds one far from today too, where a step of the clock is longer than a second (the search used to spin forever)', () => {
+    for (const year of [1e9, 19.3e9, -1e9]) {
+      const ms = msFromCivil(year, 1, 1);
+      const tp = s2PericentreNear(ms)!;
+      expect(Number.isFinite(tp), String(year)).toBe(true);
+      expect(Math.abs(tp - ms)).toBeLessThan(9 * 365.25 * 86_400_000);
+    }
+  });
+
   it('shows S2’s two images a minute in, where the exact solver puts them', () => {
     const tp = s2PericentreNear(NOW)!;
     const note = run('s2-behind-sgr-a-star');

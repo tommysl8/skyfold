@@ -14,9 +14,9 @@ import { sim } from '../sim';
 import { useUI } from '../../state/ui';
 import { formatSimDate } from '../../lib/time';
 import { formatIsoDate } from '../../content/learn/catalogue';
-import { grownShare, nakedEyeEndMs, SUPERNOVAE, supernovaAt, type SupernovaState } from './supernovae';
+import { grownShare, modelDrawn, nakedEyeEndMs, pictureShare, SUPERNOVAE, supernovaAt, type SupernovaState } from './supernovae';
 import { KILONOVA_ID, kilonovaRecord, supernovaRecord } from './records';
-import { kilonovaAt, MERGER_MS, type KilonovaState } from './kilonova';
+import { kilonovaAt, KN_DRAWN_DAYS, MERGER_MS, type KilonovaState } from './kilonova';
 import { updatePace } from './pace';
 
 export { SUPERNOVAE, supernovaById } from './supernovae';
@@ -61,15 +61,24 @@ export function registerPhenomena(): void {
 
 /**
  * A supernova's remnant drawn by a picture (scene/Nebulae.tsx): its size at the date shown as a share of the picture's,
- * 0 before its light reached Earth. The Crab's picture grows with its filaments; SN 1987A's (Hubble's view of its ring
- * and the stars round it) is simply not there before 1987, nor while its model is drawn up close.
+ * 0 before its light reached Earth and once the picture no longer shows it. The Crab's picture grows with its filaments
+ * and fades as its pulsar spins down (gone about 10,500 years on: pictureShare); SN 1987A's (Hubble's view of its ring
+ * and the stars round it) is simply not there before 1987, nor while its model is drawn up close, nor once the blast has
+ * dissolved the ring (by 2040).
  */
 export function remnantScale(id: string, ms: number): number {
   for (const sn of SUPERNOVAE) {
     if (sn.remnant.bodyId !== id) continue;
+    if (!(pictureShare(sn, ms) > 0)) return 0;
     if (sn.pictureRemnant) return grownShare(sn, ms);
     return ms > sn.explosionMs && !phenomena.near.has(sn.id) ? 1 : 0;
   }
+  return 1;
+}
+
+/** How brightly a remnant's picture is drawn at the date (1 today; pictureShare), for scene/Nebulae.tsx. */
+export function remnantOpacity(id: string, ms: number): number {
+  for (const sn of SUPERNOVAE) if (sn.remnant.bodyId === id) return pictureShare(sn, ms);
   return 1;
 }
 
@@ -100,14 +109,15 @@ export function updatePhenomena(): void {
     lum.vmag = st.vmag;
     lum.teffK = st.teffK;
     const size = Math.max(st.shockKm, st.photosphereKm);
-    if (st.ageS > 0 && size > 0 && b.distCamera < MODEL_REACH * size) {
+    if (modelDrawn(st) && size > 0 && b.distCamera < MODEL_REACH * size) {
       snNear = true;
       phenomena.near.add(sn.id);
     }
   }
   const kn = getBody(KILONOVA_ID) ? sim.bodies[KILONOVA_ID] : undefined;
   phenomena.kilonova = kilonovaAt(ms, phenomena.kilonova ?? undefined);
-  const knNear = !!kn && kn.distCamera < KILONOVA_REACH_KM && ms > MERGER_MS - 2 * 86_400_000;
+  // Drawn from two days before the merger until its glow has faded (KN_DRAWN_DAYS).
+  const knNear = !!kn && kn.distCamera < KILONOVA_REACH_KM && ms > MERGER_MS - 2 * 86_400_000 && ms < MERGER_MS + KN_DRAWN_DAYS[1] * 86_400_000;
   const ui = useUI.getState();
   const earth = sim.bodies.earth;
   const aurora = ui.aurora && !!earth?.present && earth.radiusPx > 1.5;

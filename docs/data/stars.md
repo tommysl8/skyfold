@@ -1079,7 +1079,11 @@ its 11.68-day rotation (Donahue, Saar & Baliunas 1996, ApJ 466, 384).
 the equator to 22,014 au at 69.5° (the lobes are widest short of their poles) and 21,690 au at the pole, for 2,350 pc
 and an age of 160 years in March 2005. The outflow is a Hubble flow (Smith's expansion speeds are the radii over 160
 years: 648 km/s at the pole), so the shape is scaled by (year − 1845.2)/160 for the simulation's date; before 1845 it
-is not drawn. Its axis is tilted 41° from our line of sight, the south-east lobe towards us at position angle 130°
+is not drawn. The lobes coast only until they have swept up gas comparable to their own mass (12 M☉ or more: Smith et
+al. 2003, AJ 125, 1458): at 650 km/s in 1–10 hydrogen atoms per cm³ round them (a typical range; not measured), when
+their tips are 2–4 pc out, 3,000–7,000 years after 1845, by when their light has thinned as the square of their size
+too. So the model fades out over ages 3,000–7,000 years (`HOMUNCULUS_FADE_YR`, `homunculusFade`), its size held there,
+and is not drawn after. Its axis is tilted 41° from our line of sight, the south-east lobe towards us at position angle 130°
 (Smith 2006). The skin's light is the star's scattered by dust (a model): 1/r² from the star, a Henyey–Greenstein phase
 function with g = 0.45 (so the near lobe, between us and the star, is the brighter, as in Hubble's pictures) and the
 path length through a thin shell, 1/|n·v|; the colour is the reddish brown of its pictures. Not drawn: the thicker
@@ -1091,7 +1095,8 @@ lobe. It shows within 8–30 times its size of the star.
 au) from the centre, its position angle 269° on 1998 April 14 (JD 2450918), turning clockwise on the sky (position
 angle falling: the images at longer wavelengths are "advanced … (clockwise)", §2.2), in a plane tilted 12° (0–16°)
 from the sky at position angle 84°. 24,000 dust particles carry their age in coils and are placed on the spiral in the
-vertex shader for the date (`wr104ArmAngleDeg` is its pure twin), so the pattern turns on the simulation's clock. The
+vertex shader for the date (`wr104ArmAngleDeg` is its pure twin), so the pattern turns on the simulation's clock; only
+the turn's fraction goes to the shader, so it stays exact at any date (its size never changes). The
 arm's width (9% of its radius, after the shock cone's ≈ 20° half-angle) and the dust's fading outwards (∝ r^−1.6, over
 2.6 coils) are a model; the dust shines in the infrared, where the spiral was imaged, and is shown in false colour. It
 shows within 40–160 coil spacings of the star.

@@ -49,12 +49,45 @@ Crab), which the cards say. The model (`Phenomena.tsx`, `SHELL_FRAG`):
   shock follows its measured radii (Gaensler et al. 1997's radio shell, then Frank et al. 2016's X-ray radii). The shell
   behind the shock and the hot ejecta inside it are drawn in false colour (remnants shine mostly in X-rays), mottled by
   noise, at a brightness chosen to be seen (21.3 mag/arcsec² at the rim);
+- its future (`remnantEvolution`, `blastRadiusKm`): the measured law has no end, so the shock is the smaller of it and
+  the blast of the explosion's energy E in the gas round it (hydrogen density n, metallicity ζ in the Sun's): Sedov–Taylor,
+  R = 1.15 (E t²/ρ)^(1/5) with ρ = 1.4 m_H n, until t_PDS = 1.33 × 10⁴ yr E₅₁^(3/14) n^(−4/7) ζ^(−5/14), the start of the
+  radiative, pressure-driven snowplow (its cold shell forms at e t_PDS, 3.61 × 10⁴ yr for E₅₁ = n = 1); then
+  R = R_PDS (4t/3t_PDS − 1/3)^(3/10), R_PDS the Sedov–Taylor radius then (14.0 pc E₅₁^(2/7) n^(−3/7) ζ^(−1/7)), which
+  joins it with the same slope and tends to R ∝ t^0.3 (Cioffi, McKee & Bertschinger 1988, ApJ 334, 252; Truelove &
+  McKee 1999, ApJS 120, 299). It merges with the interstellar gas when the shock has slowed to the gas's turbulent
+  motions, 10 km/s: t_merge = 153 t_PDS (E₅₁^(1/14) n^(1/7) ζ^(3/14) / β C₀₆)^(10/7) with β C₀₆ = 1 (Cioffi et al.'s β ≈ 2,
+  at 20 km/s, would make it 2.7 times sooner). The radius is held from the merger; the model fades out over the last
+  40 % of that age (`remnantFade`). Its X-ray glow (the false colour) falls from t_PDS as the hot interior's pressure,
+  ∝ R^−5 (`remnantGlow`), and below a thousandth of the rim's brightness (about 75 t_PDS on) the model is not drawn
+  (`modelDrawn`). Before the explosion's light arrived nothing is drawn, and up to today every remnant is as it was
+  (tests). E and n, with their sources in each record's `surroundings`:
+
+  | | E (10⁵¹ erg) | n (cm⁻³) | measured law meets the blast | t_PDS | R_PDS | merges | then across |
+  | --- | --- | --- | --- | --- | --- | --- | --- |
+  | SN 1006 | 1.3 (W7: Nomoto et al. 1984) | 0.05 (Acero et al. 2007) | 1,030 yr | 78,000 yr | 54 pc | 6.6 Myr | 450 pc |
+  | SN 1054 (Crab) | 0.1 (Yang & Chevalier 2015) | 0.1 (typical) | 3,600 yr | 30,000 yr | 20 pc | 2.3 Myr | 155 pc |
+  | SN 1181 (Pa 30) | 0.002 (Lykou et al. 2023) | 0.1 (typical) | 3,300 yr | 13,000 yr | 6 pc | 0.66 Myr | 45 pc |
+  | SN 1572 (Tycho) | 1.3 | 0.15 (Williams et al. 2013) | 1,600 yr | 42,000 yr | 34 pc | 4.4 Myr | 300 pc |
+  | SN 1604 (Kepler) | 1.3 | 0.1 beyond its dense wind (typical) | 48,000 yr | 52,000 yr | 41 pc | 5.1 Myr | 350 pc |
+  | SN 1987A | 1.5 (Blinnikov et al. 2000; Utrobin 2005), ζ = 0.5 | 1 (typical, the LMC) | 6,900 yr | 19,000 yr | 17 pc | 2.4 Myr | 160 pc |
+
+  The thin gas round most of them makes them merge later and larger than the textbook remnant in 1 cm⁻³ (2 Myr, 140
+  pc across, with β C₀₆ = 1). Kepler's measured law (m = 0.6, in its progenitor's dense wind) is followed until it meets
+  the blast 48,000 years on: a simplification, as the shock will speed up again once it leaves the wind;
 - SN 1987A's equatorial ring: 0.808″ in radius (Panagia 1999), tilted 43°, long axis at position angle 81° (Sugerman et
   al. 2005; which side is nearer is assumed), in 28 knots; its brightness over the years is a model (lit by the flash,
   fading, then from 1995 by the blast in hot spots, peaking about 2009);
 - the Crab's remnant is its picture: drawn at the size its filaments' expansion gives for the date (R ∝ t^1.06: their
-  speeds are 1.06 times their age's average, Martin et al. 2025), none before 1054 (`remnantScale`, read by
-  `scene/Nebulae.tsx`); SN 1987A's picture (Hubble's) is hidden before 1987 and while its model is drawn up close.
+  speeds are 1.06 times their age's average, Martin et al. 2025; bounded by the blast's law above), none before 1054
+  (`remnantScale`, read by `scene/Nebulae.tsx`). It shines by its pulsar's spin-down power, Ė ∝ (1 + Δt/T)^(−(n+1)/(n−1))
+  with the braking index n = 2.5 (Lyne et al. 2015) and T = 2τ_c/(n − 1) = 1,676 years (τ_c = P/2Ṗ = 1,257 years, ATNF),
+  so in the future its picture is drawn as bright as Ė over today's (`crabPowerShare`, `pictureShare`): a third by
+  3000, a tenth by 5000, and gone below a hundredth, about 10,500 years on, when the remnant's reverse shock is
+  expected to have crushed the nebula too (Reynolds & Chevalier 1984; Gelfand, Slane & Zhang 2009) and today's picture
+  no longer shows it. SN 1987A's picture (Hubble's) is hidden before 1987 and while its model is drawn up close; the
+  blast is dissolving its ring (Fransson et al. 2015 expected it gone by about 2025; JWST still saw it in 2022–23), so
+  the ring and the picture fade out from 2030 and are not drawn after 2040 (`ring1987aShare`).
   While a model is drawn, the deep-sky catalogue's ring for its remnant is hidden.
 
 A blinding explosion (a fireball millions of times the Sun's surface brightness) is drawn with the view stopped down to
@@ -78,7 +111,11 @@ carried by the expansion; the tests check it against `gw-events.json.gz`).
   measured (−16.04 ± 0.23), and about magnitude 17 from Earth. Blue then red: 10,300 K at half a day, 3,750 K at 2.5
   days, 2,500–3,000 K after a week.
 - **Its debris (a model)**: a fast blue part towards the poles (0.27c) and a slower red one round the waist (0.13c) (Kasen
-  et al. 2017; Villar et al. 2017), blue's share of the light falling from 85 % to 15 % over four days. One-part models
+  et al. 2017; Villar et al. 2017), blue's share of the light falling from 85 % to 15 % over four days. It is drawn while
+  it glows: its light, last measured at 74 days (Spitzer: Kasliwal et al. 2022), is extrapolated as L ∝ t^−2.8 and is a
+  ten-millionth of its peak after three years; the model fades out over its second and third years, its size held
+  there (2.6 × 10¹³ km), and is not drawn after (`KN_DRAWN_DAYS`). The debris then coasts, unseen, until it has swept
+  up its own mass of gas, decades on, and slows into a faint remnant (not drawn). One-part models
   fit the light too (Waxman et al. 2018): the card says the shape is a model. The hypermassive neutron star of the first
   moment (a model, under a second) most likely collapsed to a black hole (Margalit & Metzger 2017; not observed).
 - **Precision**: 40 Mpc from the Sun a world coordinate is 10⁵ km coarse, more than the inspiral is wide. The model is

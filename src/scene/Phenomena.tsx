@@ -28,7 +28,7 @@ import { controller } from '../controls/cameraController';
 import { MODEL_REACH, phenomena, remnantShown } from '../sim/phenomena';
 import { auroraBrightness, bodyFixedDir, BLUE_NM, fluxPerKr, geomagneticPole, GREEN_NM, lineColour, ovalTable, RED_NM } from '../sim/phenomena/aurora';
 import { auroraKpNow, wantKp } from '../sim/spaceWeather';
-import { RING_1987A, SUPERNOVAE, type Supernova, type SupernovaState } from '../sim/phenomena/supernovae';
+import { modelDrawn, RING_1987A, ring1987aShare, SUPERNOVAE, type Supernova, type SupernovaState } from '../sim/phenomena/supernovae';
 import { inspiralAt, NS_RADIUS_KM, THETA_JN_DEG, vLuminosityUnits, type Inspiral } from '../sim/phenomena/kilonova';
 import { KILONOVA_ID } from '../sim/phenomena/records';
 import { beamingFrom, blobReachKpc, cenABlobs, m87JetBlobs, type Blob } from '../sim/phenomena/jets';
@@ -208,6 +208,9 @@ function placeRing(slot: SnSlot, st: SupernovaState, centre: Vector3, opacity: n
   if (!ring) return;
   const days = st.days;
   const mag = ring1987aMag(days);
+  // The blast dissolves the ring (ring1987aShare: gone by 2040).
+  const left = ring1987aShare(slot.sn.zeroMs + days * 86_400_000);
+  opacity *= left;
   if (mag >= NONE || opacity <= 0) {
     ring.mesh.visible = false;
     return;
@@ -280,7 +283,7 @@ function Supernovae() {
       const st = phenomena.sn.get(sn.id);
       const b = sim.bodies[sn.id];
       const size = st ? Math.max(st.shockKm, st.photosphereKm) : 0;
-      const near = phenomena.want.supernovae && !!st && !!b && st.ageS > 0 && size > 0 && b.distCamera < MODEL_REACH * size;
+      const near = phenomena.want.supernovae && !!st && !!b && modelDrawn(st) && size > 0 && b.distCamera < MODEL_REACH * size;
       let slot = slots.current.get(sn.id);
       if (!near) {
         if (slot) slot.mesh.visible = false;
@@ -316,8 +319,9 @@ function drawSupernova(slot: SnSlot, st: SupernovaState, at: Vector3, dist: numb
   const { sn, mesh, material } = slot;
   const unit = Math.max(st.shockKm, st.photosphereKm);
   const centre = centreScratch.copy(at).sub(sim.camera.pos);
-  // Fades in as the camera comes within a few hundred of its sizes (beyond, it is the point of light).
-  const opacity = 1 - smooth(0.25 * MODEL_REACH * size, MODEL_REACH * size, dist);
+  // Fades in as the camera comes within a few hundred of its sizes (beyond, it is the point of light), and out as the
+  // remnant merges with the interstellar gas (remnantFade).
+  const opacity = (1 - smooth(0.25 * MODEL_REACH * size, MODEL_REACH * size, dist)) * st.fade;
   mesh.visible = opacity > 0;
   mesh.position.copy(centre);
   mesh.scale.setScalar(1.05 * unit);
@@ -342,9 +346,10 @@ function drawSupernova(slot: SnSlot, st: SupernovaState, at: Vector3, dist: numb
   const coreR = 0.75;
   const coreKm = coreR * unit;
   const coreVisible = ((1 - wPhot) * lum) / ((4 / 3) * Math.PI * coreKm ** 3) * unit;
-  // The remnant (false colour): grows in over its first decades, but not where its picture shows it (the Crab).
+  // The remnant (false colour): grows in over its first decades, but not where its picture shows it (the Crab); its X-ray
+  // glow falls once its shell has formed and it cools (remnantGlow).
   const sTarget = 10 ** (-0.4 * REMNANT_MU) * ARCSEC2_PER_SR;
-  const wRem = sn.pictureRemnant ? 0 : smooth(0.5 * 365, 30 * 365, days);
+  const wRem = sn.pictureRemnant ? 0 : smooth(0.5 * 365, 30 * 365, days) * st.glow;
   const coreFalse = (wRem * 0.35 * sTarget) / (2 * coreR);
   u.uCoreR.value = coreR;
   u.uCoreS.value = coreVisible + coreFalse;
@@ -457,7 +462,8 @@ function Kilonova() {
       const sig = set.sig[i];
       peak = Math.max(peak, (0.2126 * l.x + 0.7152 * l.y + 0.0722 * l.z) / (2 * Math.PI * sig.x * sig.y));
     }
-    applyLaw(material, 1, peak);
+    // Out as its glow fades, a few years on (KN_DRAWN_DAYS).
+    applyLaw(material, kn.shown, peak);
   });
   return <primitive object={set.mesh} />;
 }

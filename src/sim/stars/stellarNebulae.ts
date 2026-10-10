@@ -5,7 +5,8 @@
  *  - the Homunculus round Eta Carinae, thrown off in the Great Eruption of the 1840s: two polar lobes whose radius at
  *    each latitude is Smith's (2006, ApJ 644, 1151, Table 1) model shape from the Doppler shifts of its molecular
  *    hydrogen skin, about 21,700 au from pole to centre in 2005, an age of 160 years. The flow is a Hubble flow
- *    (each part moving at a constant speed from one moment), so the shape grows in proportion to the time since then;
+ *    (each part moving at a constant speed from one moment), so the shape grows in proportion to the time since then,
+ *    until it has swept up gas comparable to its own mass, a few thousand years on, when it is faded out (below);
  *  - the dust spiral of WR 104 (Tuthill et al. 2008, ApJ 675, 698): an Archimedean spiral turning once every
  *    241.5 ± 0.5 days and expanding at 0.28 ± 0.02 mas a day, its dust starting 13.3 mas from the centre, seen within
  *    16° of face on, at 2.6 kpc.
@@ -43,8 +44,23 @@ export const HOMUNCULUS_THICKNESS = 1 / 8;
 export const HOMUNCULUS_INCLINATION_DEG = 41;
 export const HOMUNCULUS_NEAR_LOBE_PA_DEG = 130;
 
-/** How big the Homunculus is at a year, relative to 2005 (0 before 1845.2: it had not been thrown off yet). */
-export const homunculusScale = (year: number): number => Math.max(0, (year - HOMUNCULUS_BIRTH_YR) / HOMUNCULUS_AGE_YR);
+/**
+ * The Hubble flow lasts only while the lobes coast: once they have swept up gas comparable to their own mass (12 M☉ or
+ * more: Smith et al. 2003, AJ 125, 1458), they slow and lose their shape. At their 650 km/s, in the Carina Nebula's gas
+ * of 1–10 hydrogen atoms per cm³ (a typical range: it is not measured round the lobes), that is when they are 2–4 pc in
+ * radius (their tips), 3,000–7,000 years after 1845; their light, the star's scattered by their dust, has thinned as the square of
+ * their size by then too. The model fades out over these ages and is not drawn after, its size held there.
+ */
+export const HOMUNCULUS_FADE_YR: readonly [number, number] = [3000, 7000];
+
+/** How big the Homunculus is at a year, relative to 2005 (0 before 1845.2: it had not been thrown off yet; held from HOMUNCULUS_FADE_YR's end). */
+export const homunculusScale = (year: number): number => Math.max(0, Math.min(year - HOMUNCULUS_BIRTH_YR, HOMUNCULUS_FADE_YR[1]) / HOMUNCULUS_AGE_YR);
+
+/** How much of the Homunculus is drawn at a year: 1, fading out over HOMUNCULUS_FADE_YR (ages), 0 after. */
+export function homunculusFade(year: number): number {
+  const f = Math.min(1, Math.max(0, (year - HOMUNCULUS_BIRTH_YR - HOMUNCULUS_FADE_YR[0]) / (HOMUNCULUS_FADE_YR[1] - HOMUNCULUS_FADE_YR[0])));
+  return 1 - f * f * (3 - 2 * f);
+}
 
 /** The expansion speed at a latitude, km/s: its 2005 radius over 160 years (Smith's Table 1 lists the same). */
 export const homunculusSpeedKms = (radiusAu: number): number => (radiusAu * AU_KM) / (HOMUNCULUS_AGE_YR * 365.25 * 86_400);

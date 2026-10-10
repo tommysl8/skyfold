@@ -271,8 +271,12 @@ first, at most 50.
     side of a disc assumed where it is not known; the cosmic web is a survey with an uneven footprint; the CMB map is
     contrast enhanced. The cards say so.
 - **Voyager 1** follows its JPL Horizons trajectory from launch to 2099 (a Chebyshev fit, within 25 km), then a
-  two-body hyperbola around the Solar System's total mass. Around 18 November 2026 it becomes one light-day from
-  Earth.
+  two-body hyperbola around the Solar System's total mass, for a million years (bodies on open orbits are hidden
+  beyond: docs/bodies.md). Around 18 November 2026 it becomes one light-day from Earth.
+- **Models in time.** Every model that grows or moves with the clock has an end (`src/sim/timeBounds.test.ts` sweeps
+  them from the Big Bang to the clock's end): the supernova remnants merge with the interstellar gas and are no longer
+  drawn (docs/data/phenomena.md §1), the Crab's and SN 1987A's pictures fade out, the kilonova's debris after three
+  years, the Homunculus after a few thousand (docs/data/stars.md §13.5), the Sun's planetary nebula after 30,000.
 
 ## Data and credits
 
