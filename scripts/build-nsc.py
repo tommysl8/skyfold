@@ -18,27 +18,33 @@ Components (lengths in pc from Sgr A*, frame G of src/sim/galaxy/frames.ts: z to
         stars excluded: 82 % 13 Gyr, 13 % 3 Gyr, the rest 30 Myr to 1 Gyr).
   NSD   the Galaxy model's law (model.json nuclearStellarDisc: (R/90 pc)^-1.3 inside 90 pc, (R/90 pc)^-3 to 230 pc,
         exp(-|z|/45 pc), R >= 3 pc), so that it replaces the model's particles exactly; star-formation history after
-        Nogueras-Lara et al. 2020 (Nature Astronomy 4, 377): 90 % older than 8 Gyr, 5 % about 1 Gyr ago (MIST ages),
-        about 5 % in the last 500 Myr, 1.7 % of it in the last 30 Myr (0.2-0.8 Msun/yr).
+        Nogueras-Lara et al. 2020 (Nature Astronomy 4, 377): 90 % older than 8 Gyr, 5 % about 1 Gyr ago, about 5 % in
+        the last 500 Myr, 1.7 % of it in the last 30 Myr (0.2-0.8 Msun/yr).
   Young the 3-4 Myr old stars of the central half parsec (Lu et al. 2013, ApJ 764, 155: IMF dN/dm ~ m^-1.7 from 1 to
         150 Msun, 1.4-3.7 x 10^4 Msun above 1 Msun; 2.5 x 10^4 used), 20 % in the clockwise disc (Yelda et al. 2014,
         ApJ 783, 131: normal (i, Omega) = (130, 96) deg, surface density ~ R^-1.9; Paumard et al. 2006, ApJ 643, 1011)
         and 80 % in an isotropic cusp with surface density ~ R^-1.14 (Do et al. 2013 via Yelda et al. 2014), from 0.04
-        to 0.5 pc. Ages spread over 3.2 and 3.5 Myr (MIST grid ages 10^6.50 and 10^6.55 yr, equal masses), which makes
-        MIST's Wolf-Rayet count match the ~30 observed Wolf-Rayet stars and blue supergiants (Paumard et al. 2006),
-        inside Lu et al.'s 2.5-5.8 Myr; at 4 Myr MIST instead gives a dozen yellow supergiants of M_V ~ -10 that the
-        Galactic Centre does not show.
+        to 0.5 pc. Ages spread over 4.0 and 4.2 Myr (10^6.60 and 10^6.62 yr, equal masses), by Lu et al.'s solution
+        of 3.9 Myr (inside their 2.5-5.8 Myr): there the formulae below have stripped the stars above ~60 Msun to
+        some 45 naked helium stars (the Galactic Centre shows ~30 Wolf-Rayet stars and blue supergiants, Paumard et
+        al. 2006); a little younger they leave those stars on the main sequence, brighter in V than any seen there,
+        and from 4.3 Myr they make red supergiants, of which the central half parsec has one (IRS 7).
   Normalisation: the V luminosity of NSC + young stars equals the Galaxy model's NSC share (0.06 % of the Galaxy's
         L_V, model.json luminosity) and the NSD's the model's NSD share (1.5 %), so the field hands over from the model's
         particles without a jump (the app cross-fades them between 30 and 60 pc from Sgr A*). The young stars are a
         realisation (every one of them is a point); the NSC's old light is the model's share less theirs.
 
-Stellar populations: MIST v1.2 isochrones (Choi et al. 2016, ApJ 823, 102; Dotter 2016, ApJS 222, 8; built on MESA),
-v/v_crit = 0.4, UBV(RI)c + 2MASS photometry, [Fe/H] = +0.25 for the old populations (Feldmeier-Krause et al. 2017,
-MNRAS 464, 194: mean [M/H] = +0.26) and 0.00 for the young stars; Kroupa (2001) IMF (0.08-150 Msun) for all but the
-young stars. Each isochrone segment is split into 16 mass bins, each with its number of stars per solar mass formed,
-M_V, M_B, M_Ks and T_eff (linear in initial mass along the segment). Input (downloaded once, cached, not
-redistributed): data-raw/nsc/MIST_v1.2_vvcrit0.4_UBVRIplus.txz from https://mist.science (160 MB).
+Stellar populations: isochrones from the single-star formulae of Hurley, Pols & Tout 2000 (MNRAS 315, 543;
+src/sim/stars/sse.ts, the app's own, at Z = 0.02), with their main-sequence winds and naked helium stars, made by
+scripts/nsc-isochrones.mjs (see its header); Kroupa (2001) IMF (0.08-150 Msun) for all but the young stars. The
+formulae are solar in metallicity: the old stars' +0.26 dex (Feldmeier-Krause et al. 2017, MNRAS 464, 194) is not
+modelled, which leaves them some 0.05 mag bluer in B - V and 15-20 % brighter per solar mass than metal-rich models.
+Magnitudes: M_V = 4.73 - 2.5 log L - BC_V with Flower's (1996, ApJ 469, 355) bolometric corrections as corrected by
+Torres (2010, AJ 140, 1158, Table 1; as src/sim/stars/photometry.ts), held below 3,100 K and continued above 50,000 K
+by a blackbody's V flux; B - V from Flower's colour-temperature relation for dwarfs, subgiants and giants (Torres 2010,
+Table 2), inverted; V - Ks from Pecaut & Mamajek's (2013, ApJS 208, 9, Table 5) dwarf sequence (it serves only the
+star-count check below). Each isochrone segment is split into 16 mass bins, each with its number of stars per solar
+mass formed, M_V, M_B, M_Ks and T_eff (linear in initial mass along the segment). Nothing is downloaded.
 
 Points. A star at distance r from Sgr A* looks as bright from the hole as m_hole = M_V + 5 log10(r / 10 pc). The
 points are every young star plus the old stars with m_hole < m_split, m_split set so that there are 60,000 points in
@@ -81,8 +87,8 @@ clamped to 65,535). nuclearGlow.json records the SHA-256 of the uncompressed byt
 Determinism: numpy's PCG64 bit generator (its raw 64-bit stream is fixed across numpy versions) with seed 20260929,
 turned into doubles and normal deviates here. `--verify` rebuilds in memory and compares with the files on disk.
 
-Run: python scripts/build-nsc.py [--verify]   (Python 3.10+, numpy; network only for the MIST download). About a
-minute: most of it reading the two isochrone files.
+Run: python scripts/build-nsc.py [--verify]   (Python 3.10+, numpy, and Node for the isochrones; no network). About
+half a minute, most of it the isochrones.
 """
 
 from __future__ import annotations
@@ -94,17 +100,14 @@ import io
 import json
 import math
 import struct
+import subprocess
 import sys
-import tarfile
-import urllib.request
 from pathlib import Path
 
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-RAW = ROOT / "data-raw" / "nsc"
-MIST_URL = "https://mist.science/data/tarballs_v1.2/MIST_v1.2_vvcrit0.4_UBVRIplus.txz"
-MIST_TAR = RAW / "MIST_v1.2_vvcrit0.4_UBVRIplus.txz"
+ISO_SCRIPT = ROOT / "scripts" / "nsc-isochrones.mjs"
 MODEL_JSON = ROOT / "src" / "sim" / "galaxy" / "model.json"
 OUT_BIN = ROOT / "public" / "data" / "nsc-stars.bin.gz"
 OUT_JSON = ROOT / "src" / "sim" / "galaxy" / "nuclearGlow.json"
@@ -121,12 +124,10 @@ MU_OF_SIGMA = 26.402  # mu_V (mag/arcsec^2) of 1 Lsun/pc^2 with M_V,sun = 4.83
 # The Nuker law of the NSC's light (Schoedel et al. 2018, mean model) and its flattening (Schoedel et al. 2014).
 NSC_RB, NSC_GAMMA, NSC_BETA, NSC_ALPHA, NSC_Q, NSC_MMAX = 3.1, 1.13, 3.5, 10.0, 0.71, 50.0
 
-# Old and intermediate-age populations: MIST log10(age/yr) -> fraction of the initially formed mass.
+# Old and intermediate-age populations: log10(age/yr) -> fraction of the initially formed mass.
 NSC_SFH = {10.10: 0.821, 9.50: 0.131, 9.00: 0.002, 8.90: 0.005, 8.70: 0.035, 8.40: 0.002, 7.90: 0.003, 7.50: 0.002}
 NSD_SFH = {10.10: 0.900, 9.00: 0.050, 8.70: 0.017, 8.30: 0.008, 8.00: 0.008, 7.50: 0.017}
-OLD_FEH = 0.25
-YOUNG_FEH = 0.00
-YOUNG_AGES = (6.50, 6.55)
+YOUNG_AGES = (6.60, 6.62)
 YOUNG_MASS = 2.5e4
 YOUNG_SLOPE = 1.7
 YOUNG_MRANGE = (1.0, 150.0)
@@ -193,40 +194,70 @@ class Rng:
 # ─── Isochrones and luminosity functions ──────────────────────────────────────────────────────────────────────────
 
 
-def mist_member(feh: float) -> str:
-    return f"MIST_v1.2_vvcrit0.4_UBVRIplus/MIST_v1.2_feh_{'p' if feh >= 0 else 'm'}{abs(feh):.2f}_afe_p0.0_vvcrit0.4_UBVRIplus.iso.cmd"
+# Flower 1996's bolometric correction BC_V(log T_eff) with Torres 2010's coefficients (Table 1), as
+# src/sim/stars/photometry.ts has it, and M_bol,sun = 4.73 to go with it (Torres 2010).
+BC_COEFFS = (
+    (-0.190537291496456e5, 0.155144866764412e5, -0.421278819301717e4, 0.381476328422343e3),
+    (-0.370510203809015e5, 0.385672629965804e5, -0.150651486316025e5, 0.261724637119416e4, -0.170623810323864e3),
+    (-0.118115450538963e6, 0.137145973583929e6, -0.636233812100225e5, 0.147412923562646e5, -0.170587278406872e4, 0.788731721804990e2),
+)
+# Flower 1996's log T_eff(B - V) for main-sequence stars, subgiants and giants (Torres 2010, Table 2).
+BV_COEFFS = (3.979145106714099, -0.654992268598245, 1.740690042385095, -4.608815154057166, 6.792599779944473, -5.396909891322525, 2.192970376522490, -0.359495739295671)
+M_BOL_SUN = 4.73
+T_LO, T_HI = 3100.0, 50000.0  # where Flower's polynomials hold (photometry.ts clamps to the same)
+# V - Ks against T_eff of dwarfs, Pecaut & Mamajek 2013 (ApJS 208, 9, Table 5; Mamajek's v2022.04.16), O9V to M6V.
+VKS_TABLE = (
+    (2810, 7.10), (3060, 5.95), (3210, 5.25), (3430, 4.60), (3560, 4.23), (3850, 3.65), (4100, 3.35), (4440, 2.88),
+    (4830, 2.40), (5270, 1.953), (5660, 1.635), (5930, 1.437), (6550, 1.079), (7220, 0.734), (8100, 0.403),
+    (9700, 0.041), (12300, -0.254), (15700, -0.380), (17000, -0.492), (20600, -0.602), (26000, -0.874), (33300, -1.000),
+)
 
 
-def read_isochrones(feh: float, ages: set[float]) -> dict[float, np.ndarray]:
-    """Rows of the MIST isochrones of [Fe/H] = feh at the wanted log ages: initial mass, log T_eff, M_B, M_V, M_Ks, phase."""
-    RAW.mkdir(parents=True, exist_ok=True)
-    if not MIST_TAR.exists():
-        print(f"downloading {MIST_URL} (160 MB) ...", flush=True)
-        urllib.request.urlretrieve(MIST_URL, MIST_TAR)
-    cache = RAW / Path(mist_member(feh)).name
-    if not cache.exists():
-        with tarfile.open(MIST_TAR, "r:xz") as t:
-            f = t.extractfile(mist_member(feh))
-            assert f is not None
-            cache.write_bytes(f.read())
-    parsed = cache.with_suffix(".npz")
-    if not parsed.exists():
-        rows_by_age: dict[str, list[list[float]]] = {}
-        with open(cache, encoding="ascii") as f:
-            for line in f:
-                if line.startswith("#") or not line.strip():
-                    continue
-                p = line.split()
-                # 2 initial_mass, 4 log_Teff, 10 Bessell_B, 11 Bessell_V, 16 2MASS_Ks, last phase
-                rows_by_age.setdefault(f"{float(p[1]):.2f}", []).append([float(p[2]), float(p[4]), float(p[10]), float(p[11]), float(p[16]), float(p[-1])])
-        np.savez(parsed, **{k: np.array(v) for k, v in rows_by_age.items()})
-    with np.load(parsed) as z:
-        out = {}
-        for a in ages:
-            key = f"{a:.2f}"
-            if key not in z:
-                raise SystemExit(f"no isochrone at log age {a} for [Fe/H] = {feh}")
-            out[a] = z[key]
+def _poly(c, x):
+    return sum(ci * x**i for i, ci in enumerate(c))
+
+
+def bc_v(logt: np.ndarray) -> np.ndarray:
+    """Flower's BC_V between 3,100 and 50,000 K, held below; above, a blackbody's V flux against its total."""
+    lt = np.clip(logt, math.log10(T_LO), math.log10(T_HI))
+    bc = np.where(lt < 3.70, _poly(BC_COEFFS[0], lt), np.where(lt < 3.90, _poly(BC_COEFFS[1], lt), _poly(BC_COEFFS[2], lt)))
+    x = 1.4388e-2 / 0.55e-6  # h c / (k lambda_V), K
+
+    def planck_over_t4(t):
+        return 1.0 / (np.expm1(x / t) * t**4)
+
+    hot = np.maximum(10**logt, T_HI)
+    return bc + 2.5 * np.log10(planck_over_t4(hot) / planck_over_t4(T_HI))
+
+
+_BV_GRID = np.linspace(-0.40, 1.80, 2201)
+_LT_GRID = _poly(BV_COEFFS, _BV_GRID)
+assert np.all(np.diff(_LT_GRID) < 0), "Flower's colour-temperature relation should fall monotonically over the grid"
+
+
+def b_minus_v(logt: np.ndarray) -> np.ndarray:
+    """B - V from Flower's relation, inverted; held at the ends of its grid (-0.40 to 1.80) and outside 3,100-50,000 K."""
+    lt = np.clip(logt, math.log10(T_LO), math.log10(T_HI))
+    return np.interp(-lt, -_LT_GRID, _BV_GRID)
+
+
+def v_minus_ks(logt: np.ndarray) -> np.ndarray:
+    t = np.array(VKS_TABLE)
+    return np.interp(logt, np.log10(t[:, 0]), t[:, 1])
+
+
+def read_isochrones(ages: set[float]) -> dict[float, np.ndarray]:
+    """Isochrones at the wanted log ages from Hurley, Pols & Tout's formulae (scripts/nsc-isochrones.mjs), with Flower's
+    bolometric corrections and colours: rows of initial mass, log T_eff, M_B, M_V, M_Ks, phase (HPT's type k)."""
+    keys = sorted(f"{a:.2f}" for a in ages)
+    run = subprocess.run(["node", str(ISO_SCRIPT), *keys], capture_output=True, text=True, check=True, cwd=ROOT)
+    raw = json.loads(run.stdout)
+    out = {}
+    for a in ages:
+        r = np.array(raw[f"{a:.2f}"], dtype=float)
+        logl, logt = r[:, 1], r[:, 2]
+        mv = M_BOL_SUN - 2.5 * logl - bc_v(logt)
+        out[a] = np.stack([r[:, 0], logt, mv + b_minus_v(logt), mv, mv - v_minus_ks(logt), r[:, 3]], axis=1)
     return out
 
 
@@ -246,7 +277,7 @@ def lf_bins(iso: np.ndarray, imf, norm: float, fraction: float) -> np.ndarray:
     for i in range(len(iso) - 1):
         m0, m1 = m[i], m[i + 1]
         if not m1 > m0:
-            continue  # repeated or backward initial masses (MIST's low-mass seam): no stars
+            continue  # repeated or backward initial masses: no stars
         for k in range(SUB):
             a = m0 + (m1 - m0) * k / SUB
             b = m0 + (m1 - m0) * (k + 1) / SUB
@@ -500,8 +531,8 @@ def build() -> tuple[bytes, dict, list[str]]:
     l_nsd_model = total_lv * lum["fractions"]["nuclearStellarDisc"]
     rng = Rng(SEED)
 
-    old_isos = read_isochrones(OLD_FEH, set(NSC_SFH) | set(NSD_SFH))
-    young_isos = read_isochrones(YOUNG_FEH, set(YOUNG_AGES))
+    old_isos = read_isochrones(set(NSC_SFH) | set(NSD_SFH))
+    young_isos = read_isochrones(set(YOUNG_AGES))
     knorm = imf_mass_norm(kroupa, 0.08, 150)
     lf_nsc = Lf(np.vstack([lf_bins(old_isos[a], kroupa, knorm, f) for a, f in NSC_SFH.items()]))
     lf_nsd = Lf(np.vstack([lf_bins(old_isos[a], kroupa, knorm, f) for a, f in NSD_SFH.items()]))
@@ -513,7 +544,7 @@ def build() -> tuple[bytes, dict, list[str]]:
     ypos = sky_to_ecl(ypos_sky)
     y_mv = yrows[:, 3]
     y_lv = float(np.sum(10 ** (-0.4 * (y_mv - M_V_SUN))))
-    say(f"young: {y_drawn} stars drawn ({y_mass:.0f} Msun), {y_alive} alive ({y_disc} in the disc), L_V {y_lv:.3e} Lsun, brightest M_V {y_mv.min():.2f}, WR {int(np.sum(np.round(yrows[:, 5]) == 9))}")
+    say(f"young: {y_drawn} stars drawn ({y_mass:.0f} Msun), {y_alive} alive ({y_disc} in the disc), L_V {y_lv:.3e} Lsun, brightest M_V {y_mv.min():.2f}, naked helium stars {int(np.sum(np.round(yrows[:, 5]) == 7))}, red supergiants {int(np.sum((yrows[:, 5] >= 2) & (yrows[:, 5] <= 6) & (yrows[:, 1] < math.log10(4000))))}")
 
     laws = Laws(model)
     sh_nsc = shell(laws.nsc)
@@ -736,7 +767,7 @@ def build() -> tuple[bytes, dict, list[str]]:
             "rho0": r6(laws.nsc_rho0),
             "lightLsun": r6(l_nsc_old),
             "bv": round(bv_glow_nsc, 3),
-            "refs": ["Schoedel2018", "Schoedel2014", "Schoedel2020", "Feldmeier-Krause2017", "MIST"],
+            "refs": ["Schoedel2018", "Schoedel2014", "Schoedel2020", "Feldmeier-Krause2017", "Hurley2000", "Flower1996"],
         },
         "nsd": {
             "law": "model",
@@ -749,7 +780,7 @@ def build() -> tuple[bytes, dict, list[str]]:
             "rho0": r6(laws.nsd_rho0),
             "lightLsun": r6(l_nsd_model),
             "bv": round(bv_glow_nsd, 3),
-            "refs": ["model.json", "Nogueras-Lara2020", "Launhardt2002", "Sormani2022", "MIST"],
+            "refs": ["model.json", "Nogueras-Lara2020", "Launhardt2002", "Sormani2022", "Hurley2000", "Flower1996"],
         },
         "young": {
             "count": y_alive,
@@ -762,7 +793,7 @@ def build() -> tuple[bytes, dict, list[str]]:
             "rOutPc": YOUNG_R[1],
             "isoIndex": 0.86,
             "discIndex": 0.1,
-            "refs": ["Lu2013", "Yelda2014", "Paumard2006", "MIST"],
+            "refs": ["Lu2013", "Yelda2014", "Paumard2006", "Hurley2000", "Flower1996"],
         },
         "modelShares": {"nscLsun": r6(l_nsc_model), "nsdLsun": r6(l_nsd_model)},
         "share": {
@@ -797,7 +828,9 @@ def build() -> tuple[bytes, dict, list[str]]:
             "Lu2013": "Lu J. R. et al. 2013, ApJ 764, 155: Stellar populations in the central 0.5 pc of the Galaxy II. The initial mass function",
             "Yelda2014": "Yelda S. et al. 2014, ApJ 783, 131: Properties of the remnant clockwise disk of young stars in the Galactic Center",
             "Paumard2006": "Paumard T. et al. 2006, ApJ 643, 1011: The two young star disks in the central parsec of the Galaxy",
-            "MIST": "Choi J. et al. 2016, ApJ 823, 102; Dotter A. 2016, ApJS 222, 8 (MIST v1.2 isochrones, https://mist.science)",
+            "Hurley2000": "Hurley J. R., Pols O. R. & Tout C. A. 2000, MNRAS 315, 543: Comprehensive analytic formulae for stellar evolution as a function of mass and metallicity (the isochrones, from src/sim/stars/sse.ts)",
+            "Flower1996": "Flower P. J. 1996, ApJ 469, 355, with the coefficients of Torres G. 2010, AJ 140, 1158 (bolometric corrections and B - V)",
+            "Pecaut2013": "Pecaut M. J. & Mamajek E. E. 2013, ApJS 208, 9 (V - Ks of dwarfs, for the star-count check)",
             "Kroupa2001": "Kroupa P. 2001, MNRAS 322, 231: On the variation of the initial mass function",
             "Ferrarese2006": "Ferrarese L. et al. 2006, ApJS 164, 334: The ACS Virgo Cluster Survey VI. Isophotal analysis and the structure of early-type galaxies",
             "Kormendy2009": "Kormendy J. et al. 2009, ApJS 182, 216: Structure and formation of elliptical and spheroidal galaxies",

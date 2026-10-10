@@ -6,8 +6,8 @@
  * hundred particles on a 2-pc lattice, while a real observer there would see millions of stars brighter than
  * the eye's limit. A seeded generator (scripts/build-nsc.py) draws the cluster, the disc and the young stars
  * of the central half parsec from published density laws, star-formation histories and isochrones, and keeps
- * as points the 60,000 that look brightest from the hole (every young star among them): 3,140 young stars,
- * 53,805 of the cluster and 3,055 of the disc, none within 0.04 pc of the hole (only GRAVITY's four S-stars
+ * as points the 60,000 that look brightest from the hole (every young star among them): 3,109 young stars,
+ * 53,423 of the cluster and 3,468 of the disc, none within 0.04 pc of the hole (only GRAVITY's four S-stars
  * are there, as bodies). The light of all the others is a glow: each law times 1 − s(r), the share of its
  * light not in the points (sim/galaxy/nuclearGlow.json, its twin march in sim/galaxy/glow.ts, drawn by
  * render/shaders/galaxyGlow.frag.glsl). The lens's quality rungs 1 and 2 draw only the first 30,000 and
@@ -264,7 +264,7 @@ export const NSC_LAYER_CARD = {
     'No dust is drawn inside the cluster. Most of the 30 magnitudes that hide it from Earth lie in the Galaxy’s disc on the way.',
   ],
   sources: [
-    'The cluster follows the light profile Schödel and colleagues measured (2014, 2018), the disc the Galaxy model’s own law; the stars’ ages, brightness and colours come from the star-formation histories of Schödel et al. (2020) and Nogueras-Lara et al. (2020) with the MIST stellar models, and the young stars of the central half parsec from Lu et al. (2013) and Yelda et al. (2014).',
+    'The cluster follows the light profile Schödel and colleagues measured (2014, 2018), the disc the Galaxy model’s own law; the stars’ ages, brightness and colours come from the star-formation histories of Schödel et al. (2020) and Nogueras-Lara et al. (2020) with the stellar-evolution formulae of Hurley, Pols and Tout (2000), and the young stars of the central half parsec from Lu et al. (2013) and Yelda et al. (2014).',
   ],
 } as const;
 

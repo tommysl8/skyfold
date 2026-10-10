@@ -423,9 +423,10 @@ function Sources() {
             A&amp;A 641, A102), Gallego-Cano et al. (2018, A&amp;A 609, A26), Feldmeier-Krause et al. (2017, MNRAS 464, 194),
             Nogueras-Lara et al. (2020, Nature Astronomy 4, 377), Launhardt, Zylka &amp; Mezger (2002, A&amp;A 384, 112), Sormani
             et al. (2022, MNRAS 512, 1857), Paumard et al. (2006, ApJ 643, 1011), Lu et al. (2013, ApJ 764, 155) and Yelda et
-            al. (2014, ApJ 783, 131); the stars’ brightness and colours from the{' '}
-            <Ext href="https://mist.science">MIST</Ext> v1.2 isochrones (Choi et al. 2016, ApJ 823, 102; Dotter 2016, ApJS 222,
-            8) with Kroupa’s (2001, MNRAS 322, 231) mass function. M87’s own starlight from the light profiles of Ferrarese et al.
+            al. (2014, ApJ 783, 131); the stars’ brightness and colours from the stellar-evolution formulae of Hurley, Pols &amp;
+            Tout (2000, MNRAS 315, 543) with Kroupa’s (2001, MNRAS 322, 231) mass function, Flower’s (1996, ApJ 469, 355)
+            bolometric corrections and colours as corrected by Torres (2010, AJ 140, 1158), and Pecaut &amp; Mamajek’s (2013, ApJS
+            208, 9) infrared colours. M87’s own starlight from the light profiles of Ferrarese et al.
             (2006, ApJS 164, 334) and Kormendy et al. (2009, ApJS 182, 216).
           </>,
         ]}
