@@ -58,6 +58,7 @@ import { useUI } from './state/ui';
 import { useDocRoute } from './state/route';
 import { deepSkyGate, subscribeDeepSky } from './sim/deepsky';
 import { phenomena, subscribePhenomena } from './sim/phenomena';
+import { spaceWeather, subscribeSpaceWeather } from './sim/spaceWeather';
 import { darkLayer, subscribeDarkLayer } from './sim/galaxy/darkLayer';
 import { satellites, subscribeSatellites } from './sim/satellites';
 
@@ -106,6 +107,18 @@ function GalacticFieldLayer() {
 }
 // And the magnetic field lines, the first time View › Magnetic field lines is turned on (sim/fields).
 const FieldLines = lazy(() => import('./scene/FieldLines'));
+
+// And the fronts of the coronal mass ejections, the first time one is in flight near the camera (sim/spaceWeather).
+const SpaceWeather = lazy(() => import('./scene/SpaceWeather'));
+
+function SpaceWeatherLayer() {
+  const started = useSyncExternalStore(subscribeSpaceWeather, () => spaceWeather.started);
+  return started ? (
+    <Suspense fallback={null}>
+      <SpaceWeather />
+    </Suspense>
+  ) : null;
+}
 
 function PhenomenaLayer() {
   const started = useSyncExternalStore(subscribePhenomena, () => phenomena.started);
@@ -218,6 +231,7 @@ export default function App() {
           <Surveys />
           <DeepSkyLayer />
           <PhenomenaLayer />
+          <SpaceWeatherLayer />
           <DarkMatterLayer />
           <GalacticFieldLayer />
           <FieldLinesLayer />

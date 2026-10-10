@@ -7,7 +7,8 @@
  *  - A planet's lines (and Ganymede's) show once its magnetopause's stand-off is 10 px across the screen and are full
  *    at 40. Its lines are cut where they leave the magnetopause, the shape facing the Sun (Ganymede's facing the
  *    plasma that overtakes it), whenever the Sun's direction in the planet's frame has moved by 0.3° (a pass over its
- *    vertices; nothing allocated): a closed line that leaves it is drawn from both its feet up to the boundary. Earth's are traced again for each half year of the date (IGRF-14).
+ *    vertices; nothing allocated): a closed line that leaves it is drawn from both its feet up to the boundary. Earth's are traced again for each half year of the date (IGRF-14),
+ *    and cut again whenever a CME's sheath moves its magnetopause (sim/spaceWeather/storm.ts).
  *  - The Sun's: the potential field of the Carrington rotation of the date (its map fetched once, 120 kB) out to the
  *    source surface, shown once the Sun is a few pixels across; the Parker spirals and the current sheet out to 3 au,
  *    while that reach is 20 px or more across, from within 0.3 au of the Sun or from 4 to 60 au (among the inner
@@ -30,6 +31,7 @@ import { MagnetopauseTest, standoff } from '../sim/fields/magnetopause';
 import { CLOSED, OPEN, SHEET, SOURCE_SURFACE, SPIRAL, SPIRAL_END_RSUN, type LineSet } from '../sim/fields/lines';
 import { parseSunRotations, rotationAt, type SunRotations } from '../sim/fields/sun';
 import type { FieldWorkerReply, FieldWorkerRequest } from '../sim/fields/worker';
+import { spaceWeather } from '../sim/spaceWeather';
 
 // ─── The worker ───────────────────────────────────────────────────────────────────────
 
@@ -213,7 +215,7 @@ function cut(d: Drawn, test: MagnetopauseTest, n: Vector3): void {
 function PlanetField({ model }: { model: FieldModel }) {
   const { mesh, material, drawn, show } = useLineMesh();
   fieldLinesDebug.meshes[model.id] = mesh;
-  const test = useMemo(() => new MagnetopauseTest(model.magnetopause, model.limit), [model]);
+  const test = useRef(new MagnetopauseTest(model.magnetopause, model.limit));
   const reach = useMemo(() => standoff(model.magnetopause), [model]);
   const last = useMemo(() => new Vector3(), []);
   useFrame(() => {
@@ -244,10 +246,19 @@ function PlanetField({ model }: { model: FieldModel }) {
       mesh.visible = false;
       return;
     }
+    // Earth's magnetopause moves with the solar wind's pressure: a CME's sheath pushes it in (sim/spaceWeather).
+    if (model.id === 'earth') {
+      const now = spaceWeather.earth;
+      const mp = test.current.mp;
+      if (mp.kind === 'shue' && Math.abs(now.r0 - mp.r0) > 0.005 * mp.r0) {
+        test.current = new MagnetopauseTest({ kind: 'shue', r0: now.r0, alpha: now.alpha }, model.limit);
+        last.set(0, 0, 0);
+      }
+    }
     if (model.noseBody) nose.set(model.noseBody[0], model.noseBody[1], model.noseBody[2]);
     else nose.copy(sun.apparentPos).sub(b.apparentPos).normalize().applyQuaternion(inv.copy(b.apparentQuat).invert());
     if (nose.dot(last) < Math.cos((0.3 * Math.PI) / 180)) {
-      cut(d, test, nose);
+      cut(d, test.current, nose);
       last.copy(nose);
     }
     mesh.position.copy(toCam);

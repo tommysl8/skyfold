@@ -8,7 +8,8 @@
  * sim/galaxy/nuclearCluster.ts) and the glowing gas falling into it (the accretion flow's model,
  * sim/blackholes/accretion.ts), and the Milky Way's magnetic field (its model's lines in 3D, or the field over the sky
  * measured from the Solar System: sim/galaxy/fieldView.ts), and the dark-matter layer while it is on (what of it shows,
- * with the Milky Way's rotation curve in a small chart: DarkMatterChart.tsx, a chunk of its own). Each says what the layer is and whether it is a model; each opens to say
+ * with the Milky Way's rotation curve in a small chart: DarkMatterChart.tsx, a chunk of its own), and a card for each
+ * coronal mass ejection in view (up to two: sim/spaceWeather/cards.ts). Each says what the layer is and whether it is a model; each opens to say
  * more, keeps its credits and references under Sources (closed: Sources.tsx), and shows whenever its layer does,
  * unless it has been put away with its Hide: that hides the note only, never the layer (the View menu turns layers on
  * and off), and is remembered between visits until View › Layer notes brings the notes back (state/ui.ts hiddenNotes).
@@ -28,11 +29,15 @@ import { cmbEpochNote } from '../../sim/cosmos/cmb';
 import { NSC_LAYER_CARD, nuclear } from '../../sim/galaxy/nuclearCluster';
 import { FLOW_HOLE, flowPoint, type FlowPoint } from '../../sim/blackholes/accretion';
 import { kindArticle } from '../../content/bodyArticles';
-import { Sources } from './Sources';
+import { SourceLinks, Sources } from './Sources';
 import { ASTEROID_CARD, asteroidCardShown } from '../asteroidCard';
 import { smallBodies } from '../../sim/asteroids/load';
 import { SATELLITE_CARD, satelliteCardLines } from '../satelliteCard';
 import { FIELD_CARD, FIELD_SKY_SOURCE, FIELD_SKY_TEXT, fieldShares } from '../../sim/galaxy/fieldView';
+import { cmeCardsNow } from '../../sim/spaceWeather';
+
+/** The Learn note on space weather. */
+const SPACE_WEATHER_ARTICLE = 'space-weather';
 import { DARK_CARD, darkLayer } from '../../sim/galaxy/darkLayer';
 
 /** The rotation curve's chart, with the mass model it plots: loaded once the dark-matter card first shows it. */
@@ -74,6 +79,7 @@ function LayerCard({
   figure,
   more,
   sources,
+  links = [],
   article,
   onClose,
   closeTitle = 'Hide this note: the layer stays (the View menu turns layers off; View › Layer notes brings notes back)',
@@ -86,8 +92,9 @@ function LayerCard({
   /** A small figure under the lines. */
   figure?: ReactNode;
   more: readonly string[];
-  /** Its credits and references, under Sources. */
+  /** Its credits and references, under Sources, and links among them. */
   sources: readonly string[];
+  links?: readonly { url: string; label: string }[];
   /** The Learn article it belongs to, when there is one. */
   article?: string;
   onClose: () => void;
@@ -120,6 +127,7 @@ function LayerCard({
           {sources.map((s) => (
             <p key={s}>{s}</p>
           ))}
+          <SourceLinks links={links} />
         </Sources>
       )}
     </section>
@@ -141,6 +149,7 @@ export function LayerCards() {
   const beltsOn = useUI((s) => s.showBelts);
   const satsOn = useUI((s) => s.satellites);
   const fieldOn = useUI((s) => s.fieldLines);
+  const cmesOn = useUI((s) => s.cmes);
   const hidden = useUI((s) => s.hiddenNotes);
   const darkOn = useUI((s) => s.darkMatter);
   const away = (key: string) => hidden.includes(key);
@@ -163,11 +172,13 @@ export function LayerCards() {
   const field = fieldOn && !away('field') ? fieldShares(sim.camera.pos) : null;
   const fieldSky = !!field && field.sky >= FIELD_CARD_SHARE && (!relView.active || relView.split);
   const fieldLines = !!field && field.lines >= FIELD_CARD_SHARE;
+  // The CMEs whose fronts are drawn now (sim/spaceWeather), up to two.
+  const cmes = cmesOn && !away('cme') ? cmeCardsNow() : [];
   // The dark-matter layer while it is on; its chart while the halo and the tracers show.
   const dark = !away('dark') && darkOn;
   const darkHalo = darkLayer.tracers > 0.3;
   const darkBullet = darkLayer.bullet > 0.3;
-  if (!web && !surveys && !cmb && !nsc && !flow && !belts && !fieldSky && !fieldLines && !sats && !dark) return null;
+  if (!web && !surveys && !cmb && !nsc && !flow && !belts && !fieldSky && !fieldLines && !sats && !dark && cmes.length === 0) return null;
   const holeArticle = kindArticle('black-hole');
   return (
     <div className="flex w-full max-w-[380px] flex-col gap-1.5">
@@ -182,6 +193,19 @@ export function LayerCards() {
           onClose={() => hideNote('cmb')}
         />
       )}
+      {cmes.map((c, i) => (
+        <LayerCard
+          key={`${i}:${c.title}`}
+          title={c.title}
+          line={c.line}
+          caveat={c.caveat}
+          more={c.more}
+          sources={c.sources}
+          links={c.link ? [{ url: c.link, label: 'The CME in DONKI' }] : []}
+          article={SPACE_WEATHER_ARTICLE}
+          onClose={() => hideNote('cme')}
+        />
+      ))}
       {(fieldLines || fieldSky) && (
         <LayerCard
           title={FIELD_CARD.title}

@@ -28,6 +28,7 @@ import { isWithin } from '../sim/bodies';
 import { updateCosmicSky } from '../sim/cosmos/expansion';
 import { nscPointsGate } from '../sim/galaxy/nuclearCluster';
 import { updatePhenomena } from '../sim/phenomena';
+import { updateSpaceWeather } from '../sim/spaceWeather';
 import { updateDarkLayer } from '../sim/galaxy/darkLayer';
 import { satellites } from '../sim/satellites';
 
@@ -125,6 +126,8 @@ export function SimDriver() {
     updatePhenomena();
     // The variable stars' light at this date, and the Sun at the age it is shown (sim/stars)
     updateStarTime();
+    // The CMEs in flight at this date and their load on Earth's magnetosphere, the measured Kp (sim/spaceWeather)
+    updateSpaceWeather();
     if (!initialised.current) {
       initialised.current = true;
       controller.placeAt('earth', 26_000);

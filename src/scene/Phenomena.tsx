@@ -2,7 +2,8 @@
  * The phenomena's models (sim/phenomena; materials: render/phenomenaMaterials.ts), a chunk of its own mounted once one is
  * first near (App.tsx):
  *  - Aurora: Earth's two ovals on the night side, at the geomagnetic poles of the date and the activity chosen in the
- *    View menu (Kp), their curtains folding slowly on the wall clock.
+ *    View menu (Kp; by default the Kp measured at the date, sim/spaceWeather), their curtains folding slowly on the
+ *    wall clock.
  *  - Supernovae: each one's fireball and debris up close, from the moment its light reached Earth to today's remnant;
  *    SN 1987A's ring of gas lit by its flash and then its blast.
  *  - The kilonova of GW170817: the two neutron stars spiralling in (the chirp's real pace, the orbit drawn slowed), then
@@ -26,6 +27,7 @@ import { useUI } from '../state/ui';
 import { controller } from '../controls/cameraController';
 import { MODEL_REACH, phenomena, remnantShown } from '../sim/phenomena';
 import { auroraBrightness, bodyFixedDir, BLUE_NM, fluxPerKr, geomagneticPole, GREEN_NM, lineColour, ovalTable, RED_NM } from '../sim/phenomena/aurora';
+import { auroraKpNow, wantKp } from '../sim/spaceWeather';
 import { RING_1987A, SUPERNOVAE, type Supernova, type SupernovaState } from '../sim/phenomena/supernovae';
 import { inspiralAt, NS_RADIUS_KM, THETA_JN_DEG, vLuminosityUnits, type Inspiral } from '../sim/phenomena/kilonova';
 import { KILONOVA_ID } from '../sim/phenomena/records';
@@ -81,10 +83,13 @@ function skyFrame(at: Vector3, east: Vector3, north: Vector3, toEarth: Vector3):
 
 // ─── Aurora ───────────────────────────────────────────────────────────────────────────
 
+/** The ovals are redrawn when Kp moves by this much (a ninth: the eased measured Kp changes smoothly). */
+const KP_STEP = 1 / 9;
+
 function Aurora() {
-  const kp = useUI((s) => s.auroraKp);
-  const texture = useMemo(() => createOvalTexture(ovalTable(kp)), [kp]);
+  const texture = useMemo(() => createOvalTexture(ovalTable(3)), []);
   const material = useMemo(() => createAuroraMaterial(texture), [texture]);
+  const drawnKp = useRef(3);
   phenomena.materials.aurora = material;
   useEffect(() => () => material.dispose(), [material]);
   useEffect(() => () => texture.dispose(), [texture]);
@@ -103,6 +108,19 @@ function Aurora() {
     m.visible = on;
     if (!on) return;
     updateLaw(camera);
+    // The activity: the visitor's, or the Kp measured at the date (its table loaded the first time it is wanted).
+    if (useUI.getState().auroraKp === 'auto') wantKp();
+    const kp = auroraKpNow();
+    if (Math.abs(kp - drawnKp.current) >= KP_STEP || (kp !== drawnKp.current && Number.isInteger(kp))) {
+      const table = ovalTable(kp);
+      (texture.image.data as Float32Array).set(table);
+      texture.needsUpdate = true;
+      drawnKp.current = kp;
+      // Rays are rejected below the oval's lowest latitude, less 3° (50° but in great storms).
+      let colat = 0;
+      for (let i = 1; i < table.length; i += 4) colat = Math.max(colat, table[i] * 90);
+      material.uniforms.uMinSinLat.value = Math.sin((Math.min(50, 87 - colat) * Math.PI) / 180);
+    }
     const rec = getBody('earth')!;
     const R = e.displayRadius;
     const scale = R / (rec.physical.equatorialRadiusKm ?? rec.physical.radiusKm);
@@ -117,10 +135,13 @@ function Aurora() {
     const d = bodyFixedDir(pole.latDeg, pole.lonDeg);
     u.uDipole.value.set(d[0], d[1], d[2]).applyQuaternion(e.apparentQuat).normalize();
     u.uSun.value.copy(sun.apparentPos).sub(e.apparentPos).normalize();
-    const { greenKr, redShare } = auroraBrightness(kp);
+    const { greenKr, redShare } = auroraBrightness(drawnKp.current);
     u.uKr.value = greenKr;
     u.uRedShare.value = redShare;
     u.uFluxPerKr.value = flux.g;
+    // The display's roll-off: from a column of 20 kR of the green line (a bright quiet-night arc seen overhead is 15)
+    // towards 60 kR.
+    u.uSoftS.value.set(20 * flux.g, 60 * flux.g);
     u.uEffRed.value = flux.r / flux.g;
     u.uEffBlue.value = flux.b / flux.g;
     u.uGreen.value.setRGB(green[0], green[1], green[2]);

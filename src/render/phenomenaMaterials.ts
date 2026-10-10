@@ -379,6 +379,8 @@ export function createAuroraMaterial(edges: DataTexture): ShaderMaterial {
       uScale: { value: 1 },
       uTime: { value: 0 },
       uOpacity: { value: 1 },
+      uMinSinLat: { value: Math.sin((50 * Math.PI) / 180) },
+      uSoftS: { value: new Vector2(1e30, 2e30) },
       uGreen: { value: new Color(0.2, 1, 0.3) },
       uRed: { value: new Color(1, 0.1, 0.1) },
       uBlue: { value: new Color(0.3, 0.2, 1) },

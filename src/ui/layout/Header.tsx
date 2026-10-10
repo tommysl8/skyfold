@@ -54,19 +54,21 @@ export function OpticsSeg() {
   );
 }
 
-/** The geomagnetic activity the aurora is drawn for (sim/phenomena/aurora.ts): Kp 1, 3, 5 or 7. */
+/** The geomagnetic activity the aurora is drawn for (sim/phenomena/aurora.ts): measured at the date, or Kp 1, 3, 5, 7 or 9. */
 function KpSeg() {
   const kp = useUI((s) => s.auroraKp);
   return (
     <Seg
       label="Geomagnetic activity (Kp)"
       value={String(kp)}
-      onChange={(v) => useUI.setState({ auroraKp: Number(v), aurora: true })}
+      onChange={(v) => useUI.setState({ auroraKp: v === 'auto' ? 'auto' : Number(v), aurora: true })}
       options={[
+        { value: 'auto', label: 'Auto', title: 'Auto (measured): the Kp index measured at the date, every three hours since 1932 (GFZ Potsdam); Kp 3 where there is none (the default)' },
         { value: '1', label: 'Quiet', title: 'Kp 1: a quiet night; the ovals are narrow and far north and south' },
-        { value: '3', label: 'Kp 3', title: 'Kp 3: a typical moderate night (the default)' },
-        { value: '5', label: 'Kp 5', title: 'Kp 5: a minor storm; the ovals widen towards the equator' },
-        { value: '7', label: 'Kp 7', title: 'Kp 7: a strong storm; aurora overhead at 55° geomagnetic latitude' },
+        { value: '3', label: '3', title: 'Kp 3: a typical moderate night' },
+        { value: '5', label: '5', title: 'Kp 5: a minor storm; the ovals widen towards the equator' },
+        { value: '7', label: '7', title: 'Kp 7: a strong storm; aurora overhead at about 52° geomagnetic latitude' },
+        { value: '9', label: '9', title: 'Kp 9: an extreme storm; the ovals as far south as in May 2024, 35° geomagnetic latitude' },
       ]}
     />
   );
@@ -266,6 +268,7 @@ function ViewMenu() {
       showCmb: u.showCmb,
       darkMatter: u.darkMatter,
       aurora: u.aurora,
+      cmes: u.cmes,
       jets: u.jets,
       satellites: u.satellites,
       satelliteDebris: u.satelliteDebris,
@@ -483,6 +486,13 @@ function ViewMenu() {
               <KpSeg />
             </div>
           )}
+          <Check
+            checked={s.cmes}
+            onChange={() => t('cmes')}
+            hint="Coronal mass ejections from NASA’s DONKI catalogue (2010 on, and 1859), as faint fronts leaving the Sun on the date, in their measured directions and speeds, slowed by the solar wind as a drag model says"
+          >
+            Solar eruptions
+          </Check>
           <Check
             checked={s.jets}
             onChange={() => t('jets')}

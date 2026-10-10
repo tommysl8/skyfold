@@ -1,0 +1,30 @@
+# scripts/build-space-weather.mjs, the latest run (2026-10-10)
+
+DONKI: 10265 CMEs, 683 shocks at Earth, 201 geomagnetic storms (2010-01-01 to 2026-10-09)
+GFZ Kp: 276920 three-hour values from 1932-01-01 to 2026-10-09T00:00Z, 0 missing, the last 64 preliminary
+  kp.bin.gz: 134 kB
+CMEs with a most accurate analysis: 10138; without a direction (not kept): 1485
+Kept: 1086 (619 of 1,000 km/s or more); 571 linked to 453 shocks at Earth
+  each shock fitted by one CME: the wind kept at 400 km/s for 124, changed too for 329; 164 fronts widened to reach Earth
+  fitted arrival minus measured: median |Δ| 0.00 h, 13 more than an hour off (largest 14.1 h)
+Typical DBM (γ = 0.2 × 10⁻⁷ km⁻¹, w = 400 km/s), predicting the 453 shocks from their best CME: Earth inside the analysed cone for 282
+  arrival error: mean 10.3 h (positive: late), mean absolute 15.8 h, median absolute 11.4 h
+  of 1,000 km/s or more (60): mean 0.4 h, mean absolute 9.7 h
+The July 2012 near-miss
+  2012-07-23T02:36Z 3435 km/s, half-width 80° (drawn 80°), γ 0.2 × 10⁻⁷ km⁻¹, w 400 km/s; shock at Earth –, drawn front misses Earth (–), typical model misses (–); Kp –
+St Patrick’s Day storm, 2015
+  2015-03-15T02:00Z 750 km/s, half-width 45° (drawn 45°), γ 2.0302 × 10⁻⁷ km⁻¹, w 900 km/s; shock at Earth 2015-03-17T04:05 (fitted), drawn front 2015-03-17T04:05 at 873 km/s (0.0 h), typical model 2015-03-18T01:21 (21.3 h); Kp 7.67
+September 2017
+  2017-09-06T12:24Z 1238 km/s, half-width 44° (drawn 44°), γ 0.005 × 10⁻⁷ km⁻¹, w 900 km/s; shock at Earth 2017-09-07T22:30 (fitted), drawn front 2017-09-08T03:15 at 1055 km/s (4.8 h), typical model 2017-09-08T19:16 (20.8 h); Kp 8.33
+The Gannon storm, May 2024
+  2024-05-08T05:36Z 870 km/s, half-width 43° (drawn 43°), γ 0.1554 × 10⁻⁷ km⁻¹, w 400 km/s; shock at Earth 2024-05-10T16:36 (fitted), drawn front 2024-05-10T16:36 at 590 km/s (0.0 h), typical model 2024-05-10T19:01 (2.4 h); Kp 9
+  2024-05-08T12:24Z 776 km/s, half-width 45° (drawn 45°), γ 0.2 × 10⁻⁷ km⁻¹, w 400 km/s; shock at Earth 2024-05-10T16:36, drawn front 2024-05-11T05:45 at 542 km/s (13.2 h), typical model 2024-05-11T05:45 (13.2 h); Kp 9
+  2024-05-08T19:12Z 828 km/s, half-width 38° (drawn 38°), γ 0.2 × 10⁻⁷ km⁻¹, w 400 km/s; shock at Earth 2024-05-10T16:36, drawn front 2024-05-11T16:01 at 528 km/s (23.4 h), typical model 2024-05-11T16:01 (23.4 h); Kp 9
+  2024-05-08T22:24Z 1257 km/s, half-width 45° (drawn 45°), γ 0.2 × 10⁻⁷ km⁻¹, w 400 km/s; shock at Earth 2024-05-11T09:30, drawn front 2024-05-11T00:07 at 619 km/s (-9.4 h), typical model 2024-05-11T00:07 (-9.4 h); Kp 9
+  2024-05-09T09:24Z 1330 km/s, half-width 45° (drawn 45°), γ 0.1767 × 10⁻⁷ km⁻¹, w 400 km/s; shock at Earth 2024-05-11T09:30 (fitted), drawn front 2024-05-11T09:29 at 647 km/s (-0.0 h), typical model 2024-05-11T11:10 (1.7 h); Kp 9
+  2024-05-09T18:23Z 895 km/s, half-width 44° (drawn 44°), γ 0.6105 × 10⁻⁷ km⁻¹, w 900 km/s; shock at Earth 2024-05-11T20:30 (fitted), drawn front 2024-05-11T20:30 at 847 km/s (0.0 h), typical model 2024-05-12T11:06 (14.6 h); Kp 7.67
+  2024-05-10T07:12Z 1018 km/s, half-width 41° (drawn 41°), γ 0.0235 × 10⁻⁷ km⁻¹, w 400 km/s; shock at Earth 2024-05-12T08:55 (fitted), drawn front 2024-05-12T08:54 at 795 km/s (-0.0 h), typical model 2024-05-12T20:44 (11.8 h); Kp 6.33
+October 2024
+  2024-10-09T02:12Z 1509 km/s, half-width 45° (drawn 45°), γ 0.1022 × 10⁻⁷ km⁻¹, w 400 km/s; shock at Earth 2024-10-10T14:46 (fitted), drawn front 2024-10-10T14:46 at 857 km/s (0.0 h), typical model 2024-10-10T22:47 (8.0 h); Kp 8.67
+Carrington 1859: 2650 km/s from the Sun's surface brings the front to Earth in 17.6 h (drawn front 1859-09-02T04:53, the storm 1859-09-02T04:54)
+cmes.json.gz: 1087 CMEs, 193 kB of JSON, 49 kB compressed
