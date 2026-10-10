@@ -65,6 +65,8 @@ void main() {
   // (Outside any branch: the map is filtered with screen-space derivatives.)
   vec3 eye;
   vec3 p = milkyWayP(src, eye);
+  // The neighbourhood's dust in front, moved from where the Sun sees it (shaders/localDustRead.glsl).
+  localDustSky(gl_FragCoord.xy * uLocalDustOn.yz, p, eye);
   if (uLensOn > 0.5) {
     float lnK = blackbodyLn(LN_T_SUN + shift).a + uLnExposure;
     vec3 c = lnK > -60.0 ? milkyWayDisplay(p, eye, exp(min(lnK, 40.0))) : vec3(0.0);
@@ -77,6 +79,7 @@ void main() {
 #else
   vec3 eye;
   vec3 p = milkyWayP(d, eye);
+  localDustSky(gl_FragCoord.xy * uLocalDustOn.yz, p, eye);
   gl_FragColor = vec4(milkyWayDisplay(p, eye, 1.0), 1.0);
 #endif
 }

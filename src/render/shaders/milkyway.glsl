@@ -20,6 +20,7 @@
 // the same way, where the eye loses faint extended light: it fades out between 22 and 24
 // mag/arcsec² (the darkest skies on Earth are about 22), so the high galactic latitudes stay black
 // and the band stands out as it does from a dark site.
+#include <lightspeed_localdust>
 uniform sampler2D uMwTex;
 // The light of the catalogue's stars too faint to be drawn as points (V 6.5 to 10), which the SVS
 // map leaves out with the brighter ones: one channel, same projection and encoding

@@ -184,6 +184,7 @@ void main() {
     vec3 bg = vec3(0.0);
     vec3 eye;
     vec3 sky = milkyWayP(skyDir, eye);
+    localDustSky(gl_FragCoord.xy * uLocalDustOn.yz, sky, eye);
     if (uDoppler > 0.5) {
       float lnK = blackbodyLn(LN_T_SUN + lnSky).a + uLnExposure;
       if (lnK > -60.0) bg = dopplerRgb(milkyWayDisplay(sky, eye, exp(min(lnK, 40.0))), lnSky);
@@ -197,6 +198,8 @@ void main() {
     vec3 bg = vec3(0.0);
     vec3 eye;
     vec3 sky = milkyWayP(dRest, eye);
+    // The neighbourhood's dust in front, moved from where the Sun sees it (shaders/localDustRead.glsl).
+    localDustSky(gl_FragCoord.xy * uLocalDustOn.yz, sky, eye);
     if (uDoppler > 0.5) {
       float lnK = lnL + uLnExposure;
       if (lnK > -60.0) bg = dopplerRgb(milkyWayDisplay(sky, eye, exp(min(lnK, 40.0))), lnD);

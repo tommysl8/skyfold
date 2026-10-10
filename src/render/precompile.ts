@@ -30,6 +30,7 @@
 import { BufferAttribute, BufferGeometry, type Camera, HalfFloatType, LineSegments, Mesh, PlaneGeometry, Points, Scene, type ShaderMaterial, type WebGLRenderer, WebGLRenderTarget } from 'three';
 import cosmicWebVert from './shaders/cosmicWeb.vert.glsl?raw';
 import { createCmbMapMaterial, createCosmicWebMaterial, createGalaxyGlowMaterial, createGalaxyMaterial } from './materials';
+import { createLocalDustMaterial, createLocalDustViewMaterial } from './dustLayer';
 import { LENS_LATER } from './lens/lensMaterials';
 import { VERTEX_LENS_LATER } from './lensVariants';
 import { RING_LATER } from './lensRingMaterial';
@@ -47,6 +48,9 @@ export const OUTWARD_LATER: readonly LaterMaterial[] = [
   [createGalaxyGlowMaterial, 'quad'],
   [() => createGalaxyMaterial(1, 0), 'points'],
   [createCmbMapMaterial, 'quad'],
+  // The neighbourhood's dust: its march, first drawn a few parsecs from the Sun (render/dustLayer.ts).
+  [createLocalDustMaterial, 'quad'],
+  [createLocalDustViewMaterial, 'quad'],
 ];
 
 /**

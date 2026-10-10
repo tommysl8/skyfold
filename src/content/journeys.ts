@@ -76,6 +76,18 @@ export const JOURNEYS: Journey[] = [
     scene: 'year-in-30s',
     clock: '1 s here = 11.6 days',
   }),
+  journey({
+    id: 'orion-clouds',
+    title: 'Into the Orion clouds',
+    sub: 'The real dust clouds of Orion, 1,400 light-years away, from beside them',
+    scene: 'into-the-orion-clouds',
+  }),
+  journey({
+    id: 'radcliffe-wave',
+    title: 'The Radcliffe Wave',
+    sub: 'A wave of clouds 8,000 light-years long, rising and falling through the Galaxy, from the side',
+    scene: 'radcliffe-wave',
+  }),
   journey({ id: 'moon', title: 'Watch the Moon go round', sub: 'A month over Earth, 100,000× faster than real', scene: 'moon-month', clock: '1 s here = 28 hours' }),
   journey({
     id: 'neptune',
