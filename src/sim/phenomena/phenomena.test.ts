@@ -7,7 +7,26 @@ import { describe, expect, it } from 'vitest';
 import { msFromCivil } from '../../lib/time';
 import { PARSEC_KM } from '../../physics/constants';
 import { FAINT, interpolate, lastDayBrighterThan, magnitudeAt, NONE, segmentOf, temperatureAt, type LightCurve } from './lightCurve';
-import { grownShare, msFromJulianCalendar, nakedEyeEndMs, remnantRadiusKm, shockRadiusKm, supernovaAt, supernovaById, SUPERNOVAE } from './supernovae';
+import {
+  blastRadiusKm,
+  crabPowerShare,
+  grownShare,
+  MERGE_KMS,
+  msFromJulianCalendar,
+  nakedEyeEndMs,
+  pictureShare,
+  remnantEvolution,
+  remnantFade,
+  remnantGlow,
+  remnantRadiusKm,
+  ring1987aShare,
+  shockRadiusKm,
+  shockSpeedKmS,
+  supernovaAt,
+  supernovaById,
+  SUPERNOVAE,
+  type Supernova,
+} from './supernovae';
 import { chirpMass, cyclesFrom, frequencyAtSeparationHz, gwFrequencyHz, gwPhase, separationKm, SUN_TIME_S, timeToMergeS } from './chirp';
 import { inspiralAt, kilonovaAt, MC_DETECTOR_MSUN, MERGER_MS, vMagnitudeOf, vShareRelSun } from './kilonova';
 import { apparentSpeed, beamingBoost, betaFromApparent, betaOf, dopplerFactor, jetCounterJetRatio, lorentz } from './beaming';
@@ -109,6 +128,99 @@ describe('the supernovae', () => {
     expect(grownShare(crab, msFromCivil(1500, 1, 1))).toBeGreaterThan(0.4);
     expect(grownShare(crab, msFromCivil(1500, 1, 1))).toBeLessThan(0.5);
     expect(grownShare(crab, msFromCivil(2000, 1, 1))).toBeCloseTo(1, 2);
+  });
+});
+
+describe('the remnants’ future (Cioffi, McKee & Bertschinger 1988)', () => {
+  const YR = 365.25 * 86_400;
+  const old = (sn: Supernova, ageS: number) => {
+    // The measured law alone, as the remnants grew before it had an end.
+    const free = sn.ejectaKmS * ageS;
+    const t0 = (msFromCivil(Math.floor(sn.remnant.epochYear), 1, 1) + (sn.remnant.epochYear % 1) * 365.25 * DAY - sn.explosionMs) / 1000;
+    return Math.min(free, remnantRadiusKm(sn) * (ageS / t0) ** sn.remnant.m);
+  };
+
+  it('leave every remnant as it was up to today', () => {
+    for (const sn of SUPERNOVAE) {
+      if (sn.id === 'supernova-1987a') continue;
+      for (const years of [0.1, 10, 100, 500, 900]) expect(shockRadiusKm(sn, years * YR) / old(sn, years * YR), `${sn.id} ${years}`).toBeCloseTo(1, 10);
+    }
+    expect(shockRadiusKm(supernovaById('sn-1054')!, -1)).toBe(0);
+  });
+
+  it('enter the snowplow at Cioffi et al.’s t_PDS and R_PDS, with the same slope', () => {
+    for (const sn of SUPERNOVAE) {
+      const { e51, nCm3: n, zeta } = sn.surroundings;
+      const ev = remnantEvolution(sn);
+      expect(ev.tPdsS / YR, sn.id).toBeCloseTo(1.33e4 * e51 ** (3 / 14) * n ** (-4 / 7) * zeta ** (-5 / 14), 3);
+      expect(ev.rPdsKm / PARSEC_KM / (14.0 * e51 ** (2 / 7) * n ** (-3 / 7) * zeta ** (-1 / 7)), sn.id).toBeCloseTo(1, 2);
+      expect(ev.tShellS / ev.tPdsS).toBeCloseTo(Math.E, 10);
+      // Continuous, and the snowplow leaves with the blast's slope (2/5 of R/t).
+      const t = ev.tPdsS;
+      expect(blastRadiusKm(sn, t * (1 + 1e-9)) / blastRadiusKm(sn, t * (1 - 1e-9)), sn.id).toBeCloseTo(1, 7);
+      const slope = (a: number, b: number) => Math.log(blastRadiusKm(sn, b) / blastRadiusKm(sn, a)) / Math.log(b / a);
+      expect(slope(t, t * 1.0001), sn.id).toBeCloseTo(0.4, 3);
+      expect(slope(t * 0.9999, t), sn.id).toBeCloseTo(0.4, 3);
+      // And tends to R ∝ t^0.3.
+      expect(slope(1e4 * t, 1.01e4 * t), sn.id).toBeCloseTo(0.3, 3);
+    }
+  });
+
+  it('merge with the interstellar gas when the shock has slowed to 10 km/s, at Cioffi et al.’s t_merge', () => {
+    for (const sn of SUPERNOVAE) {
+      const { e51, nCm3: n, zeta } = sn.surroundings;
+      const ev = remnantEvolution(sn);
+      // t_merge = 153 t_PDS (E₅₁^(1/14) n^(1/7) ζ^(3/14) / β C₀₆)^(10/7), β C₀₆ = 1.
+      const tm = 153 * ev.tPdsS * (e51 ** (1 / 14) * n ** (1 / 7) * zeta ** (3 / 14)) ** (10 / 7);
+      expect(ev.tMergeS / tm, sn.id).toBeGreaterThan(0.99);
+      expect(ev.tMergeS / tm, sn.id).toBeLessThan(1.01);
+      expect(ev.rMergeKm / (ev.rPdsKm * ((4 * tm) / (3 * ev.tPdsS) - 1 / 3) ** 0.3), sn.id).toBeCloseTo(1, 2);
+      // The shock's speed there is 10 km/s, and the drawn radius is the merger's (the measured law has met the blast's).
+      expect(shockSpeedKmS(sn, 0.999 * ev.tMergeS), sn.id).toBeCloseTo(MERGE_KMS, 0);
+      expect(shockRadiusKm(sn, ev.tMergeS) / ev.rMergeKm, sn.id).toBeCloseTo(1, 10);
+      // 10⁵–10⁷ years, tens to a few hundred parsecs (thin gas: SN 1006's 0.05 cm⁻³ makes it the largest).
+      expect(ev.tMergeS / YR, sn.id).toBeGreaterThan(1e5);
+      expect(ev.tMergeS / YR, sn.id).toBeLessThan(1e7);
+      expect(ev.rMergeKm / PARSEC_KM, sn.id).toBeGreaterThan(10);
+      expect(ev.rMergeKm / PARSEC_KM, sn.id).toBeLessThan(300);
+    }
+  });
+
+  it('grow continuously and never shrink, held at the merger and drawn no more, with no NaN at any age', () => {
+    for (const sn of SUPERNOVAE) {
+      const ev = remnantEvolution(sn);
+      let prev = 0;
+      for (let y = 1e-3; y < 1e13; y *= 1.02) {
+        const r = shockRadiusKm(sn, y * YR);
+        expect(Number.isFinite(r), sn.id).toBe(true);
+        expect(r, `${sn.id} ${y}`).toBeGreaterThanOrEqual(prev);
+        // Continuous: no step larger than the 2 % in time allows at the fastest (the Crab's t^1.06).
+        expect(r, `${sn.id} ${y}`).toBeLessThanOrEqual(prev * 1.0215 + 1e-9 + (y < 1 ? sn.ejectaKmS * y * YR * (1 + 1e-9) : 0));
+        expect(r).toBeLessThanOrEqual(ev.rMergeKm * (1 + 1e-12));
+        prev = r;
+      }
+      expect(remnantFade(sn, 0.5 * ev.tMergeS)).toBe(1);
+      expect(remnantFade(sn, ev.tMergeS)).toBe(0);
+      expect(remnantGlow(sn, ev.tPdsS)).toBe(1);
+      expect(remnantGlow(sn, 10 * ev.tPdsS)).toBeLessThan(0.05);
+      const far = supernovaAt(sn, msFromCivil(19.3e9, 1, 1));
+      expect(far.shockKm / ev.rMergeKm).toBeCloseTo(1, 10);
+      expect(far.fade).toBe(0);
+      expect(far.glow).toBe(0);
+      expect(supernovaAt(sn, msFromCivil(-1e9, 1, 1)).shockKm).toBe(0);
+    }
+  });
+
+  it('fade the Crab’s picture with its pulsar, and SN 1987A’s with its ring', () => {
+    const crab = supernovaById('sn-1054')!;
+    const sn87 = supernovaById('supernova-1987a')!;
+    expect(pictureShare(crab, msFromCivil(2026, 1, 1))).toBeGreaterThan(0.9);
+    // Ė falls as (1 + Δt/T)^(−7/3), T = 1,676 years: a tenth by about 5000 CE.
+    expect(crabPowerShare(msFromCivil(5000, 1, 1))).toBeCloseTo(0.091, 2);
+    expect(pictureShare(crab, msFromCivil(13_000, 1, 1))).toBe(0);
+    expect(pictureShare(sn87, msFromCivil(2026, 1, 1))).toBe(1);
+    expect(pictureShare(sn87, msFromCivil(2041, 1, 1))).toBe(0);
+    expect(ring1987aShare(msFromCivil(2035, 1, 1))).toBeCloseTo(0.5, 1);
   });
 });
 

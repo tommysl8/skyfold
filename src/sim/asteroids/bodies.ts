@@ -8,7 +8,7 @@
 import { AU_KM, J2000_JD } from '../../physics/constants';
 import { barycentreFromSun } from '../voyager';
 import { getBody, isBody, registerBodies, unregisterBodies, type BodyRecord, type PositionProvider } from '../bodies';
-import { ALWAYS } from '../bodies/providers/simple';
+import { ALWAYS, beyondOpenOrbit, openOrbitEnded } from '../bodies/providers/simple';
 import { updateEphemeris } from '../ephemeris';
 import { gunzipIfNeeded } from '../stars/catalogue';
 import { useUI } from '../../state/ui';
@@ -115,9 +115,12 @@ function smallBodyProvider(s: LoadedSection, index: number, refEpochJd: number):
     if (el.ellipse) ellipticPosition(el.ellipse, days, out);
     else conicPosition(el.orbit!, days, out);
   };
+  // On an open orbit (e ≥ 1) it is followed for a million years either side of now only (OPEN_ORBIT_YEARS).
+  const open = !!el.orbit && el.orbit.e >= 1;
+  const gone = openOrbitEnded('This body');
   return {
     label: `Kepler orbit from JPL SBDB elements (${bary ? 'about the barycentre' : 'about the Sun'})`,
-    availability: () => ALWAYS.approximate,
+    availability: (ms) => (open && beyondOpenOrbit(ms) ? gone : ALWAYS.approximate),
     positionAt(time, pos, vel) {
       at(time.tt, p);
       let ox = 0;

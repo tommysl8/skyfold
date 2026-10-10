@@ -14,7 +14,11 @@
  *  - Its debris (a model, Kasen et al. 2017, Nature 551, 80; Villar et al. 2017): a fast, lanthanide-poor "blue"
  *    component (about 0.02 M☉ at 0.27c, thrown towards the poles) and a slower, lanthanide-rich "red" one (about 0.04 M☉
  *    at 0.1–0.15c, near the orbit's plane). One component of about 0.05 M☉ from 0.1c to over 0.3c fits too (Waxman
- *    et al. 2018): the two-component picture is a modelling choice, and the cards say so.
+ *    et al. 2018): the two-component picture is a modelling choice, and the cards say so. The model is drawn while it
+ *    glows: its light, last measured at 74 days (Spitzer: Kasliwal et al. 2022, MNRAS 510, L7), is extrapolated as
+ *    L ∝ t^−2.8 and is a ten-millionth of its peak after three years; the model fades out over its second and third
+ *    years and is not drawn after (KN_DRAWN_DAYS), its debris's size held there. What follows is not drawn: the debris
+ *    coasts until it has swept up its own mass of the thin gas round it, decades on, and then slows into a faint remnant.
  *  - What was left: most likely a black hole after a brief hypermassive neutron star (Margalit & Metzger 2017, ApJL 850,
  *    L19); not observed directly.
  *
@@ -52,6 +56,9 @@ export const KN_R_CM = [3.7e14, 3.6e14, 6.0e14, 6.7e14, 7.6e14, 8.9e14, 1.2e15, 
 export const KN_LATE_SLOPE = -2.8;
 /** Distance: the host's, 40.7 Mpc (Cantiello et al. 2018, as Abbott et al. 2019's prior); the catalogue's waves give 40 Mpc. */
 export const KN_DISTANCE_PC = 40.7e6;
+
+/** The model is drawn until this many days after the merger, fading out from the first (its glow is then 10⁻⁷ of its peak). */
+export const KN_DRAWN_DAYS: readonly [number, number] = [365.25, 3 * 365.25];
 
 /** The ejecta's components (a model): speed of their outer edge, as a fraction of c. */
 export const BLUE_BETA = 0.27;
@@ -128,18 +135,22 @@ export interface KilonovaState {
   /** Absolute V magnitude, and apparent from Earth. */
   absV: number;
   vmag: number;
-  /** Photospheric radius (fitted), and the blue and red components' outer edges, km. */
+  /** Photospheric radius (fitted), and the blue and red components' outer edges, km (held from KN_DRAWN_DAYS's end). */
   photosphereKm: number;
   blueKm: number;
   redKm: number;
+  /** How much of the model is drawn: 1, fading out over KN_DRAWN_DAYS. */
+  shown: number;
 }
 
 /** The kilonova at `ms`: L, T and the photosphere interpolated in ln between the fits (held before the first, the late law after). */
 export function kilonovaAt(ms: number, out?: KilonovaState): KilonovaState {
-  const o = out ?? { days: 0, lErgS: 0, teffK: 0, absV: 99, vmag: 99, photosphereKm: 0, blueKm: 0, redKm: 0 };
+  const o = out ?? { days: 0, lErgS: 0, teffK: 0, absV: 99, vmag: 99, photosphereKm: 0, blueKm: 0, redKm: 0, shown: 1 };
   const d = (ms - MERGER_MS) / (DAY_S * 1000);
   o.days = d;
-  const ts = d * DAY_S;
+  const f = Math.min(1, Math.max(0, (d - KN_DRAWN_DAYS[0]) / (KN_DRAWN_DAYS[1] - KN_DRAWN_DAYS[0])));
+  o.shown = 1 - f * f * (3 - 2 * f);
+  const ts = Math.min(d, KN_DRAWN_DAYS[1]) * DAY_S;
   o.blueKm = d > 0 ? BLUE_BETA * C_KM_S * ts : 0;
   o.redKm = d > 0 ? RED_BETA * C_KM_S * ts : 0;
   if (!(d > 0)) {

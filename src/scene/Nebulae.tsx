@@ -11,7 +11,7 @@ import { MW_MU_FADE, NEBULA_MU_PEAK, surfaceScale } from '../sim/galaxy/backgrou
 import { galaxyState, galaxyVersion, subscribeGalaxy } from '../sim/galaxy/load';
 import { apparentCard, nebulaCard, type CardLens, type CardMotion, type CardView, type NebulaCard } from '../sim/galaxy/cards';
 import { relView } from '../render/relativisticView';
-import { remnantScale } from '../sim/phenomena';
+import { remnantOpacity, remnantScale } from '../sim/phenomena';
 import { sim } from '../sim/sim';
 import { useUI } from '../state/ui';
 
@@ -137,7 +137,8 @@ export function Nebulae() {
       rel[1] = y;
       rel[2] = z;
       // A supernova's remnant seen before it had grown to its picture's size (sim/phenomena): the card as large as it
-      // then was, and none before the explosion was seen.
+      // then was, and none before the explosion was seen; nor once the picture no longer shows it (the Crab's after its
+      // pulsar has spun down, SN 1987A's after its ring has gone).
       const grown = remnantScale(card.json.id, sim.timeMs);
       const radiusPc = card.radiusPc * grown;
       let { px, inView } = apparentCard(rel, radiusPc, view, moving ? motion : null, lensOn ? cardLens : null);
@@ -177,7 +178,7 @@ export function Nebulae() {
       u.uUp.value.set(card.up[0] * grown, card.up[1] * grown, card.up[2] * grown);
       u.uNormal.value.set(card.normal[0], card.normal[1], card.normal[2]);
       // Faint when it is only a few pixels (the picture is then a smudge), full from FULL_PX.
-      u.uOpacity.value = Math.min(1, Math.max(0, (px - MIN_PX) / (FULL_PX - MIN_PX)));
+      u.uOpacity.value = Math.min(1, Math.max(0, (px - MIN_PX) / (FULL_PX - MIN_PX))) * remnantOpacity(card.json.id, sim.timeMs);
       // Every picture drawn in the view carries its credit, however small.
       if (inView) credits.push({ id: card.json.id, px });
     }

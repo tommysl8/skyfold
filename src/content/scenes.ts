@@ -1939,7 +1939,10 @@ export function s2PericentreNear(ms: number): number | null {
     let d = lo + g * (hi - lo);
     let fc = sep(c);
     let fd = sep(d);
-    while (hi - lo > 1000) {
+    // To a second, or to what the clock can still tell apart: far from 1970 one step of a float64 ms is longer (1 s
+    // beyond about 140 million years), and the bracket would stop shrinking.
+    const tol = Math.max(1000, 8 * Number.EPSILON * Math.abs(hi));
+    for (let i = 0; i < 200 && hi - lo > tol; i++) {
       if (fc < fd) {
         hi = d;
         d = c;
@@ -2005,7 +2008,8 @@ defineScene('s2-behind-sgr-a-star', {
     if (!ready()) return false;
     const tp = s2PericentreNear(sim.timeMs);
     const at = tp === null ? null : s2BehindSetUp(tp);
-    if (!at || !setEpoch(at.startMs)) return false;
+    // Anywhere the clock can be (a trip may have carried it far past the setter's years).
+    if (!at || !setEpoch(at.startMs, true)) return false;
     updateEphemeris();
     setWarp(1);
     setPaused(true);

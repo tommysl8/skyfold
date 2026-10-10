@@ -161,7 +161,7 @@ Ready-made providers (`src/sim/bodies/providers/`):
 | Provider | Use |
 | --- | --- |
 | `planetProvider(id)`, `moonProvider`, `sunProvider` | the built-in bodies: astronomy-engine in 1700–2200, Standish elements to ±3000 years, frozen beyond (ephemerisPolicy.ts) |
-| `voyager1Provider` | Voyager 1's two-body hyperbola, from its 1980 Saturn flyby |
+| `voyager1Provider` | Voyager 1's two-body hyperbola, from its 1980 Saturn flyby, for a million years (`OPEN_ORBIT_YEARS`) |
 | `fixedStarProvider(ra, dec, km)` | a star at its catalogue place (no proper motion): the built-in Proxima until the catalogue loads |
 | `linearStarProvider(posPc, velKms)` | a star or a system's barycentre in straight-line motion from its J2000 catalogue place, placed where it is (plus its light-time), frozen beyond ±1 Myr (`src/sim/stars/records.ts`) |
 | `orbitStarProvider(terms, system)` | a star's share of Kepler orbits about its barycentre, each evaluated at the observation time t + D(t)/c (`src/sim/stars/records.ts`) |
@@ -224,6 +224,12 @@ are viewed in place. Each body is a `trackProvider` (`trackBodyProvider`):
 - Availability comes from the index alone (`Tracks.regimeAt`), never from evaluating the fit:
   `before-launch` hides a craft ("Voyager 2 had not been launched yet: it left Earth on 20 August
   1977."), `unknown` hides Webb after 21 September 2031, `extrapolated` shows the body, labelled.
+- **Open orbits.** A body leaving the Sun on a hyperbola (a track's two-body extension with positive energy, Voyager 1's
+  provider, a clicked comet or asteroid with e ≥ 1) is shown for a million years either side of J2000
+  (`OPEN_ORBIT_YEARS`, `beyondOpenOrbit`, `openOrbitEnded`) and hidden beyond, with the reason: by then it has run tens
+  of parsecs out, where the Galaxy's pull and passing stars bend its path (not modelled) and the stars round the Sun
+  are held still (`MOTION_VALID_YEARS`). It is not left running off in a straight line (Voyager 1 would be 17 kpc away
+  in a billion years, its orbit line beyond what 32-bit floats can draw).
 - **Voyager 1** moves onto its track with `replaceBodies`, keeping its key, label rank and
   framing; after 2099 it follows the track's own two-body extension about the barycentre.
 - **Jumps.** The tracks return Horizons' own position jumps exactly (up to 126,500 km, Pioneer 10

@@ -2,7 +2,8 @@
  * Two nebulae made by their stars, drawn as 3D models round them (sim/stars/stellarNebulae.ts; materials:
  * render/stellarNebulaMaterials.ts):
  *  - Eta Carinae's Homunculus, its two lobes at the shape Smith (2006) measured, growing with the simulation's date
- *    as it has since the 1840s (absent before 1845);
+ *    as it has since the 1840s (absent before 1845; fading out once it would have swept up its own mass of gas, 3,000
+ *    to 7,000 years on);
  *  - WR 104's dust pinwheel, turning once every 241.5 days on the simulation's clock;
  *  - the Sun's planetary nebula, while the Sun is shown at that age (sim/stars/sunFuture.ts): a shell expanding at
  *    25 km/s since the Sun shed its envelope, lit while the core is hot (a model).
@@ -21,6 +22,7 @@ import { smoothstep } from '../sim/deepsky/markers';
 import {
   HOMUNCULUS_SHAPE,
   homunculusAxis,
+  homunculusFade,
   homunculusScale,
   wr104CoilAu,
   wr104Frame,
@@ -104,7 +106,7 @@ export function StellarNebulae() {
     const eta = sim.bodies['eta-carinae'];
     const scale = homunculusScale(year);
     const sizeKm = HOMUNCULUS_POLAR_AU * AU_KM * scale;
-    const oH = eta?.present && scale > 0 ? 1 - smoothstep(HOMUNCULUS_SHOW[0] * sizeKm, HOMUNCULUS_SHOW[1] * sizeKm, eta.distCamera) : 0;
+    const oH = eta?.present && scale > 0 ? (1 - smoothstep(HOMUNCULUS_SHOW[0] * sizeKm, HOMUNCULUS_SHOW[1] * sizeKm, eta.distCamera)) * homunculusFade(year) : 0;
     if (oH > 0 && eta) {
       if (!homunculus.current) {
         const mat = createHomunculusMaterial();
@@ -147,8 +149,10 @@ export function StellarNebulae() {
       u.uEast.value.copy(f.east);
       u.uNormal.value.copy(f.normal);
       const jd = sim.timeMs / 86_400_000 + 2_440_587.5;
-      // The arm's position angle at the standoff now: it turns clockwise (position angle falling) once a period.
-      u.uPsi.value = (WR104_PA0_DEG - 360 * ((jd - WR104_EPOCH_JD) / WR104_PERIOD_D)) * DEG;
+      // The arm's position angle at the standoff now: it turns clockwise (position angle falling) once a period. Only
+      // the turn's fraction is sent: far from today the whole number of turns would swamp a 32-bit float.
+      const turns = (jd - WR104_EPOCH_JD) / WR104_PERIOD_D;
+      u.uPsi.value = (WR104_PA0_DEG - 360 * (turns - Math.floor(turns))) * DEG;
       u.uStandoff.value = wr104StandoffAu() * AU_KM;
       u.uCoil.value = coilKm;
       u.uViewH.value = sim.viewport.height / 2 / Math.tan((sim.camera.fovDeg * Math.PI) / 360);

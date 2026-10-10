@@ -31,7 +31,9 @@ import { DAY_S, GM_SOLAR_SYSTEM_KM3_S2, J2000_JD } from '../../physics/constants
 import {
   ALWAYS,
   PLUTO_BARYCENTRE,
+  beyondOpenOrbit,
   moonState,
+  openOrbitEnded,
   policyAvailability,
   relativeOrbitProvider,
   trackProvider,
@@ -46,7 +48,7 @@ import {
   type RotationSpec,
 } from '../bodies';
 import { moonRegime, type MoonModel } from '../moonModels';
-import type { BodyIndex, Tracks } from '../tracks';
+import type { BodyIndex, Fallback, Tracks } from '../tracks';
 import { barycentreFromSun } from '../voyager';
 import { Vector3 } from 'three';
 import type { BodiesFile, DataBody, DataRing, DataRotation, RingSystem, RingsFile } from './data';
@@ -518,6 +520,11 @@ export function trackBodyProvider(tracks: Tracks, id: string, name: string, laun
     reason: `Where ${name} is after ${longDate(preciseEndIso(info))} is not known: its planned trajectory ends then.`,
     regime: 'unknown',
   };
+  // Leaving the Sun on a hyperbola before or after the fitted span: followed for a million years only (OPEN_ORBIT_YEARS).
+  const open = (f: Fallback) => f.regime === 'extrapolated' && 0.5 * (f.v[0] ** 2 + f.v[1] ** 2 + f.v[2] ** 2) - f.mu / Math.hypot(f.r[0], f.r[1], f.r[2]) >= 0;
+  const openBefore = open(info.before);
+  const openAfter = open(info.after);
+  const gone = openOrbitEnded(name);
   return trackProvider(
     { evaluate: (t, withVelocity) => tracks.sample(id, t, withVelocity), regime: (t) => tracks.regimeAt(id, t) },
     {
@@ -529,7 +536,7 @@ export function trackBodyProvider(tracks: Tracks, id: string, name: string, laun
         const t = ttAt(ms);
         const r = tracks.regimeAt(id, t);
         if (r === 'precise') return ALWAYS.precise;
-        if (r === 'extrapolated') return ALWAYS.extrapolated;
+        if (r === 'extrapolated') return (t < info.precise[0] ? openBefore : openAfter) && beyondOpenOrbit(ms) ? gone : ALWAYS.extrapolated;
         return t < info.precise[0] ? notYet : ended;
       },
     },

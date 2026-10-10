@@ -12,7 +12,7 @@ import { raDecToWorld } from '../frames';
 import { cosmicAtMemo } from '../cosmicTime';
 import { KN_DISTANCE_PC, M1_MSUN, M2_MSUN, MERGER_MS } from './kilonova';
 import { NONE } from './lightCurve';
-import { remnantRadiusKm, type Supernova } from './supernovae';
+import { remnantEvolution, remnantRadiusKm, type Supernova } from './supernovae';
 
 /** A place held fixed (heliocentric, km) at RA/Dec and a distance: J2000 ecliptic from world axes (x, y, z) = ecliptic (x, z, −y). */
 function fixedProvider(raDeg: number, decDeg: number, distanceKm: number, label: string): PositionProvider {
@@ -36,6 +36,9 @@ const DATE = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'nu
 /** A supernova as a body: at the remnant, sized as today's remnant, shining as its light curve says. */
 export function supernovaRecord(sn: Supernova): BodyRecord {
   const rKm = remnantRadiusKm(sn);
+  const ev = remnantEvolution(sn);
+  const yr = (s: number) => (Math.round(s / (365.25 * 86_400) / 1e4) * 1e4).toLocaleString('en-GB');
+  const future = `In the future (a model, after Cioffi, McKee & Bertschinger 1988): it slows to a Sedov–Taylor blast, forms a cold shell about ${yr(ev.tShellS)} years on and fades in X-rays, and merges with the gas round it when its shock has slowed to 10 km/s, about ${yr(ev.tMergeS)} years on and ${Math.round((2 * ev.rMergeKm) / PARSEC_KM)} pc across; it is not drawn after. Its energy and surroundings: ${sn.surroundings.source}.`;
   return {
     id: sn.id,
     name: sn.name,
@@ -80,9 +83,12 @@ export function supernovaRecord(sn: Supernova): BodyRecord {
       `First seen ${sn.firstSeenText}. Seen for ${sn.seenForText}.`,
       `Its brightness and colour seen from Earth follow its light curve: ${sn.peakText}. ${sn.explosionNote}.`,
       sn.pictureRemnant
-        ? 'Up close: its fireball as large and as bright as its light curve and the photosphere’s speed give; the nebula it left is its picture, drawn at the size the filaments’ expansion gives for the date.'
-        : 'Up close (a model): its fireball, then its debris, the forward shock growing to today’s remnant at the speeds measured (free expansion, then the expansion parameter of its proper motions). The remnant shines mostly in X-rays: its shell is shown in false colour.',
+        ? 'Up close: its fireball as large and as bright as its light curve and the photosphere’s speed give; the nebula it left is its picture, drawn at the size the filaments’ expansion gives for the date. In the future the picture fades as its pulsar spins down and the nebula with it (braking index 2.5: Lyne et al. 2015), to a hundredth of today’s brightness about 10,500 years on, when it is no longer drawn: by then the remnant’s reverse shock is expected to have crushed the nebula, and today’s picture no longer shows it.'
+        : `Up close (a model): its fireball, then its debris, the forward shock growing to today’s remnant at the speeds measured (free expansion, then the expansion parameter of its proper motions). The remnant shines mostly in X-rays: its shell is shown in false colour. ${future}`,
       'Its age is counted from when its light reached Earth, as the deep sky is drawn as Earth sees it: at the remnant itself the explosion was earlier by the light’s travel time.',
+      ...(sn.id === 'supernova-1987a'
+        ? ['Its blast is dissolving the ring of gas round it (Fransson et al. 2015 expected it gone by about 2025; JWST still saw it in 2022–23): the ring and Hubble’s picture of it are taken to fade out from 2030 and are not drawn after 2040.']
+        : []),
     ],
     article: 'when-the-sky-changes',
     provider: fixedProvider(sn.raDeg, sn.decDeg, sn.distancePc * PARSEC_KM, 'Fixed at its remnant’s position and distance'),

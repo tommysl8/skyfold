@@ -8,6 +8,7 @@ import { propagateTwoBody } from '../../../physics/kepler';
 import { msFromCivil } from '../../../lib/time';
 import { raDecToWorld } from '../../frames';
 import { voyagerHelioState } from '../../voyager';
+import { MOTION_VALID_YEARS } from '../../stars/constants';
 import type { Availability, PositionProvider, Regime, Vec3Like } from '../types';
 
 const toEcl = (w: Vector3, out: Vec3Like) => {
@@ -30,6 +31,31 @@ export const ALWAYS: Record<Regime, Availability> = {
   unknown: { available: true, reason: null, regime: 'unknown' },
 };
 
+// ─── Open orbits ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * A body on an open orbit (a spacecraft or an interstellar visitor leaving the Sun on a hyperbola) is followed only
+ * within a million years of J2000 (stars/constants MOTION_VALID_YEARS): a straight run out at its speed at infinity is
+ * then tens of parsecs, where the Galaxy's tides and the stars it passes bend its path, which is not modelled, and
+ * where the app holds the stars round the Sun still. Beyond, the body is not shown, rather than kept running off in a
+ * straight line for ever (at Voyager 1's 16.6 km/s, 17 kpc in a billion years).
+ */
+export const OPEN_ORBIT_YEARS = MOTION_VALID_YEARS;
+const J2000_UTC_MS = Date.UTC(2000, 0, 1, 12);
+const JULIAN_YEAR_MS = 365.25 * 86_400_000;
+
+/** Whether a body on an open orbit is past the span it is followed for (OPEN_ORBIT_YEARS either side of J2000). */
+export const beyondOpenOrbit = (ms: number): boolean => Math.abs(ms - J2000_UTC_MS) > OPEN_ORBIT_YEARS * JULIAN_YEAR_MS;
+
+/** The availability of a body on an open orbit past that span. */
+export function openOrbitEnded(name: string): Availability {
+  return {
+    available: false,
+    reason: `${name} is followed for a million years either side of now: further out than that, the Galaxy’s pull and passing stars bend its path, which is not modelled.`,
+    regime: 'unknown',
+  };
+}
+
 // ─── Voyager 1 ───────────────────────────────────────────────────────────────────────────
 
 /** Voyager 1's launch, 1977-09-05 12:56 UTC. [NASA/JPL] */
@@ -48,13 +74,16 @@ const V1_NOT_MODELLED: Availability = {
   regime: 'unknown',
 };
 
-/** Voyager 1: a Horizons state propagated as a two-body hyperbola (sim/voyager.ts), from its 1980 Saturn flyby on. */
+const V1_ENDED = openOrbitEnded('Voyager 1');
+
+/** Voyager 1: a Horizons state propagated as a two-body hyperbola (sim/voyager.ts), from its 1980 Saturn flyby on, for a million years. */
 export const voyager1Provider: PositionProvider = {
   label: 'JPL Horizons state (2026) propagated as a two-body hyperbola about the Solar System barycentre',
   exactLightTime: true,
   availability(ms) {
     if (ms < VOYAGER1_LAUNCH_MS) return V1_NOT_LAUNCHED;
     if (ms < VOYAGER1_MODEL_START_MS) return V1_NOT_MODELLED;
+    if (beyondOpenOrbit(ms)) return V1_ENDED;
     return ALWAYS.approximate;
   },
   positionAt(time, pos, vel) {

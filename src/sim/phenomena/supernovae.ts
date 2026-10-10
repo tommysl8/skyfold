@@ -14,6 +14,19 @@
  * the remnant's measured proper motion gives (m = μ t₀ / θ, which needs no distance); the radius is the smaller of the
  * two laws. The Crab is a pulsar wind nebula, not a shell: its filaments expand faster than they did, R ∝ t^1.06 (their
  * speeds are 1.06 times the age's average: Martin et al. 2025), and its picture is drawn at that size (scene/Nebulae).
+ *
+ * Its future (remnantEvolution): the measured law holds until the shock has slowed to the Sedov–Taylor blast of the
+ * explosion's energy E in the gas round it (density n), R = 1.15 (E t²/ρ)^(1/5), ρ = 1.4 m_H n; the radius is the smaller
+ * of the two, so the measured law is today's remnant and the blast law takes over where they meet. The blast loses its
+ * heat to radiation once its shell forms, at t_sf = 3.61 × 10⁴ yr E₅₁^(3/14) n^(−4/7) ζ^(−5/14) (ζ the metallicity in the
+ * Sun's), and from t_PDS = t_sf/e = 1.33 × 10⁴ yr (same scalings) it is a pressure-driven snowplow, R = R_PDS (4t/3t_PDS −
+ * 1/3)^(3/10), R_PDS the Sedov–Taylor radius then (14.0 pc E₅₁^(2/7) n^(−3/7) ζ^(−1/7)), which joins it with the same
+ * slope (Cioffi, McKee & Bertschinger 1988, ApJ 334, 252; the transition as Truelove & McKee 1999, ApJS
+ * 120, 299, take it). The remnant merges with the interstellar gas when its shock has slowed to the gas's own turbulent
+ * motions, about 10 km/s: t_merge = 153 t_PDS (E₅₁^(1/14) n^(1/7) ζ^(3/14) / β C₀₆)^(10/7) with β C₀₆ = 1 (with
+ * their β ≈ 2 it would merge 2.7 times sooner). It fades out before then and is not drawn after; its radius is
+ * held there. Its X-ray glow (the false colour) falls once the shell has formed as its hot interior's pressure,
+ * ∝ R^−5 (the interior expands adiabatically).
  */
 import { bvToTemperature } from '../../physics/blackbody';
 import { JULIAN_YEAR_S, PARSEC_KM } from '../../physics/constants';
@@ -81,6 +94,11 @@ export interface Supernova {
   ejectaSource: string;
   /** Today's remnant: angular radius ″ at an epoch (year), and the expansion parameter m (R ∝ t^m), with sources. */
   remnant: { name: string; radiusArcsec: number; epochYear: number; m: number; source: string; bodyId?: string; snrId?: string };
+  /**
+   * The explosion's kinetic energy (10⁵¹ erg), the density of the gas the remnant runs into (hydrogen, cm⁻³) and its
+   * metallicity (the Sun's = 1), for the remnant's future (remnantEvolution), with the source of each.
+   */
+  surroundings: { e51: number; nCm3: number; zeta: number; source: string };
   facts: readonly string[];
   factSources: readonly string[];
   factSourceLabels: readonly string[];
@@ -142,6 +160,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       source: 'radius 15′ (Green 2024); its shock moves 2,900 km/s in the north-west and up to 2.5 times faster in the south-east (Winkler et al. 2003, 2014): an expansion parameter of about 0.3 to 0.8, taken as 0.5',
       snrId: 'snr-g327-6p14-6',
     },
+    surroundings: { e51: 1.3, nCm3: 0.05, zeta: 1, source: 'a type Ia’s kinetic energy, 1.3 × 10⁵¹ erg (the W7 model: Nomoto, Thielemann & Yokoi 1984, ApJ 286, 644); the gas round it about 0.05 cm⁻³ (Acero, Ballet & Decourchelle 2007, A&A 475, 883, from the thermal X-rays of its south-east rim, representative of most of it; 0.15–0.25 cm⁻³ at the north-western filament), the remnant lying 550 pc above the Galactic plane' },
     facts: [
       'Seen in May 1006, the brightest new star in recorded history: Chinese astronomers wrote that things could be seen by its light.',
       'A white dwarf blown apart: no star remains at its centre, and its debris is now 60 light-years across.',
@@ -192,6 +211,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       bodyId: 'crab-nebula',
     },
     pictureRemnant: true,
+    surroundings: { e51: 0.1, nCm3: 0.1, zeta: 1, source: 'a low-energy explosion, about 10⁵⁰ erg (Yang & Chevalier 2015, ApJ 806, 153: the filaments’ 4.6 M☉ at 1,260 km/s carry 7 × 10⁴⁹ erg); its blast wave has never been seen, which points to thin gas round it: 0.1 cm⁻³ is taken (a typical value)' },
     facts: [
       'Chinese astronomers saw this “guest star” by day for 23 days in July 1054; it stayed visible at night for nearly two years.',
       'It left the Crab Nebula and, at its heart, the Crab Pulsar, spinning 30 times a second.',
@@ -240,6 +260,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       m: 1,
       source: 'outer radius 100″ ± 10″ (Ritter et al. 2021); expanding ballistically (Cunningham et al. 2024)',
     },
+    surroundings: { e51: 0.002, nCm3: 0.1, zeta: 1, source: 'a weak explosion, 1–3 × 10⁴⁸ erg (Lykou et al. 2023, ApJ: 0.15 M☉ of ejecta at about 1,100 km/s); the gas round it is not measured: 0.1 cm⁻³ is taken (a typical value)' },
     facts: [
       'Seen for six months in 1181; for decades the pulsar wind nebula 3C 58 was thought its remnant, until the nebula Pa 30 was matched to it in 2021.',
       'A white dwarf only partly destroyed: what survived still shines at the centre at 200,000 K, throwing out a wind that streaks the nebula with filaments.',
@@ -281,6 +302,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       source: 'radius 4′ (Green 2024); proper motions of its forward shock 0.17–0.41″ a year (Katsuda et al. 2010; Williams et al. 2016): an expansion parameter of about 0.5',
       snrId: 'snr-g120-1p1-4',
     },
+    surroundings: { e51: 1.3, nCm3: 0.15, zeta: 1, source: 'a type Ia’s kinetic energy, 1.3 × 10⁵¹ erg (the W7 model: Nomoto, Thielemann & Yokoi 1984, ApJ 286, 644); the gas round it 0.1–0.2 cm⁻³ (Williams et al. 2013, ApJ 770, 129, from its dust’s infrared light; three to ten times denser in the north-east)' },
     facts: [
       'Tycho Brahe measured that it did not move against the stars: it was far beyond the Moon, and the heavens were not unchanging.',
       'In 2008 its light, echoing off dust 400 years later, showed the spectrum of a type Ia supernova.',
@@ -329,6 +351,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       source: 'radius 1.5′ (Green 2024); its shock moves 1,700 km/s in the north and several times faster elsewhere (Sankrit et al. 2016; Katsuda et al. 2008; Vink 2008): an expansion parameter of about 0.5–0.6',
       snrId: 'snr-g4-5p6-8',
     },
+    surroundings: { e51: 1.3, nCm3: 0.1, zeta: 1, source: 'a type Ia’s kinetic energy, 1.3 × 10⁵¹ erg (the W7 model: Nomoto, Thielemann & Yokoi 1984, ApJ 286, 644); today its shock runs into the progenitor’s own dense wind (about 8 cm⁻³ in the north: Sankrit et al. 2016), beyond which lies the thin gas 600 pc above the Galactic plane: 0.1 cm⁻³ is taken (a typical value)' },
     facts: [
       'The last supernova seen in the Milky Way: Kepler followed it for a year and wrote a book about it, De Stella Nova (1606).',
       'It appeared beside Jupiter and Saturn, which were in conjunction, so astrologers were already watching that part of the sky.',
@@ -379,6 +402,7 @@ export const SUPERNOVAE: readonly Supernova[] = [
       source: 'the X-ray-bright shock’s radius, 0.664″ on day 5036 and 0.825″ on day 10433 (Frank et al. 2016); see the ring',
       bodyId: 'sn-1987a',
     },
+    surroundings: { e51: 1.5, nCm3: 1, zeta: 0.5, source: 'about 1.5 × 10⁵¹ erg (1.1–1.5 in the light-curve models of Blinnikov et al. 2000, ApJ 532, 1132, and Utrobin 2005); beyond the gas the star shed, the Large Magellanic Cloud’s gas: 1 cm⁻³ is taken (a typical value), at half the Sun’s metallicity (Russell & Dopita 1992, ApJ 384, 508)' },
     facts: [
       'The nearest supernova seen since Kepler’s, and the first whose star was known before it exploded: the blue supergiant Sanduleak −69 202.',
       'About two dozen neutrinos from its collapsing core were caught in Japan and the United States three hours before its light: the only neutrinos yet detected from a supernova.',
@@ -398,6 +422,15 @@ export const supernovaById = (id: string): Supernova | undefined => SUPERNOVAE.f
  * al. 2005), its long axis nearly east–west (position angle about 81°); which side is nearer to us is taken as the north.
  */
 export const RING_1987A = { radiusArcsec: 0.808, inclinationDeg: 43, majorAxisPaDeg: 81 };
+
+/**
+ * The blast is dissolving the ring: its hot spots have faded since about 2009, and Fransson et al. (2015, ApJL 806, L19)
+ * expected it gone by about 2025; JWST still saw it in 2022–23 (Larsson et al. 2023). Taken as fading out from 2030 to
+ * 2040, after which neither the ring nor Hubble's picture of it is drawn.
+ */
+export const RING_1987A_GONE_MS: readonly [number, number] = [msFromCivil(2030, 1, 1), msFromCivil(2040, 1, 1)];
+/** How much of SN 1987A's ring is left at a date (1 until 2030, 0 from 2040). */
+export const ring1987aShare = (ms: number): number => 1 - smooth(RING_1987A_GONE_MS[0], RING_1987A_GONE_MS[1], ms);
 
 /**
  * SN 1987A's forward shock, ″ from the centre against days: very fast at first (about 30,000 km/s, Gaensler et al. 1997's
@@ -420,6 +453,10 @@ export interface SupernovaState {
   /** Radius of the photosphere (the fireball) and of the forward shock (the debris's edge), km. */
   photosphereKm: number;
   shockKm: number;
+  /** How much of the model is drawn: 1, falling to 0 as the remnant merges with the interstellar gas (remnantFade). */
+  fade: number;
+  /** The remnant's X-ray glow relative to before its shell formed (remnantGlow; 0 once merged). */
+  glow: number;
 }
 
 /** Today's radius of the remnant, km. */
@@ -428,9 +465,8 @@ export const remnantRadiusKm = (sn: Supernova): number => sn.remnant.radiusArcse
 /** The age of the remnant at its reference epoch, s. */
 const refAgeS = (sn: Supernova): number => (msFromCivil(Math.floor(sn.remnant.epochYear), 1, 1) + (sn.remnant.epochYear % 1) * YEAR_MS - sn.explosionMs) / 1000;
 
-/** Radius of the forward shock at age t (s), km: free expansion at the ejecta's speed, then R₀ (t/t₀)^m, whichever is smaller. */
-export function shockRadiusKm(sn: Supernova, ageS: number): number {
-  if (!(ageS > 0)) return 0;
+/** The measured law (it has no end): free expansion at the ejecta's speed, then R₀ (t/t₀)^m, whichever is smaller; SN 1987A's measured radii. */
+function measuredRadiusKm(sn: Supernova, ageS: number): number {
   if (sn.id === 'supernova-1987a') {
     const pts = SHOCK_1987A;
     const d = ageS / 86_400;
@@ -449,6 +485,92 @@ export function shockRadiusKm(sn: Supernova, ageS: number): number {
   return Math.min(free, law);
 }
 
+// ─── Its future: Sedov–Taylor, the radiative snowplow, the merger (Cioffi, McKee & Bertschinger 1988) ──────────
+
+const YEAR_S = JULIAN_YEAR_S;
+/** Hydrogen's mass, g; the gas has 1.4 of it per hydrogen atom (with its helium). */
+const M_H_G = 1.6735e-24;
+/** The Sedov–Taylor constant for γ = 5/3: R = ξ (E t²/ρ)^(1/5). */
+export const SEDOV_XI = 1.15;
+/** The shock merges with the interstellar gas when it has slowed to this, km/s: the gas's turbulent motions (β C₀₆ = 1). */
+export const MERGE_KMS = 10;
+/** The model fades out from this share of the merger's age to the merger. */
+const FADE_FROM = 0.6;
+
+export interface RemnantEvolution {
+  /** The pressure-driven snowplow's start (t_PDS, s) and the radius then (R_PDS, km). */
+  tPdsS: number;
+  rPdsKm: number;
+  /** When the cold shell forms, t_sf = e t_PDS, s. */
+  tShellS: number;
+  /** The merger with the interstellar gas: age (s) and radius (km). */
+  tMergeS: number;
+  rMergeKm: number;
+}
+
+/** The Sedov–Taylor radius at age t (s) of an explosion of e51 × 10⁵¹ erg in gas of nCm3 hydrogen atoms per cm³, km. */
+export const sedovRadiusKm = (e51: number, nCm3: number, ageS: number): number =>
+  (SEDOV_XI * ((e51 * 1e51 * ageS * ageS) / (1.4 * M_H_G * nCm3)) ** 0.2) / 1e5;
+
+const evolutions = new Map<string, RemnantEvolution>();
+
+/** The remnant's radiative phase and merger, from its explosion's energy and its surroundings (Cioffi et al. 1988). */
+export function remnantEvolution(sn: Supernova): RemnantEvolution {
+  let ev = evolutions.get(sn.id);
+  if (ev) return ev;
+  const { e51, nCm3: n, zeta } = sn.surroundings;
+  const tPdsS = 1.33e4 * YEAR_S * e51 ** (3 / 14) * n ** (-4 / 7) * zeta ** (-5 / 14);
+  const rPdsKm = sedovRadiusKm(e51, n, tPdsS);
+  // The snowplow's speed, dR/dt = (2/5)(R_PDS/t_PDS) x^(−7/10) with x = 4t/3t_PDS − 1/3, falls to MERGE_KMS at:
+  const x = Math.max(1, ((0.4 * rPdsKm) / (tPdsS * MERGE_KMS)) ** (10 / 7));
+  ev = { tPdsS, rPdsKm, tShellS: Math.E * tPdsS, tMergeS: 0.75 * (x + 1 / 3) * tPdsS, rMergeKm: rPdsKm * x ** 0.3 };
+  evolutions.set(sn.id, ev);
+  return ev;
+}
+
+/** The blast's radius at age t (s), km: Sedov–Taylor, then the pressure-driven snowplow from t_PDS. */
+export function blastRadiusKm(sn: Supernova, ageS: number): number {
+  const ev = remnantEvolution(sn);
+  if (ageS <= ev.tPdsS) return sedovRadiusKm(sn.surroundings.e51, sn.surroundings.nCm3, ageS);
+  return ev.rPdsKm * ((4 * ageS) / (3 * ev.tPdsS) - 1 / 3) ** 0.3;
+}
+
+/**
+ * Radius of the forward shock at age t (s), km: the measured law (free expansion at the ejecta's speed, then R₀ (t/t₀)^m)
+ * until it meets the blast's (Sedov–Taylor, then the snowplow), whichever is smaller; held from the merger on.
+ */
+export function shockRadiusKm(sn: Supernova, ageS: number): number {
+  if (!(ageS > 0)) return 0;
+  const t = Math.min(ageS, remnantEvolution(sn).tMergeS);
+  return Math.min(measuredRadiusKm(sn, t), blastRadiusKm(sn, t));
+}
+
+/** How much of the remnant's model is drawn at age t (s): 1, fading out over the last 40 % of the age at which it merges, 0 after. */
+export function remnantFade(sn: Supernova, ageS: number): number {
+  const tm = remnantEvolution(sn).tMergeS;
+  return 1 - smooth(FADE_FROM * tm, tm, ageS);
+}
+
+/**
+ * The remnant's X-ray glow at age t (s), relative to before its shell formed: 1 until t_PDS, then as its hot interior's
+ * pressure, ∝ R^−5 (it expands adiabatically while the cold shell radiates), and out with the fade.
+ */
+export function remnantGlow(sn: Supernova, ageS: number): number {
+  const ev = remnantEvolution(sn);
+  const f = remnantFade(sn, ageS);
+  if (ageS <= ev.tPdsS || f <= 0) return f;
+  return f * (shockRadiusKm(sn, ev.tPdsS) / shockRadiusKm(sn, ageS)) ** 5;
+}
+
+/**
+ * Below this glow (7.5 magnitudes under the rim's chosen brightness, about 75 t_PDS on) the model is invisible and not
+ * drawn: there is nothing to see, and a remnant tens of parsecs wide round the camera would still cost its pixels.
+ */
+export const MIN_GLOW = 1e-3;
+
+/** Whether a supernova's model is drawn at all in this state (before it has merged, and while its glow can be seen). */
+export const modelDrawn = (st: SupernovaState): boolean => st.ageS > 0 && st.fade > 0 && st.glow > MIN_GLOW;
+
 /** The shock's speed now, km/s (the derivative of shockRadiusKm, numerically). */
 export function shockSpeedKmS(sn: Supernova, ageS: number): number {
   const h = Math.max(1, ageS * 1e-4);
@@ -457,13 +579,15 @@ export function shockSpeedKmS(sn: Supernova, ageS: number): number {
 
 /** The supernova at `ms` (the clock's time): its light as Earth sees it, and its debris. */
 export function supernovaAt(sn: Supernova, ms: number, out?: SupernovaState): SupernovaState {
-  const o = out ?? { vmag: NONE, teffK: 6000, days: 0, ageS: 0, photosphereKm: 0, shockKm: 0 };
+  const o = out ?? { vmag: NONE, teffK: 6000, days: 0, ageS: 0, photosphereKm: 0, shockKm: 0, fade: 1, glow: 1 };
   o.days = (ms - sn.zeroMs) / DAY_MS;
   o.ageS = (ms - sn.explosionMs) / 1000;
   o.vmag = magnitudeAt(sn.curve, o.days);
   o.teffK = temperatureAt(sn.curve, o.days);
   o.shockKm = shockRadiusKm(sn, o.ageS);
   o.photosphereKm = o.ageS > 0 ? Math.min(sn.photosphereKmS * o.ageS, o.shockKm) : 0;
+  o.fade = remnantFade(sn, o.ageS);
+  o.glow = remnantGlow(sn, o.ageS);
   return o;
 }
 
@@ -474,5 +598,41 @@ export const nakedEyeEndMs = (sn: Supernova): number => sn.zeroMs + lastDayBrigh
 export function grownShare(sn: Supernova, ms: number): number {
   const age = (ms - sn.explosionMs) / 1000;
   if (!(age > 0)) return 0;
-  return Math.min(1, shockRadiusKm(sn, age) / remnantRadiusKm(sn));
+  return shockRadiusKm(sn, age) / remnantRadiusKm(sn);
+}
+
+// ─── The pictures' end ────────────────────────────────────────────────────────────────
+
+/**
+ * The Crab Nebula shines by the power its pulsar loses as it spins down, Ė ∝ Ω^(n+1) for a braking index n: 2.50
+ * between glitches (Lyne et al. 2015, MNRAS 446, 857). From P = 33.39 ms and Ṗ = 4.21 × 10⁻¹³ about 2000 (ATNF
+ * catalogue) the characteristic age τ_c = P/2Ṗ is 1,257 years, and Ω^(1−n) grows linearly in time, so Ė(t) = Ė₂₀₀₀
+ * (1 + Δt/T)^(−(n+1)/(n−1)) with T = 2τ_c/(n − 1) = 1,676 years. Its synchrotron light follows that power closely (the
+ * electrons that light it live years to decades), so its picture is drawn as bright as Ė over today's, and gone below a
+ * hundredth of it, about 10,500 years on. By then the remnant's reverse shock is expected to have reached and crushed the
+ * nebula too (Reynolds & Chevalier 1984, ApJ 278, 630; Gelfand, Slane & Zhang 2009, ApJ 703, 2051): today's picture no
+ * longer shows it.
+ */
+export const CRAB_BRAKING_INDEX = 2.5;
+export const CRAB_SPIN_T_YR = (2 * 1257) / (CRAB_BRAKING_INDEX - 1);
+const CRAB_EPOCH_MS = msFromCivil(2000, 1, 1);
+
+/** The Crab pulsar's spin-down power at a date over its power in 2000 (held at 1 before: the picture is today's). */
+export function crabPowerShare(ms: number): number {
+  const dtYr = (ms - CRAB_EPOCH_MS) / YEAR_MS;
+  if (!(dtYr > 0)) return 1;
+  return (1 + dtYr / CRAB_SPIN_T_YR) ** (-(CRAB_BRAKING_INDEX + 1) / (CRAB_BRAKING_INDEX - 1));
+}
+
+/** How brightly a supernova's picture is drawn at a date (1 today): the Crab's with its pulsar's power, gone below 1 %; SN 1987A's while its ring lasts. */
+export function pictureShare(sn: Supernova, ms: number): number {
+  if (sn.id === 'supernova-1987a') return ring1987aShare(ms);
+  if (!sn.pictureRemnant) return 1;
+  const p = crabPowerShare(ms);
+  return p * smooth(0.01, 0.03, p);
+}
+
+function smooth(a: number, b: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
 }
