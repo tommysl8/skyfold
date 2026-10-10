@@ -366,10 +366,11 @@ function bytesPer(fn: () => void): number {
   for (let k = 0; k < 2000; k++) fn();
   let best = Infinity;
   let overhead = Infinity;
-  for (let attempt = 0; attempt < 12; attempt++) {
-    // More calls between the tries: in a full test run the optimising compiler (on a background thread, with every
-    // core busy) can finish after the first warm-up, and until then V8 boxes the numbers its code keeps unboxed.
-    for (let k = 0; k < 250; k++) fn();
+  // Up to 40 tries, with more calls between them: in a full test run the optimising compiler (on a background thread,
+  // with every core busy; a CI runner has two) can finish long after the first warm-up, and until then V8 boxes the
+  // numbers its code keeps unboxed. Stop once a try shows nothing allocated.
+  for (let attempt = 0; attempt < 40 && !(overhead < Infinity && best <= overhead); attempt++) {
+    for (let k = 0; k < 1000; k++) fn();
     gc();
     const before = newSpace();
     fn();
