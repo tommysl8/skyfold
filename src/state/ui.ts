@@ -83,6 +83,12 @@ export interface UIState {
   fieldLines: boolean;
   /** The map of the cosmic microwave background over the sky (contrast enhanced). */
   showCmb: boolean;
+  /**
+   * Where the mass is (sim/galaxy/darkLayer.ts): the Milky Way's dark halo as a fog of its projected density, tracer stars
+   * orbiting with and without it, and the Bullet Cluster's gas and lensing mass. A diagnostic overlay, off by default and
+   * not saved (as the CMB map).
+   */
+  darkMatter: boolean;
   /** First-visit welcome screen. */
   welcomeOpen: boolean;
   /** Guided tour: index of the step shown, or null. */
@@ -202,7 +208,8 @@ export interface UIState {
       | 'jets'
       | 'satellites'
       | 'satelliteDebris'
-      | 'fieldLines',
+      | 'fieldLines'
+      | 'darkMatter',
   ) => void;
   setSizeMode: (m: SizeMode) => void;
 }
@@ -301,6 +308,7 @@ export const useUI = create<UIState>()(
       satelliteDebris: false,
       fieldLines: false,
       showCmb: false,
+      darkMatter: false,
       welcomeOpen: !welcomed(),
       tourStep: null,
       journeysOpen: false,

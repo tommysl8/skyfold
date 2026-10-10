@@ -138,6 +138,14 @@ export const JOURNEYS: Journey[] = [
     scene: 'famous-galaxies',
   }),
   journey({ id: 'virgo-cluster', title: 'The Virgo Cluster', sub: 'Sixty of its brightest galaxies, 54 million light-years away', scene: 'virgo-cluster-close' }),
+  journey({
+    id: 'galaxy-rotation',
+    title: 'How the Galaxy turns',
+    sub: 'Its stars going round, with the dark halo’s pull and without it',
+    scene: 'galaxy-rotation',
+    clock: 'The stars’ clock: 1 s here = 30 million years',
+  }),
+  journey({ id: 'bullet-mass', title: 'Where the mass is: the Bullet Cluster', sub: 'Two colliding clusters, their gas and the mass that went on without it', scene: 'bullet-cluster-mass' }),
   journey({ id: 'sgr-a-star-radio', title: 'Sagittarius A* in radio light', sub: 'The ring the Event Horizon Telescope sees, up close', scene: 'sgr-a-star-radio' }),
   journey({
     id: 'monsters',

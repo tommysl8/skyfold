@@ -264,6 +264,7 @@ function ViewMenu() {
       pulsars: u.pulsars,
       gwEvents: u.gwEvents,
       showCmb: u.showCmb,
+      darkMatter: u.darkMatter,
       aurora: u.aurora,
       jets: u.jets,
       satellites: u.satellites,
@@ -352,7 +353,7 @@ function ViewMenu() {
           </Check>
           <Check
             checked={!s.notesHidden}
-            onChange={(v) => useUI.setState({ hiddenNotes: v ? [] : ['cmb', 'web', 'surveys', 'flow', 'belts', 'nsc', 'sats'] })}
+            onChange={(v) => useUI.setState({ hiddenNotes: v ? [] : ['cmb', 'web', 'surveys', 'flow', 'belts', 'nsc', 'sats', 'dark'] })}
             hint="The short notes on the data layers (the cosmic web, the galaxy surveys…) in the top left. Hide on a note puts that note away; this brings them all back"
           >
             Layer notes
@@ -462,6 +463,13 @@ function ViewMenu() {
           </Check>
           <Check checked={s.showCmb} onChange={() => t('showCmb')} hint="The cosmic microwave background over the sky: WMAP’s map, contrast enhanced about 10,000 times">
             CMB map
+          </Check>
+          <Check
+            checked={s.darkMatter}
+            onChange={() => t('darkMatter')}
+            hint="Where the mass is, not light: the Milky Way’s dark halo as a faint fog of its density (seen from outside the Galaxy), stars orbiting with and without it, and the Bullet Cluster’s gas and lensing mass"
+          >
+            Dark matter
           </Check>
           <Check
             checked={s.aurora}

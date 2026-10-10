@@ -146,6 +146,8 @@ One line per fact: claim | value | source | status. "computed" means recomputed 
 - M(<25 kpc) 2.3 x 10^11 is 3.7 times stars + cold gas | computed | verified
 - Dark matter density 0.30 GeV/cm^3 = 0.32 proton masses per cm^3 (proton 0.938 GeV) | computed from Eilers et al. 2019 | verified
 - Stars (5 x 10^10) are ~4% of 1.3 x 10^12, ~24% of 2.1 x 10^11 | computed | verified
+- McMillan 2017 best-fitting model (Table 3): NFW halo rho_0 = 0.00854 Msun/pc^3, r_h = 19.6 kpc; R0 = 8.21 kpc, v0 = 233.1 km/s; rho_h,sun = 0.0101 Msun/pc^3; M_v = 1.37 x 10^12; M_* = 5.43 x 10^10 | 2017 | P. J. McMillan, MNRAS 465, 76 (2017), https://doi.org/10.1093/mnras/stw2759 (arXiv:1608.00971 text) | verified (primary)
+- In McMillan's model, dark share of the mass within 200 kpc 95% (halo 1.22 x 10^12 against 6.6 x 10^10 of stars and gas); the model's v_c is 3-14% above Eilers et al.'s points beyond 13 kpc (within 6.5% to 18 kpc) | computed (src/sim/galaxy/darkMatter.test.ts) | verified
 
 ## Future (status as of 25 Sep 2026)
 - Gaia DR4 (66 months of data) scheduled 2 December 2026; DR5 (all mission data) not before end of 2030 | 2026 | ESA, https://www.cosmos.esa.int/web/gaia/release | verified

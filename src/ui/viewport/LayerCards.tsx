@@ -7,7 +7,8 @@
  * stars round it (a statistical model of the nuclear star cluster and disc, its text in
  * sim/galaxy/nuclearCluster.ts) and the glowing gas falling into it (the accretion flow's model,
  * sim/blackholes/accretion.ts), and the Milky Way's magnetic field (its model's lines in 3D, or the field over the sky
- * measured from the Solar System: sim/galaxy/fieldView.ts). Each says what the layer is and whether it is a model; each opens to say
+ * measured from the Solar System: sim/galaxy/fieldView.ts), and the dark-matter layer while it is on (what of it shows,
+ * with the Milky Way's rotation curve in a small chart: DarkMatterChart.tsx, a chunk of its own). Each says what the layer is and whether it is a model; each opens to say
  * more, keeps its credits and references under Sources (closed: Sources.tsx), and shows whenever its layer does,
  * unless it has been put away with its Hide: that hides the note only, never the layer (the View menu turns layers on
  * and off), and is remembered between visits until View › Layer notes brings the notes back (state/ui.ts hiddenNotes).
@@ -15,7 +16,7 @@
  * Cost: a few comparisons twice a second, and the flow's point once (a microsecond, nothing
  * allocated).
  */
-import { useState } from 'react';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { openLearn } from '../../state/route';
 import { useUI } from '../../state/ui';
 import { sim } from '../../sim/sim';
@@ -32,6 +33,10 @@ import { ASTEROID_CARD, asteroidCardShown } from '../asteroidCard';
 import { smallBodies } from '../../sim/asteroids/load';
 import { SATELLITE_CARD, satelliteCardLines } from '../satelliteCard';
 import { FIELD_CARD, FIELD_SKY_SOURCE, FIELD_SKY_TEXT, fieldShares } from '../../sim/galaxy/fieldView';
+import { DARK_CARD, darkLayer } from '../../sim/galaxy/darkLayer';
+
+/** The rotation curve's chart, with the mass model it plots: loaded once the dark-matter card first shows it. */
+const DarkMatterChart = lazy(() => import('./DarkMatterChart'));
 
 /** The web's card shows once this much of the layer shows. */
 const WEB_CARD_SHARE = 0.3;
@@ -66,6 +71,7 @@ function LayerCard({
   line,
   caveat,
   note,
+  figure,
   more,
   sources,
   article,
@@ -77,6 +83,8 @@ function LayerCard({
   caveat?: string;
   /** A line more under the caveat, for a part of the layer that shows only at times. */
   note?: string;
+  /** A small figure under the lines. */
+  figure?: ReactNode;
   more: readonly string[];
   /** Its credits and references, under Sources. */
   sources: readonly string[];
@@ -105,6 +113,7 @@ function LayerCard({
       <p>{line}</p>
       {caveat && <p className="mt-0.5 text-fg-3">{caveat}</p>}
       {note && <p className="mt-0.5 text-fg-3">{note}</p>}
+      {figure}
       {open && more.map((m) => <p key={m} className="mt-1 text-fg-3">{m}</p>)}
       {sources.length > 0 && (
         <Sources className="mt-1">
@@ -133,6 +142,7 @@ export function LayerCards() {
   const satsOn = useUI((s) => s.satellites);
   const fieldOn = useUI((s) => s.fieldLines);
   const hidden = useUI((s) => s.hiddenNotes);
+  const darkOn = useUI((s) => s.darkMatter);
   const away = (key: string) => hidden.includes(key);
   // The satellites' note while their switch is on near Earth, saying why they are hidden when they are.
   const sats = away('sats') ? null : satelliteCardLines(satsOn);
@@ -153,7 +163,11 @@ export function LayerCards() {
   const field = fieldOn && !away('field') ? fieldShares(sim.camera.pos) : null;
   const fieldSky = !!field && field.sky >= FIELD_CARD_SHARE && (!relView.active || relView.split);
   const fieldLines = !!field && field.lines >= FIELD_CARD_SHARE;
-  if (!web && !surveys && !cmb && !nsc && !flow && !belts && !fieldSky && !fieldLines && !sats) return null;
+  // The dark-matter layer while it is on; its chart while the halo and the tracers show.
+  const dark = !away('dark') && darkOn;
+  const darkHalo = darkLayer.tracers > 0.3;
+  const darkBullet = darkLayer.bullet > 0.3;
+  if (!web && !surveys && !cmb && !nsc && !flow && !belts && !fieldSky && !fieldLines && !sats && !dark) return null;
   const holeArticle = kindArticle('black-hole');
   return (
     <div className="flex w-full max-w-[380px] flex-col gap-1.5">
@@ -231,6 +245,24 @@ export function LayerCards() {
           sources={FLOW_LAYER_CARD.sources}
           article={holeArticle}
           onClose={() => hideNote('flow')}
+        />
+      )}
+      {dark && (
+        <LayerCard
+          title={DARK_CARD.title}
+          line={DARK_CARD.line}
+          caveat={darkBullet ? DARK_CARD.bullet : darkHalo || darkLayer.halo > 0.3 ? DARK_CARD.halo : DARK_CARD.elsewhere}
+          figure={
+            darkHalo ? (
+              <Suspense fallback={null}>
+                <DarkMatterChart />
+              </Suspense>
+            ) : undefined
+          }
+          more={DARK_CARD.more}
+          sources={DARK_CARD.sources}
+          article={darkBullet ? 'island-universes' : 'our-galaxy'}
+          onClose={() => hideNote('dark')}
         />
       )}
       {nsc && (

@@ -192,8 +192,8 @@ The 1970 paper made no such claim. Rubin and Ford reported the mass inside 24 kp
 
 The most direct evidence came in 2006 from two galaxy clusters that passed through each other about 4 billion light-years away, known as 1E 0657-558 or the Bullet Cluster.[^chandra2006] Most of the ordinary matter in a cluster is not in its galaxies but in hundred-million-degree gas between them, which glows in X-rays. In the collision the two gas clouds hit and were slowed, as air slows a thrown ball, while the widely spaced galaxies sailed on. The Chandra X-ray telescope mapped the gas. Douglas Clowe and his colleagues mapped the mass from the way it bends the light of galaxies behind it, the lensing Zwicky had proposed in 1937.[^clowe2006][^chandra2006] The mass sits with the galaxies, not the gas, though the gas outweighs the galaxies. The offset is significant at 8 sigma, a measure of how unlikely it is to be a fluke, far past the 5 sigma physicists usually require, and, Clowe's team argued, no change to the law of gravity alone could explain it.[^clowe2006]
 
-::: see-it go:bullet-cluster
-The Bullet Cluster, drawn here as its two groups of galaxies; its hot gas is not drawn. In the published images the X-ray gas is pink and the mass found by lensing is blue.[^chandra2006] The blue lies beyond the pink on both sides: the dark matter went straight through.
+::: see-it bullet-cluster-mass
+The Bullet Cluster, its two groups of galaxies with their hot gas in pink, from Chandra's X-ray picture, and the mass found by lensing in blue, as in the published images.[^chandra2006] The blue lies beyond the pink on both sides: the dark matter went straight through. The blue here is a smooth model fitted to the positions and strengths Clowe's team published, not their map itself.[^clowe2006]
 :::
 
 ## The neighbourhood

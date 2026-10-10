@@ -73,6 +73,7 @@ import { nakedEyeEndMs, shockRadiusKm } from '../sim/phenomena/supernovae';
 import { inspiralAt, kilonovaAt, MERGER_MS } from '../sim/phenomena/kilonova';
 import { startPace } from '../sim/phenomena/pace';
 import { bodyFixedDir, geomagneticPole } from '../sim/phenomena/aurora';
+import { restartTracers } from '../sim/galaxy/darkLayer';
 import { sunMapHeld } from '../sim/fields';
 import { registerDestinations, type Destination } from './destinations';
 import { playSunFuture, setSunAge } from '../sim/stars/sunFuture';
@@ -329,6 +330,9 @@ export const NAMED_SCENES = [
   'heliospheric-current-sheet',
   'solar-eclipse',
   'lunar-eclipse',
+  'milky-way-dark-halo',
+  'galaxy-rotation',
+  'bullet-cluster-mass',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -486,6 +490,9 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'heliospheric-current-sheet': 'The Sun’s field in the solar wind',
   'solar-eclipse': 'The next total solar eclipse',
   'lunar-eclipse': 'A total lunar eclipse',
+  'milky-way-dark-halo': 'The Milky Way’s dark halo',
+  'galaxy-rotation': 'How the Galaxy turns, with and without dark matter',
+  'bullet-cluster-mass': 'Where the mass is: the Bullet Cluster',
 };
 
 /** Define (or replace) a named scene. */
@@ -1056,7 +1063,7 @@ function start(s: Scene, note: string): boolean {
  * has changed it since), so the CMB map does not stay over Jupiter after the CMB scene, nor the
  * flow stay hidden after a lens scene.
  */
-const SCENE_VIEWS = ['showCmb', 'showOrbits', 'constellations', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines'] as const;
+const SCENE_VIEWS = ['showCmb', 'showOrbits', 'constellations', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines', 'darkMatter'] as const;
 type SceneView = (typeof SCENE_VIEWS)[number];
 type SceneViews = Partial<Pick<UIState, SceneView>>;
 
@@ -1079,6 +1086,7 @@ function currentViews(): Pick<UIState, SceneView> {
     accretionBand: s.accretionBand,
     ehtBlur: s.ehtBlur,
     fieldLines: s.fieldLines,
+    darkMatter: s.darkMatter,
   };
 }
 
@@ -2435,6 +2443,81 @@ defineScene('lunar-eclipse', {
     return true;
   },
 });
+
+// ─── Dark matter (sim/galaxy/darkLayer.ts, darkMatter.ts; sim/cosmos/bulletCluster.ts) ─────────
+
+/**
+ * The rotation scene's pace for the tracers' own clock: 30 million years a second (the Sun goes round in 7 s). The rest of
+ * the view keeps its date: run the clock at home that far and the Magellanic Clouds would fly past the camera.
+ */
+export const ROTATION_PACE_MYR_S = 30;
+/** How far out the halo's view stands from the Galaxy's centre (300 kpc), and the rotation scene's (100 kpc, above the pole). */
+export const HALO_VIEW_KM = 300 * KPC_KM;
+export const ROTATION_VIEW_KM = 100 * KPC_KM;
+/** The Bullet Cluster's view: 2.2 Mpc out on our side of it, the X-ray picture's 2.2 Mpc filling the width. */
+export const BULLET_VIEW_KM = 2.2 * MPC_KM;
+
+defineScene('milky-way-dark-halo', {
+  label: PENDING_LABELS['milky-way-dark-halo'],
+  note: 'The Milky Way from 300 kpc (a million light-years) out, its dark halo drawn as a faint blue fog: the halo’s density summed along each line of sight, in McMillan’s (2017) mass model. It reaches far beyond the stars and holds about 95 % of the Galaxy’s mass within 200 kpc, yet gives out no light: the fog shows where the mass is, not anything an eye could see. How heavy the halo is, is uncertain by a factor of several.',
+  unavailable: needs('milky-way', 'sgr-a-star'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ darkMatter: true, selected: 'milky-way' });
+      // Tipped 35° from the Galaxy's pole towards the Sun's side: the disc as an oval inside its halo.
+      const tilt = (35 * Math.PI) / 180;
+      const dir = GALACTIC_NORTH.clone().multiplyScalar(Math.cos(tilt)).addScaledVector(galacticToWorld(180, 0), Math.sin(tilt)).normalize();
+      controller.goTo('sgr-a-star', { distance: HALO_VIEW_KM, direction: dir });
+    }),
+});
+
+defineScene('galaxy-rotation', {
+  label: PENDING_LABELS['galaxy-rotation'],
+  note: 'The Milky Way from above its north pole, its stars’ clock running 30 million years a second (the rest of the view keeps today’s date). Gold stars go round at the circular speed of McMillan’s (2017) mass model, close to what Eilers et al. (2019) measured: about 230 km/s at the Sun, still about 220 km/s at 30 kpc. Beside each a grey star goes round as it would if the Galaxy were only its stars and gas: far out it falls further and further behind. The difference is the dark halo’s pull; the card’s chart has both curves and the measurements.',
+  unavailable: needs('milky-way', 'sgr-a-star'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ darkMatter: true, selected: null });
+      // On the spokes while the camera flies there, then turning.
+      restartTracers();
+      controller.goTo('sgr-a-star', { distance: ROTATION_VIEW_KM, direction: GALACTIC_NORTH.clone().addScaledVector(galacticToWorld(180, 0), 0.05).normalize() });
+      afterSlew('sgr-a-star', () => restartTracers(ROTATION_PACE_MYR_S));
+    }),
+});
+
+defineScene('bullet-cluster-mass', {
+  label: PENDING_LABELS['bullet-cluster-mass'],
+  note: 'The Bullet Cluster, about 4 billion light-years away, from our side: two clusters of galaxies that passed through each other. Pink is their hot gas in X-rays (Chandra), most of their ordinary matter, slowed by the collision into a bullet-shaped cloud behind a shock. Blue, with the paper’s contours, is the mass that bends the light of the galaxies behind it (a model of Clowe et al.’s 2006 lensing map). The mass went on with the galaxies, ahead of the gas: most of it is dark matter.',
+  unavailable: needs('bullet-cluster'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ darkMatter: true, selected: 'bullet-cluster', showLabels: true });
+      const at = sim.bodies['bullet-cluster'];
+      const toEarth = sim.bodies.earth.pos.clone().sub(at.pos).normalize();
+      controller.goTo('bullet-cluster', { distance: BULLET_VIEW_KM, direction: toEarth });
+    }),
+});
+
+/** Dark matter in "Where to?": the halo, the rotation and the Bullet Cluster's mass. */
+const DARK_VIEWS: readonly Destination[] = (
+  [
+    ['dark-halo-view', 'The Milky Way’s dark halo', ['dark matter', 'dark halo', 'dark matter halo', 'galactic halo', 'missing mass'], 'Where the Galaxy’s mass is', 'milky-way-dark-halo', 'milky-way'],
+    ['rotation-curve-view', 'How the Galaxy turns', ['rotation curve', 'galaxy rotation', 'flat rotation curve', 'circular velocity'], 'With and without dark matter', 'galaxy-rotation', 'milky-way'],
+    ['bullet-mass-view', 'Where the mass is: the Bullet Cluster', ['Bullet Cluster dark matter', 'lensing map', 'mass map', '1E 0657-56 mass'], 'Gas and lensing mass', 'bullet-cluster-mass', 'bullet-cluster'],
+  ] as const
+).map(([id, name, aliases, kind, spec, body]) => ({
+  id,
+  name,
+  aliases,
+  kind,
+  group: 'galaxies' as const,
+  distanceKm: () => NaN,
+  unavailable: () => (isBody(body) ? null : 'Loading…'),
+  go: () => {
+    runScene(spec);
+  },
+}));
+registerDestinations(() => DARK_VIEWS);
 
 /** The phenomena that are views rather than bodies, for "Where to?": the aurora and the jets. */
 const PHENOMENA_VIEWS: readonly Destination[] = (

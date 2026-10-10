@@ -120,6 +120,11 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   typical solar wind; the Sun's corona as a potential field to 2.5 solar radii from SDO/HMI's map of the date's
   Carrington rotation (2010–2026), with Parker spirals and the current sheet out to 3 au. The tails and the currents in
   space are not modelled; `docs/data/fields.md` writes it up.
+- **Where the mass is.** View › Dark matter (off by default) draws what gives out no light: the Milky Way's dark halo as a
+  faint fog of its projected density (McMillan's 2017 mass model), tracer stars going round with its pull and, beside
+  them, as fast as the stars and gas alone would carry them, with the measured rotation curve (Eilers et al. 2019) on
+  its card, and the Bullet Cluster's X-ray gas (Chandra) apart from its lensing mass (a model of Clowe et al.'s 2006
+  map). `docs/data/dark-matter.md` writes it up, with the spread in the halo's mass.
 - **Two size modes.** *True scale* shows specks, as reality does (planets still shine at their real apparent
   magnitude). *Enlarged* draws bodies at least a few pixels across while keeping every distance true.
 - **Travel.** Enter β exactly, or use a logit-scaled fader (0.00001c to 0.99999c) and presets (Voyager 1, Parker
@@ -303,6 +308,7 @@ first, at most 50.
 | The supernovae, the kilonova, the jets and the aurora (`src/sim/phenomena/`) | Light curves, speeds and sizes from the papers cited in the code and `docs/data/phenomena.md`; the IGRF-14 dipole (IAGA, via NOAA NCEI); Starkov's auroral oval (Starkov 1994, via Sigernes et al. 2011) | Facts quoted with citation; IGRF free to use; the code MIT |
 | The Milky Way's magnetic field (`src/sim/galaxy/magneticField.ts`, `public/textures/field-sky-wmap.png`) | The UF23 "base" model of [Unger & Farrar 2024](https://doi.org/10.3847/1538-4357/ad4a54); WMAP nine-year K-band polarisation, NASA / WMAP Science Team | Numbers quoted with citation; NASA data, public domain; the derived texture CC BY 4.0 |
 | The Sun's field harmonics and the planets' field models (`public/data/fields/sun-hmi-pfss.bin`, `src/sim/fields/`) | Computed from SDO/HMI synoptic maps (NASA/SDO and the HMI science team); IGRF-14 (IAGA, NOAA NCEI); JRM33, Cassini 11+, AH5, O8 and the other papers in `docs/data/fields.md` | NASA data with credit; coefficients quoted with citation |
+| Dark matter (`src/sim/galaxy/darkMatter.ts`, `src/sim/cosmos/bulletCluster.ts`, `public/images/dark-matter/bullet-xray.jpg`) | McMillan 2017 (mass model), Eilers et al. 2019 (rotation curve), Clowe et al. 2006 (the Bullet Cluster's galaxies, gas and lensing peaks); X-ray picture NASA/CXC/CfA/M. Markevitch et al. | Facts quoted with citation; the Chandra image without asserted copyright, with its credit; the code MIT |
 | Typefaces | IBM Plex Sans (IBM), JetBrains Mono (JetBrains), Source Serif 4 (Adobe) | SIL OFL 1.1 |
 
 
