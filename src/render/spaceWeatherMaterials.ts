@@ -2,8 +2,9 @@
  * The material of a CME's front (scene/SpaceWeather.tsx; the model: sim/spaceWeather/). Part of the space-weather
  * chunk. Each front is one draw of a cap mesh, its vertices placed on the GPU by the same model the CPU uses
  * (sim/spaceWeather/dbm.ts): each ring of the cap is an element of the cone at an angle φ from the axis, started at the
- * cone's share of the apex's distance and speed and flown by the drag-based model's closed form. Four nested layers,
- * 1 % apart and fainter one behind the other, make a soft front with a sheath behind it.
+ * cone's share of the apex's distance and speed and flown by the drag-based model's closed form. Three nested layers,
+ * 1.2 % apart and fainter one behind the other, make a soft front with a sheath behind it. Its brightness is worked
+ * out per vertex, so the fragments only add it.
  *
  * Added light with no depth writes. A thin shell of even brightness shows brightest where it is seen edge-on (the
  * line of sight runs longer through it), so it is drawn so, fainter as it spreads, and faded towards the cone's edge
@@ -15,7 +16,7 @@ import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, DoubleSide, S
 /** Rings from the axis to the cone's edge, segments round it, and nested layers. */
 const RINGS = 20;
 const SEGMENTS = 48;
-export const LAYERS = 4;
+export const LAYERS = 3;
 
 /** The cap: per vertex (φ as a share of the half-width, azimuth, layer), triangles within each layer. */
 export function createFrontGeometry(): BufferGeometry {
@@ -58,12 +59,20 @@ uniform float uV0;       // the apex's speed there, km/s
 uniform float uGamma;    // drag parameter, km⁻¹
 uniform float uW;        // the wind's speed, km/s
 uniform float uRsun;     // km
-varying vec3 vWorld;
-varying vec3 vDir;
-varying float vU;
-varying float vLayer;
-varying vec2 vCap;
-varying float vR;
+uniform float uOpacity;
+uniform float uGain;     // the brightness of a layer seen face-on
+uniform float uFadeKm;   // within this distance of the Sun the front shows at full brightness
+uniform float uSeed;
+varying float vA;
+
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7)) + uSeed) * 43758.5453); }
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+
 void main() {
   float u = position.x;
   float psi = position.y;
@@ -84,15 +93,27 @@ void main() {
     r = (sg / uGamma) * log(1.0 + sg * uGamma * dv * uT) + uW * uT + r0;
   }
   // The nested layers: the sheath behind the front.
-  r *= 1.0 - 0.01 * layer;
+  r *= 1.0 - 0.012 * layer;
   vec3 dir = cos(phi) * uAxis + sin(phi) * (cos(psi) * uE1 + sin(psi) * uE2);
-  vWorld = uSun + dir * r;
-  vDir = dir;
-  vR = r;
-  vU = u;
-  vLayer = layer;
-  vCap = vec2(u * cos(psi), u * sin(psi));
-  gl_Position = projectionMatrix * viewMatrix * vec4(vWorld, 1.0);
+  vec3 world = uSun + dir * r;
+  // The brightness, worked out per vertex (the cap is fine enough; the fragments only add it, so a front costs its
+  // pixels' blending and little else).
+  float d = length(world);
+  // Edge-on brightening of a thin shell (the line of sight's path through it), held finite: the rim shows, the face
+  // hardly at all.
+  float edgeOn = min(1.0 / max(abs(dot(dir, world / max(d, 1.0))), 0.12), 8.0);
+  // Fainter as it spreads: the sunlight it scatters falls off as 1/r² and its plasma thins (far more gently here, as
+  // 1/√r beyond 0.25 au, so that a front still shows at Earth's distance).
+  float spread = clamp(sqrt(uFadeKm / r), 0.3, 1.0);
+  // Faded to the cone's edge, softly mottled, and the layers behind the front fainter.
+  float edge = 1.0 - smoothstep(0.35, 1.0, u);
+  float mottle = 0.8 + 0.4 * noise(vec2(u * cos(psi), u * sin(psi)) * 3.0 + 3.0 * layer);
+  float behind = 1.0 - layer / float(${LAYERS});
+  // Faded where the camera is near the front for its size: from close by a real front, a sheath some 0.1 au thick at
+  // Earth, would be all round, not a surface (and at a planet's scale it would only be a wall across the view).
+  float near = smoothstep(0.25, 0.6, d / max(r, 1.0));
+  vA = uOpacity * edgeOn * spread * edge * mottle * behind * near * uGain;
+  gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
   #include <logdepthbuf_vertex>
 }
 `;
@@ -100,50 +121,17 @@ void main() {
 const FRAG = /* glsl */ `
 #include <common>
 #include <logdepthbuf_pars_fragment>
-uniform float uOpacity;
-uniform float uGain;     // the front's brightness at its rim
-uniform float uSeed;
 uniform vec3 uColour;
-varying vec3 vWorld;
-varying vec3 vDir;
-varying float vU;
-varying float vLayer;
-varying vec2 vCap;
-varying float vR;
-uniform float uFadeKm;   // the distance (km) within which the front shows at full brightness
-
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7)) + uSeed) * 43758.5453); }
-float noise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
-}
-
+varying float vA;
 void main() {
   #include <logdepthbuf_fragment>
-  float d = length(vWorld);
-  vec3 view = vWorld / max(d, 1.0);
-  // Edge-on brightening of a thin shell (the line of sight's path through it), held finite: the front's rim shows, its
-  // face hardly at all.
-  float edgeOn = min(1.0 / max(abs(dot(normalize(vDir), view)), 0.15), 6.0);
-  // Fainter as it spreads: the sunlight it scatters falls off as 1/r² and its plasma thins (held within 0.15–1 here).
-  float spread = clamp(uFadeKm / vR, 0.15, 1.0);
-  // Faded to the cone's edge, softly mottled, and the layers behind the front fainter.
-  float edge = 1.0 - smoothstep(0.35, 1.0, vU);
-  float mottle = 0.8 + 0.4 * noise(vCap * 3.0 + 3.0 * vLayer);
-  float layer = 1.0 - vLayer / float(${LAYERS});
-  // Faded where the camera is near the front for its size: from close by a real front, a sheath some 0.1 au thick at
-  // Earth, would be all round, not a surface (and at a planet's scale it would only be a wall across the view).
-  float near = smoothstep(0.25, 0.6, d / max(vR, 1.0));
-  float a = uOpacity * edge * mottle * layer * near * edgeOn * spread * uGain;
-  if (a <= 0.0) discard;
-  gl_FragColor = vec4(uColour * a, 1.0);
+  if (vA <= 0.0) discard;
+  gl_FragColor = vec4(uColour * vA, 1.0);
 }
 `;
 
-/** The front's brightness (of a layer seen face-on within 0.25 au of the Sun; up to 6 times that edge-on). */
-export const FRONT_GAIN = 0.003;
+/** The front's brightness (of a layer seen face-on within 0.25 au of the Sun; up to 8 times that edge-on). */
+export const FRONT_GAIN = 0.0026;
 
 /** Sunlight scattered off electrons: the Sun's own colour, pale. */
 export const FRONT_COLOUR = new Color(1.0, 0.95, 0.88);

@@ -2456,6 +2456,9 @@ function stormScene(
 ): boolean {
   if (!ready() || !setEpoch(o.startMs)) return false;
   updateEphemeris();
+  // The field lines go on at the second stop, after the scene's start, so the next scene would not turn them back:
+  // the third stop does.
+  const fieldWas = useUI.getState().fieldLines;
   return scene(note, () => {
     setWarp(1);
     setPaused(false);
@@ -2471,7 +2474,7 @@ function stormScene(
           setWarp(600);
           atSimTime(o.auroraMs, () => {
             setWarp(1);
-            useUI.setState({ journeyNote: o.auroraNote });
+            useUI.setState({ journeyNote: o.auroraNote, fieldLines: fieldWas });
             controller.goTo('earth', { distance: 16_400, direction: overNightOval() });
             afterSlew('earth', () => setWarp(300));
           });

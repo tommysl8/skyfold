@@ -11,11 +11,13 @@ of their own), `scripts/build-space-weather.mjs` (the data); the latest build's 
 ## 1. What is shown
 
 - **The fronts.** Each CME in flight on the date, from the moment it leaves the Sun until its apex is 3 au out
-  (fading from 1.8 au), as a soft cap: four nested layers a per cent apart, brightest where seen edge-on (a thin
-  shell's line of sight is longest there), fainter as it spreads, faded towards the cone's edge and where the camera is
-  near it for its size (closer than about a quarter of its distance from the Sun: from close by, a real sheath some
-  0.1 au thick would surround the camera, and at a planet's scale it would only be a wall across the view). At most
-  eight are drawn, the largest on the screen. They are guides, drawn in the classical view: a real CME is seen only in
+  (fading from 1.8 au), as a soft cap: three nested layers 1.2 % apart, brightest where seen edge-on (a thin
+  shell's line of sight is longest there; up to eight times its face), fainter as it spreads (as 1/√r beyond 0.25 au,
+  far more gently than the real 1/r² of the sunlight it scatters, so that a front still shows at Earth), faded towards
+  the cone's edge and where the camera is near it for its size (fading as the camera comes within 0.6 of the front's
+  distance from the Sun, gone within 0.25: from close by, a real sheath some 0.1 au thick would surround the camera,
+  and at a planet's scale it would only be a wall across the view). At most
+  six are drawn, the largest on the screen. They are guides, drawn in the classical view: a real CME is seen only in
   coronagraphs and heliospheric imagers, by sunlight scattered off its electrons, millions of times fainter.
 - **A card for each front in view** (the layer cards, top left; up to two, those heading for Earth first): when and
   where it left the Sun (DONKI's source and NOAA active region), its speed and width, when its shock reached Earth and
@@ -161,12 +163,22 @@ Auto, Quiet (1), 3, 5, 7, 9.
 Always loaded: the update in sim/spaceWeather/index.ts, a binary search and a few comparisons a frame once the table has
 loaded (nothing before). The table loads (49 kB) once the camera is among the planets (within 60 au of the Sun) at a
 date it covers (31 August–8 September 1859 and 2010–October 2026); the Kp index (134 kB) once the aurora is drawn with
-Auto. The fronts' chunk loads the first time a CME is in flight near the camera; each front is one draw of a
-4,100-vertex cap, its pixels shaded three or four times at most with a few operations; at most eight. Nothing is drawn
-when none is in flight, nor with the switch off.
+Auto. The fronts' chunk (6 kB) loads the first time a CME is in flight near the camera; each front is one draw of a
+3,100-vertex cap whose brightness is worked out per vertex, so its pixels are only added, three layers deep at most
+(more where the cap folds behind itself); at most six fronts. Nothing is drawn when none is in flight, nor with the
+switch off.
 
-Measured (Intel integrated GPU, the owner's laptop, `__ls.perf.ab`, the layer on against off, 1600 × 900): see the
-numbers in the report of 9 October 2026 below.
+Measured on 9 October 2026 (Intel integrated GPU, ANGLE D3D11, the canvas 3,200 × 1,584 at pixel ratio 2,
+`__ls.perf.ab`, the layer on against off, three rounds of 10 frames), with the machine's processor at 100 % from other
+work, so the frame times swung by tens of milliseconds between rounds:
+
+| View | On (best) | Off (best) | Rounds' differences |
+| --- | --- | --- | --- |
+| 10 May 2024 15:00 UT, Earth from 0.8 au, seven fronts over half the screen (the worst case) | 20.9 ms | 17.9 ms | −142, −4.6, +8.9 ms |
+| 9 May 2024 12:00 UT, the Sun from 1.7 au, the fronts leaving it | 16.5 ms | 29.4 ms | +15.9, −1.3, +3.7 ms |
+
+So: below what this noise can resolve in the usual view; about 3 ms (best against best) in the worst case at pixel
+ratio 2, which would be under 1 ms at pixel ratio 1. These need measuring again on a quiet machine.
 
 ## 7. Not modelled
 

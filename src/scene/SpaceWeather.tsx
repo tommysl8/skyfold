@@ -5,7 +5,7 @@
  * model), fading in as it leaves the corona, out between 1.8 and 3 au, and where the camera is near it for its size.
  *
  * Guides, not light: drawn in the classical view (GUIDES_LAYER), far brighter than a real CME (see the material).
- * Cost: one draw of a 4,100-vertex cap per front shown (at most MAX_FRONTS), the pixels it covers three times at most;
+ * Cost: one draw of a 3,100-vertex cap per front shown (at most MAX_FRONTS), the pixels it covers added three times at most;
  * nothing while none is in flight (the meshes not even visible). Measured in docs/data/space-weather.md §6.
  */
 import { useEffect, useMemo } from 'react';
@@ -20,7 +20,7 @@ import { frontKm, frontShare, type Cme } from '../sim/spaceWeather/cmes';
 import { R0_KM } from '../sim/spaceWeather/dbm';
 
 /** The most fronts drawn at once (the nearest and largest on the screen). */
-const MAX_FRONTS = 8;
+const MAX_FRONTS = 6;
 
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
