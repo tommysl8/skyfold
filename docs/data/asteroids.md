@@ -194,3 +194,51 @@ with the SBDB page and the position note under Sources; Go there and Fly here wo
 any named or numbered body by name or number and any comet by designation; the names file loads when the palette
 opens. A body chosen either way becomes a body of the registry (`src/sim/asteroids/bodies.ts`), drawn by it while it
 is registered and left out of the layer's points meanwhile, and released when something else is chosen.
+
+## 10. Comets' tails
+
+Every comet the app draws as a body (Halley, Encke, 67P, Hale–Bopp, Borisov, 3I/ATLAS, and a comet of the layer once
+it is clicked or found) and the layer's six comets with the strongest tails at the date get a coma and two tails
+(`src/render/cometTail.ts` the model, `src/scene/CometTails.tsx` the drawing, `src/sim/asteroids/activeComets.ts` the
+choice of the layer's). The tails are a model of the shape: their directions are physics, their brightness is gentle
+and illustrative.
+
+- **Ion tail:** straight, along the solar wind as the comet sees it, v_sw r̂ − v with v_sw = 400 km/s (Biermann 1951):
+  anti-sunward, swept back a few degrees against the comet's motion (atan(v⊥ / 400 km/s): 7.8° for Halley at
+  perihelion). Blue.
+- **Dust tail:** grains of radiation-pressure parameter β = 0.06, 0.15, 0.35, 0.65 and 1 (5 µm to 0.5 µm or so),
+  each released from where the nucleus was (traced back along its two-body orbit) and moved forward on its own orbit
+  under μ☉(1 − β), exactly (universal variables). Grains of one β make a syndyne, grains of one age a synchrone
+  (Finson & Probstein 1968): the fan curves back along the orbit, in the orbit's plane. Yellow-white, fading with
+  age.
+- **How strong and how long:** from each comet's magnitude law, total magnitude m = M1 + 5 log10 Δ + K1 log10 r (JPL
+  SBDB; M1 = 15, K1 = 10 where it has none). M1 + K1 log10 r is the comet's light as seen from 1 au, the measure of
+  how much gas and dust it makes at r au from the Sun. The tails' strength is that magnitude on a linear scale from
+  17 (nothing) to 3 (a great comet), times a smooth step from 1 inside 3 au to 0 at 5 au, where water ice stops
+  sublimating (the CO and CO₂ activity of some comets further out is left out). The ion tail's length goes as the
+  square root of the light, 5 × 10⁷ km at magnitude 5, kept to 3 × 10⁶–1.5 × 10⁸ km; the oldest dust drawn as its
+  fourth root, 30 days at magnitude 5, kept to 10–60 days.
+
+| Comet | M1, K1 (JPL SBDB) | At perihelion | Strength | Ion tail |
+| --- | --- | --- | --- | --- |
+| 1P/Halley, 9 February 1986 | 5.5, 8.0 (ICQ Comet Handbook 2005) | 0.587 au | 0.95 | 9.3 × 10⁷ km |
+| C/1995 O1 Hale–Bopp, 1 April 1997 | 4.8, 4.0 (solution 226) | 0.914 au | 0.88 | 5.9 × 10⁷ km |
+| C/1996 B2 Hyakutake, 1 May 1996 | 7.4, 10.75 | 0.230 au | 1 | 1.5 × 10⁸ km |
+| C/2020 F3 NEOWISE, 3 July 2020 | 12.1, 12.25 | 0.295 au | 0.81 | 3.8 × 10⁷ km |
+| C/2023 A3 Tsuchinshan–ATLAS, 27 September 2024 | 8.9, 5.5 | 0.391 au | 0.74 | 2.3 × 10⁷ km |
+| 2P/Encke | 15.7, 4.5 | 0.340 au | 0.24 | 3 × 10⁶ km |
+| 2I/Borisov, 8 December 2019 | 13.8, 4.5 | 2.01 au | 0.13 | 3 × 10⁶ km |
+
+The layer's comets with tails are chosen twice a second while the layer shows (and at once when the date jumps by
+two days): of the comets about the Sun with a magnitude law, those inside 5 au, strongest first, at most six, none
+weaker than 2 % (`src/sim/asteroids/activeComets.test.ts` finds Hyakutake, NEOWISE, Tsuchinshan–ATLAS and 12P at
+their perihelia). A tail is computed and drawn only while it is at least 2 px long on screen. Each costs 115 grain
+orbits and 23 release states a frame on the CPU (0.09 ms in Node), and one draw of 193 vertices; Halley's in the
+1986 scene cost 0.38 ms of GPU time (`window.__ls.perf.ab` with `__ls.tails.look.on`, two rounds, 0.21 and 0.55 ms,
+canvas 3200 × 1584, development build). Tests: `src/render/cometTail.test.ts`
+(anti-sunward ion tail with its aberration, dust in the orbit plane behind the comet, ½βgt² for fresh dust, the
+magnitude law's scaling), and the two scenes' dates in `src/content/scenes.test.ts`.
+
+Not modelled: jets, striae, the gas coma's chemistry and colours (C₂'s green), anti-tails seen edge-on, outbursts,
+sodium tails, and the comets' real surface brightness. Journeys: "Halley's Comet in 1986", "Comet Hale–Bopp, 1997";
+the Learn article's "Halley comes back" (2061) is a scene.

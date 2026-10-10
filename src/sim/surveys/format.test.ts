@@ -148,6 +148,14 @@ describe('the hierarchy', () => {
     expect(h.nodes.map((n) => n.path)).toEqual(paths);
     expect(h.total).toBe(999);
     expect(h.perSource).toEqual([1, 2, 3]);
+    // More catalogues than the 64-byte header holds (11) grow it; the decoder reads its size from the file.
+    const many = Array.from({ length: 12 }, (_, i) => 100 + i);
+    const h12 = decodeHierarchy(encodeHierarchy(nodes, 999, many));
+    expect(h12.perSource).toEqual(many);
+    expect(h12.nodes.map((n) => n.path)).toEqual(paths);
+    expect(h12.nodes[3].points).toBe(nodes[3].points);
+    expect(new DataView(encodeHierarchy(nodes, 999, many).buffer).getUint16(6, true)).toBe(80);
+    expect(new DataView(encodeHierarchy(nodes, 999, many.slice(0, 11)).buffer).getUint16(6, true)).toBe(64);
     expect(h.nodes[3].parent).toBe(1);
     expect(h.nodes[1].children[7]).toBe(3);
     h.nodes.forEach((n, i) => {

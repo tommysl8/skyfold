@@ -1,7 +1,7 @@
 {
  "format": "lightspeed-bodies",
  "version": 1,
- "generated": "2026-09-26",
+ "generated": "2026-10-09",
  "conventions": {
   "units": "km, kg, km³/s², degrees, hours, days; dates ISO 8601 (UTC for events)",
   "time": "Rotation models take TDB days since J2000.0 (JD 2451545.0 TDB); T = days / 36525",
@@ -4807,6 +4807,138 @@
     "status": "Operating; science observations continuing.",
     "statusAsOf": "2026-09-25",
     "statusSource": "https://science.nasa.gov/mission/webb/"
+   },
+   "assets": {
+    "texture": null,
+    "textureInfo": null,
+    "model": null,
+    "modelInfo": null,
+    "rings": null
+   }
+  },
+  {
+   "id": "juno",
+   "name": "Juno",
+   "kind": "spacecraft",
+   "radiusKm": 0.01,
+   "radiusType": "size-scale",
+   "sizeNote": "Three solar arrays about 9 m long on a hexagonal body, 20 m from tip to tip (JPL Horizons notes); radius here is half that.",
+   "massKg": 3625,
+   "massSource": "https://science.nasa.gov/mission/juno/ (at launch, with propellant)",
+   "rotation": {
+    "model": "attitude-controlled",
+    "note": "Three-axis stabilised; the app should point the high-gain antenna (or Webb’s sunshield / Parker’s heat shield) sensibly rather than model attitude."
+   },
+   "colour": "#c9c4bb",
+   "colourHue": "#c9c4bb",
+   "colourSource": "Representative of the spacecraft’s appearance in NASA photographs (thermal blankets, white or gold surfaces).",
+   "facts": [
+    "Juno reached Jupiter on 5 July 2016 (UTC) and loops over its poles every few weeks, skimming about 4,000 km above the cloud tops at each closest pass.",
+    "It is the first spacecraft to work at Jupiter on solar power: three solar arrays about 9 m long, 20 m from tip to tip.",
+    "In its extended mission it flew close past Ganymede (June 2021), Europa (September 2022) and Io (December 2023 and February 2024)."
+   ],
+   "factSources": [
+    "https://science.nasa.gov/mission/juno/",
+    "https://science.nasa.gov/mission/juno/",
+    "https://science.nasa.gov/mission/juno/"
+   ],
+   "spacecraft": {
+    "launch": "2011-08-05T16:25:00Z",
+    "launchVehicle": "Atlas V 551",
+    "launchSite": "Cape Canaveral Air Force Station, Florida (Space Launch Complex 41)",
+    "mission": "Earth gravity assist (9 October 2013), arrival at Jupiter (5 July 2016), polar orbits studying its interior, atmosphere and magnetosphere; extended mission with flybys of Ganymede, Europa and Io.",
+    "status": "Operating in its extended mission; JPL’s navigation team tracked it to September 2026, and its trajectory beyond is a plan.",
+    "statusAsOf": "2026-09-23",
+    "statusSource": "https://science.nasa.gov/mission/juno/",
+    "statusCaveat": "From the notes of JPL Horizons’ Juno trajectory (tracking data to 23 September 2026)."
+   },
+   "assets": {
+    "texture": null,
+    "textureInfo": null,
+    "model": null,
+    "modelInfo": null,
+    "rings": null
+   }
+  },
+  {
+   "id": "europa-clipper",
+   "name": "Europa Clipper",
+   "kind": "spacecraft",
+   "radiusKm": 0.01525,
+   "radiusType": "size-scale",
+   "sizeNote": "Solar arrays 30.5 m across when deployed; radius here is half that.",
+   "massKg": 6065,
+   "massSource": "https://science.nasa.gov/mission/europa-clipper/ (at launch, with propellant)",
+   "rotation": {
+    "model": "attitude-controlled",
+    "note": "Three-axis stabilised; the app should point the high-gain antenna (or Webb’s sunshield / Parker’s heat shield) sensibly rather than model attitude."
+   },
+   "colour": "#d8d4cc",
+   "colourHue": "#d8d4cc",
+   "colourSource": "Representative of the spacecraft’s appearance in NASA photographs (thermal blankets, white or gold surfaces).",
+   "facts": [
+    "Europa Clipper is the largest spacecraft NASA has built for a planetary mission: its solar arrays span 30.5 m.",
+    "From 2031 it is to fly past Europa 49 times, as low as 25 km, to study the ocean thought to lie beneath its ice.",
+    "On the way it borrows speed from Mars (1 March 2025) and from Earth (December 2026), and reaches Jupiter in April 2030."
+   ],
+   "factSources": [
+    "https://science.nasa.gov/mission/europa-clipper/",
+    "https://science.nasa.gov/mission/europa-clipper/",
+    "https://science.nasa.gov/mission/europa-clipper/"
+   ],
+   "spacecraft": {
+    "launch": "2024-10-14T16:06:00Z",
+    "launchVehicle": "Falcon Heavy",
+    "launchSite": "Kennedy Space Center, Florida (Launch Complex 39A)",
+    "mission": "Gravity assists at Mars (1 March 2025) and Earth (December 2026), arrival at Jupiter in April 2030, then 49 close flybys of Europa from 2031 to 2034.",
+    "status": "In cruise to Jupiter; JPL’s navigation team tracked it to September 2026, and its trajectory beyond is the mission’s plan.",
+    "statusAsOf": "2026-09-22",
+    "statusSource": "https://science.nasa.gov/mission/europa-clipper/",
+    "statusCaveat": "From the notes of JPL Horizons’ Europa Clipper trajectory (tracking data to 22 September 2026)."
+   },
+   "assets": {
+    "texture": null,
+    "textureInfo": null,
+    "model": null,
+    "modelInfo": null,
+    "rings": null
+   }
+  },
+  {
+   "id": "soho",
+   "name": "SOHO",
+   "kind": "spacecraft",
+   "radiusKm": 0.00475,
+   "radiusType": "size-scale",
+   "sizeNote": "Body about 4.3 × 2.7 × 3.7 m; solar panels 9.5 m across; radius here is half that span.",
+   "massKg": 1850,
+   "massSource": "https://www.esa.int/Science_Exploration/Space_Science/SOHO",
+   "rotation": {
+    "model": "attitude-controlled",
+    "note": "Three-axis stabilised; the app should point the high-gain antenna (or Webb’s sunshield / Parker’s heat shield) sensibly rather than model attitude."
+   },
+   "colour": "#d9c48a",
+   "colourHue": "#d9c48a",
+   "colourSource": "Representative of the spacecraft’s appearance in NASA photographs (thermal blankets, white or gold surfaces).",
+   "facts": [
+    "The Solar and Heliospheric Observatory (ESA and NASA) has watched the Sun from near the Sun–Earth L1 point, 1.5 million km sunward of Earth, since early 1996.",
+    "It has found more than 5,000 comets, most of them sungrazers, many spotted in its images by amateur astronomers.",
+    "Contact was lost in June 1998; engineers found it again and had it back at work within months."
+   ],
+   "factSources": [
+    "https://science.nasa.gov/mission/soho/",
+    "https://science.nasa.gov/mission/soho/",
+    "https://www.esa.int/Science_Exploration/Space_Science/SOHO"
+   ],
+   "spacecraft": {
+    "launch": "1995-12-02T08:08:00Z",
+    "launchVehicle": "Atlas IIAS",
+    "launchSite": "Cape Canaveral Air Force Station, Florida",
+    "mission": "A joint ESA and NASA solar observatory in a halo orbit about the Sun–Earth L1 point since February 1996: the Sun’s interior, its corona and the solar wind.",
+    "status": "Operating, in mission extensions by ESA and NASA.",
+    "statusAsOf": "2026-08",
+    "statusSource": "https://science.nasa.gov/mission/soho/",
+    "statusCaveat": "JPL Horizons carries its trajectory, from Goddard’s flight dynamics team, to 2 November 2026."
    },
    "assets": {
     "texture": null,

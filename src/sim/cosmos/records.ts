@@ -817,7 +817,8 @@ function namedObject(o: NamedObject, ctx: { virgoEclKm: Vec3 | null }): Built {
         : 'Drawn as its galaxies: its brightest thirty-odd as galaxies of their own, all at the cluster’s distance (their own are not precise enough to place them in depth), the rest with measured distances as points of the cosmic web (Cosmicflows-4); many fainter members are in neither.',
     );
   } else if (o.id === 'bullet-cluster') {
-    notes.push('Illustrative: its galaxies are drawn as two groups about 0.7 Mpc apart on the sky, as its two clusters are; where each galaxy sits is a random draw, their total light (about 3 × 10¹² Suns) is typical of so massive a cluster, and the hot gas between them is not drawn.');
+    notes.push('Illustrative: its galaxies are drawn as two groups about its two brightest galaxies, 0.7 Mpc apart on the sky (Clowe et al. 2006); where each galaxy sits is a random draw, and their total light (about 3 × 10¹² Suns) is typical of so massive a cluster.');
+    notes.push('View › Dark matter adds its hot gas (Chandra’s X-ray picture) and its mass (a smooth model of Clowe et al.’s lensing map, fitted to their published peaks) as a card on the sky: a picture of where the matter is, the gas in pink, the mass in blue.');
     notes.push('Placed where it is now, at the comoving distance of its redshift.');
   } else {
     notes.push(templateNote(template, !!o.disc, o.disc?.nearSideAssumed ?? false, !o.disc && (o.size?.pa == null || o.size?.axisRatio == null)));

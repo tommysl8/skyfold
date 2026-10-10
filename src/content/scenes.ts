@@ -35,8 +35,8 @@
  * Twins: sim/lensBodies.ts holeView (the card's and the HUD's numbers, which the notes quote),
  * content/journeys.ts (the fall's journey), src/content/blackHoleScenes.test.ts.
  */
-import { SearchRelativeLongitude, Body } from 'astronomy-engine';
-import { Vector3 } from 'three';
+import { SearchRelativeLongitude, Body, EclipseKind, NextGlobalSolarEclipse, NextLunarEclipse, SearchGlobalSolarEclipse, SearchLunarEclipse } from 'astronomy-engine';
+import { Matrix4, Vector3 } from 'three';
 import { AU_KM, C_KM_S, KPC_KM, LIGHT_YEAR_KM, MPC_KM, SUN_RADIUS_KM } from '../physics/constants';
 import { einsteinAngle } from '../physics/schwarzschild';
 import { bodyName, bodyPositionAt, bodyStateAt, childrenOf, displayRadiusKm, getBody, isBody, type BodyId } from '../sim/bodies';
@@ -67,14 +67,19 @@ import { emitPulse } from '../sim/pulses';
 import { frameCosmicWeb, frameFromOurSide, frameLocalGroup, frameMilkyWay, goToBody, goToStarSystem, goToSystem, showCmbMap } from '../ui/navigation';
 import { afterArrival, planOneG, startTrip } from '../ui/tripActions';
 import { formatIsoDate } from './learn/catalogue';
-import { eqjToWorld } from '../sim/frames';
+import { eqjToWorld, raDecToWorld } from '../sim/frames';
 import { KILONOVA_ID, supernovaById } from '../sim/phenomena';
 import { nakedEyeEndMs, shockRadiusKm } from '../sim/phenomena/supernovae';
 import { inspiralAt, kilonovaAt, MERGER_MS } from '../sim/phenomena/kilonova';
 import { startPace } from '../sim/phenomena/pace';
 import { bodyFixedDir, geomagneticPole } from '../sim/phenomena/aurora';
+import { restartTracers } from '../sim/galaxy/darkLayer';
 import { sunMapHeld } from '../sim/fields';
 import { registerDestinations, type Destination } from './destinations';
+import { playSunFuture, setSunAge } from '../sim/stars/sunFuture';
+import { startDrift, stopDrift, type DriftRun } from '../sim/stars/drift';
+import { ALGOL_EPHEMERIS } from '../sim/stars/variables';
+import { NORTH, PORT } from '../sim/heliosphere';
 import { requestDeepSky } from '../sim/deepsky';
 import { fieldAxisWorld } from '../sim/blackholes/fieldAxis';
 
@@ -271,6 +276,10 @@ export const NAMED_SCENES = [
   'edge-of-reach',
   'voyager2-neptune',
   'halley-2061',
+  'halley-1986',
+  'hale-bopp-1997',
+  'visitors-from-other-stars',
+  'edge-of-the-solar-system',
   'trappist-1-worlds',
   'sgr-a-star-shadow',
   'photon-ring',
@@ -302,6 +311,9 @@ export const NAMED_SCENES = [
   'm87-jet',
   'centaurus-a-jets',
   'aurora',
+  'sun-future',
+  'constellations-drift',
+  'stars-that-change',
   'galactic-field',
   'galactic-field-sky',
   'crab-magnetosphere',
@@ -318,6 +330,11 @@ export const NAMED_SCENES = [
   'heliospheric-current-sheet',
   'gannon-storm',
   'carrington-event',
+  'solar-eclipse',
+  'lunar-eclipse',
+  'milky-way-dark-halo',
+  'galaxy-rotation',
+  'bullet-cluster-mass',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -421,6 +438,10 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'edge-of-reach': 'The edge of reach',
   'voyager2-neptune': 'Ride Voyager 2 past Neptune',
   'halley-2061': 'Halley comes back',
+  'halley-1986': 'Halley’s Comet in 1986',
+  'hale-bopp-1997': 'Comet Hale–Bopp, 1997',
+  'visitors-from-other-stars': 'Visitors from other stars',
+  'edge-of-the-solar-system': 'The edge of the Solar System',
   'trappist-1-worlds': 'Seven worlds of TRAPPIST-1',
   'sgr-a-star-shadow': 'The shadow of Sgr A*',
   'photon-ring': 'The photon ring',
@@ -452,6 +473,9 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'm87-jet': 'The jet of M87',
   'centaurus-a-jets': 'The jets and lobes of Centaurus A',
   'aurora': 'The northern lights from space',
+  'sun-future': 'The Sun’s future',
+  'constellations-drift': 'The constellations drift',
+  'stars-that-change': 'Stars that change',
   'galactic-field': 'The Milky Way’s magnetic field',
   'galactic-field-sky': 'The Galaxy’s field across our sky',
   'crab-magnetosphere': 'The Crab pulsar’s magnetosphere',
@@ -468,6 +492,11 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'heliospheric-current-sheet': 'The Sun’s field in the solar wind',
   'gannon-storm': 'The Gannon storm, May 2024',
   'carrington-event': 'The Carrington event, 1859',
+  'solar-eclipse': 'The next total solar eclipse',
+  'lunar-eclipse': 'A total lunar eclipse',
+  'milky-way-dark-halo': 'The Milky Way’s dark halo',
+  'galaxy-rotation': 'How the Galaxy turns, with and without dark matter',
+  'bullet-cluster-mass': 'Where the mass is: the Bullet Cluster',
 };
 
 /** Define (or replace) a named scene. */
@@ -988,6 +1017,9 @@ export function runScene(spec: string, opts: { note?: string } = {}): boolean {
   // A new scene replaces anything the last one still had to do, and the views it turned on.
   cancelSceneStep();
   restoreSceneViews();
+  // The Sun back to today's age, and the constellations' clock handed back (sim/stars).
+  setSunAge(null);
+  stopDrift();
   // Scenes are written for the present at real time: each starts there (a date scene sets its own date,
   // and a scene that runs time faster sets its own pace), not at the date or the pace the last one left.
   if (s.kind !== 'date') backToPresent();
@@ -1035,7 +1067,7 @@ function start(s: Scene, note: string): boolean {
  * has changed it since), so the CMB map does not stay over Jupiter after the CMB scene, nor the
  * flow stay hidden after a lens scene.
  */
-const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines', 'cmes', 'aurora', 'auroraKp'] as const;
+const SCENE_VIEWS = ['showCmb', 'showOrbits', 'constellations', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines', 'darkMatter', 'cmes', 'aurora', 'auroraKp'] as const;
 type SceneView = (typeof SCENE_VIEWS)[number];
 type SceneViews = Partial<Pick<UIState, SceneView>>;
 
@@ -1047,6 +1079,7 @@ function currentViews(): Pick<UIState, SceneView> {
   return {
     showCmb: s.showCmb,
     showOrbits: s.showOrbits,
+    constellations: s.constellations,
     retarded: s.retarded,
     relMode: s.relMode,
     relDoppler: s.relDoppler,
@@ -1057,6 +1090,7 @@ function currentViews(): Pick<UIState, SceneView> {
     accretionBand: s.accretionBand,
     ehtBlur: s.ehtBlur,
     fieldLines: s.fieldLines,
+    darkMatter: s.darkMatter,
     cmes: s.cmes,
     aurora: s.aurora,
     auroraKp: s.auroraKp,
@@ -1233,6 +1267,29 @@ defineScene('voyager2-neptune', {
   },
 });
 
+/**
+ * A comet near perihelion, seen from above its orbit and a little sunward, so both tails are side on (the camera
+ * `distance` km from it), with time running `warp` times faster once the slew is over.
+ */
+function cometScene(id: BodyId, note: string, startMs: number, distance: number, warp: number): boolean {
+  if (!ready() || !setEpoch(startMs)) return false;
+  updateEphemeris();
+  const h = sim.bodies[id];
+  if (!h?.present) return false;
+  setWarp(1);
+  setPaused(true);
+  useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'visible', showLabels: true, showOrbits: true, selected: id });
+  const r = h.pos.clone().normalize();
+  const n = r.clone().cross(h.vel).normalize();
+  const dir = n.addScaledVector(r, -0.35).normalize();
+  controller.goTo(id, { distance, direction: dir });
+  afterSlew(id, () => {
+    setWarp(warp);
+    setPaused(false);
+  });
+  return true;
+}
+
 /** Halley's perihelion: 2061-07-28 17:17 TDB (JPL Horizons, solution JPL#75). */
 const HALLEY_2061_MS = msFromCivil(2061, 7, 28, 17, 16);
 
@@ -1240,25 +1297,81 @@ defineScene('halley-2061', {
   label: 'Halley comes back',
   note: 'Halley’s Comet rounds the Sun on 28 July 2061, 0.59 au out. Its dust tail curves back along its orbit; the fainter blue ion tail points straight down the solar wind. The tails come from a simple physical model; a day passes in under 9 seconds.',
   unavailable: needs('halley'),
+  run: (note) => cometScene('halley', note, HALLEY_2061_MS - 6 * 86_400_000, 8e7, 10_000),
+});
+
+/** Halley's 1986 perihelion: 1986-02-09 11:22 TDB, 0.587 au (JPL SBDB, solution 75). */
+const HALLEY_1986_MS = msFromCivil(1986, 2, 9, 11, 21);
+
+defineScene('halley-1986', {
+  label: 'Halley’s Comet in 1986',
+  note: 'Halley’s Comet rounds the Sun on 9 February 1986, 0.59 au out; a month later ESA’s Giotto flew 600 km from its nucleus. Its dust tail curves back along its orbit; the fainter blue ion tail points straight down the solar wind, swept a few degrees back by the comet’s own speed. The tails are a model of the shape, as strong and long as Halley’s measured brightness allows; a day passes in under 9 seconds.',
+  unavailable: needs('halley'),
+  run: (note) => cometScene('halley', note, HALLEY_1986_MS - 6 * 86_400_000, 8e7, 10_000),
+});
+
+/** Hale–Bopp's perihelion: 1997-04-01 15:14 TDB, 0.914 au (JPL SBDB, solution 226). */
+const HALE_BOPP_1997_MS = msFromCivil(1997, 4, 1, 15, 13);
+
+defineScene('hale-bopp-1997', {
+  label: 'Comet Hale–Bopp, 1997',
+  note: 'Comet Hale–Bopp rounds the Sun on 1 April 1997, 0.91 au out, in its second year of being visible to the naked eye. Its nucleus, some 60 km across, is several times Halley’s. The broad dust tail curves back along its orbit, the blue ion tail streams straight from the Sun. The tails are a model of the shape, as strong and long as its measured brightness allows; a day passes in under 9 seconds.',
+  unavailable: needs('hale-bopp'),
+  run: (note) => cometScene('hale-bopp', note, HALE_BOPP_1997_MS - 8 * 86_400_000, 9e7, 10_000),
+});
+
+/** ʻOumuamua was found on 19 October 2017, already leaving. */
+const OUMUAMUA_FOUND_MS = msFromCivil(2017, 10, 19, 12, 0);
+
+defineScene('visitors-from-other-stars', {
+  label: 'Visitors from other stars',
+  note: 'Three bodies are known to have come from other stars: ʻOumuamua, found on 19 October 2017 as it left, the comet Borisov in 2019 and the comet 3I/ATLAS in 2025. Their paths, from JPL’s orbits, cross the inner Solar System on open orbits; far out they run straight, back towards where each came from and on to where it goes. ʻOumuamua is drawn as a model: a long body, tumbling every 8.67 hours.',
+  unavailable: needs('oumuamua', 'borisov', 'atlas-3i'),
   run: (note) => {
-    if (!ready() || !setEpoch(HALLEY_2061_MS - 6 * 86_400_000)) return false;
+    if (!ready() || !setEpoch(OUMUAMUA_FOUND_MS)) return false;
     updateEphemeris();
-    const h = sim.bodies.halley;
-    if (!h?.present) return false;
     setWarp(1);
     setPaused(true);
-    useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'visible', showLabels: true, showOrbits: true, selected: 'halley' });
-    // From above the orbit and a little sunward, so both tails are seen side on.
-    const r = h.pos.clone().normalize();
-    const n = r.clone().cross(h.vel).normalize();
-    const dir = n.addScaledVector(r, -0.35).normalize();
-    controller.goTo('halley', { distance: 8e7, direction: dir });
-    afterSlew('halley', () => {
-      setWarp(10_000);
+    useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'visible', showLabels: true, showOrbits: true, selected: 'oumuamua' });
+    // High above the inner Solar System, tipped a little: all three paths and the planets' orbits in view.
+    controller.goTo('sun', { distance: 9 * AU_KM, direction: ABOVE.clone().normalize() });
+    afterSlew('sun', () => {
+      setWarp(100_000);
       setPaused(false);
     });
     return true;
   },
+});
+
+/** The edge scene's two views: the heliosphere side on, then the Oort cloud, au from the Sun; and the pause between, s. */
+const EDGE_HELIO_AU = 900;
+const EDGE_OORT_AU = 400_000;
+const EDGE_PAUSE_S = 14;
+
+defineScene('edge-of-the-solar-system', {
+  label: 'The edge of the Solar System',
+  note: 'The Sun’s wind blows a bubble in the gas between the stars, the heliosphere. It slows abruptly at the termination shock, 75 to 160 au out, and ends at the heliopause, where Voyager 1 crossed in 2012 at 121.6 au and Voyager 2 in 2018 at 119 au: both are now outside it. After a pause the view pulls back to a model of the Oort cloud of comets, thought to reach 100,000 au. Both shapes are models, fitted to what the Voyagers and IBEX measured.',
+  unavailable: needs('voyager1', 'voyager2'),
+  run: (note) =>
+    scene(note, () => {
+      resetToNow();
+      updateEphemeris();
+      useUI.setState({ showLabels: true, selected: 'voyager1' });
+      // From the port side and a little north: the bubble side on, its nose to one side, both Voyagers outside it.
+      const e = { x: PORT.x + 0.35 * NORTH.x, y: PORT.y + 0.35 * NORTH.y, z: PORT.z + 0.35 * NORTH.z };
+      const dir = new Vector3(e.x, e.z, -e.y).normalize();
+      controller.goTo('sun', { distance: EDGE_HELIO_AU * AU_KM, direction: dir });
+      afterSlew('sun', () => {
+        cancelSceneStep();
+        const move = controller.moves;
+        const timer = setTimeout(() => {
+          pendingStep = null;
+          if (controller.moves !== move || useUI.getState().tripActive) return;
+          controller.goTo('sun', { distance: EDGE_OORT_AU * AU_KM, direction: dir });
+        }, EDGE_PAUSE_S * 1000);
+        pendingStep = () => clearTimeout(timer);
+      });
+    }),
 });
 
 // ─── The Milky Way (sim/galaxy) ─────────────────────────────────────────────────────────
@@ -1917,6 +2030,177 @@ defineScene('m87-star-close', {
     }),
 });
 
+// ─── Stars in time (sim/stars: sunFuture.ts, drift.ts, variability.ts) ──────────────────
+
+defineScene('sun-future', {
+  label: PENDING_LABELS['sun-future'],
+  note: 'The Sun’s whole life in a minute and a half, from the stellar-evolution formulae of Hurley, Pols & Tout: it brightens slowly for 6 billion years, swells into a red giant 0.88 au in radius that swallows Mercury (Venus, its orbit widened as the Sun loses mass, escapes narrowly), flashes into helium burning, swells again on the asymptotic giant branch, sheds half its mass as a planetary nebula, and ends a white dwarf the size of Earth. Only the Sun ages, not the clock: the planets keep today’s places, their orbits widening. Its card says where it is; its slider and Today are there too.',
+  unavailable: needs('sun', 'mercury'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ selected: 'sun', bodyCard: true, showOrbits: true, showLabels: true, sizeMode: 'visible' });
+      setWarp(1);
+      setPaused(false);
+      controller.goTo('sun', { distance: 3.2 * AU_KM, direction: new Vector3(0.3, 1, 0.5).normalize() });
+      afterSlew('sun', () => playSunFuture());
+    }),
+});
+
+/**
+ * The constellations' journey: each stop looks from beside the Sun towards a figure, the camera held still (Roam, which
+ * rides along with the Sun) 4,000 au from the Sun on the figure's side: beyond the Kuiper belt's bodies, the Sun behind
+ * the view, the figure's stars shifted by under 0.1°.
+ */
+interface DriftStop {
+  /** Where to look (ICRS, degrees). */
+  raDeg: number;
+  decDeg: number;
+  run: DriftRun;
+  note: string;
+}
+
+const DRIFT_FROM_SUN_KM = 4000 * AU_KM;
+
+const DRIFT_STOPS: readonly DriftStop[] = [
+  {
+    raDeg: 185,
+    decDeg: 56,
+    run: { fromYr: -100_000, toYr: 100_000, seconds: 36 },
+    note: 'The Big Dipper (Ursa Major) from the Sun, from 100,000 years ago to 100,000 years ahead, about 5,500 years a second. Five of its stars move together (the Ursa Major moving group); Dubhe and Alkaid, at the ends, go their own ways, and the dipper bends. Each star moves in a straight line from its measured motion (Gaia, Hipparcos).',
+  },
+  {
+    raDeg: 83,
+    decDeg: 1,
+    run: { fromYr: -100_000, toYr: 100_000, seconds: 36 },
+    note: 'Orion over the same 200,000 years. Its stars are far away (250 to 1,300 light-years), so it holds its shape better; Betelgeuse drifts out of the shoulder. Then back to today.',
+  },
+];
+
+/** The constellation figures' setting before the journey, put back at its end. */
+let driftFigures: UIState['constellations'] = 'auto';
+
+function driftStop(i: number): void {
+  const s = DRIFT_STOPS[i];
+  resetToNow();
+  updateEphemeris();
+  if (!s) {
+    controller.exitRoam();
+    useUI.setState({ constellations: driftFigures });
+    return;
+  }
+  useUI.setState({ journeyNote: s.note, constellations: 'on', showLabels: false, selected: null });
+  if (!controller.enterRoam()) return;
+  const dir = raDecToWorld(s.raDeg, s.decDeg).normalize();
+  sim.camera.pos.copy(sim.bodies.sun.pos).addScaledVector(dir, DRIFT_FROM_SUN_KM);
+  // Looking along the figure's direction, celestial north up.
+  sim.camera.quat.setFromRotationMatrix(new Matrix4().lookAt(new Vector3(), dir, raDecToWorld(0, 90)));
+  startDrift(s.run, () => driftStop(i + 1));
+}
+
+defineScene('constellations-drift', {
+  label: PENDING_LABELS['constellations-drift'],
+  note: DRIFT_STOPS[0].note,
+  unavailable: () => (starStatus() === 'ready' ? null : LOADING_STARS),
+  run: (note) =>
+    scene(note, () => {
+      driftFigures = useUI.getState().constellations;
+      driftStop(0);
+    }),
+});
+
+/** A stop of "Stars that change": a star up close (or, with `fromHome`, from beside the Sun) with time sped up. */
+interface VariableStop {
+  id: BodyId;
+  /** Camera distance in the star's radii; or from the Sun's side, looking at it. */
+  radii?: number;
+  fromHome?: boolean;
+  /** The date to start from: a function of the star (an eclipse's time), and how fast time runs then. */
+  start?: () => number;
+  warp: number;
+  holdS: number;
+  note: string;
+}
+
+const JD_MS = (jd: number) => (jd - 2_440_587.5) * 86_400_000;
+
+const VARIABLE_STOPS: readonly VariableStop[] = [
+  {
+    id: 'algol-a',
+    radii: 16,
+    // The next eclipse as seen from beside Algol: the orbit there runs a light-time (D/c) ahead of what Earth sees.
+    start: () => {
+      const d = sim.bodies['algol-a'].pos.length() / C_KM_S / 86_400;
+      const jd = Date.now() / 86_400_000 + 2_440_587.5 + d;
+      const n = Math.ceil((jd - ALGOL_EPHEMERIS.minJd) / ALGOL_EPHEMERIS.periodDays);
+      return JD_MS(ALGOL_EPHEMERIS.minJd + n * ALGOL_EPHEMERIS.periodDays - d - 0.25);
+    },
+    warp: 4000,
+    holdS: 18,
+    note: 'Algol up close, from our side, time 4,000 times faster: its dim companion, a cool subgiant, crosses the bright blue star every 2.87 days, and from Earth Algol fades from magnitude 2.1 to 3.4 for ten hours. The orbit is CHARA’s measurement; the eclipse is the stars’ own geometry, not a recorded curve.',
+  },
+  {
+    id: 'delta-cephei',
+    radii: 5,
+    warp: 40_000,
+    holdS: 16,
+    note: 'Delta Cephei, the first Cepheid, 40,000 times faster: it swells and shrinks every 5.37 days, brightest and hottest (6,900 K) just as it starts to swell, 5,600 K at its coolest. Cepheids’ periods tell their luminosities: how distances to galaxies were first measured.',
+  },
+  {
+    id: 'mira',
+    radii: 5,
+    warp: 2_000_000,
+    holdS: 16,
+    note: 'Mira, a red giant on its last legs, two million times faster: every 332 days it brightens from invisible to the naked eye to magnitude 3.5 and fades again, swelling by a fifth and cooling as it does.',
+  },
+  {
+    id: 'betelgeuse',
+    fromHome: true,
+    start: () => Date.UTC(2019, 8, 1),
+    warp: 1_000_000,
+    holdS: 22,
+    note: 'Betelgeuse from Earth, autumn 2019 to spring 2020, a million times faster: the Great Dimming. By February it had fallen to magnitude 1.6, fainter than Bellatrix in the other shoulder, as a cloud of dust it had shed blocked part of its light, then it recovered by April. Its brightness follows the measured magnitudes.',
+  },
+];
+
+function variableStop(i: number): void {
+  const s = VARIABLE_STOPS[i];
+  if (!s || !isBody(s.id)) {
+    resetToNow();
+    return;
+  }
+  setWarp(1);
+  const start = s.start?.();
+  if (start !== undefined && setEpoch(start)) updateEphemeris();
+  else if (start === undefined) resetToNow();
+  setPaused(false);
+  useUI.setState({ journeyNote: `${i + 1} of ${VARIABLE_STOPS.length}. ${s.note}`, selected: s.id, showLabels: !s.fromHome, constellations: s.fromHome ? 'on' : useUI.getState().constellations });
+  const b = sim.bodies[s.id];
+  if (s.fromHome) controller.goTo(s.id, { distance: b.pos.length() - 1000 * AU_KM, direction: b.pos.clone().negate().normalize() });
+  else controller.goTo(s.id, { distance: (s.radii ?? 4) * displayRadiusKm(getBody(s.id)!), direction: b.pos.clone().negate().normalize().addScaledVector(UP, 0.12).normalize() });
+  afterSlew(s.id, () => {
+    // The slew took time on the clock: back to the stop's start, then faster.
+    if (start !== undefined && setEpoch(start)) updateEphemeris();
+    setPaused(false);
+    setWarp(s.warp);
+    if (i + 1 >= VARIABLE_STOPS.length) return;
+    const timer = setTimeout(() => {
+      pendingStep = null;
+      variableStop(i + 1);
+    }, s.holdS * 1000);
+    pendingStep = () => clearTimeout(timer);
+  });
+}
+
+defineScene('stars-that-change', {
+  label: PENDING_LABELS['stars-that-change'],
+  note: VARIABLE_STOPS[0].note,
+  unavailable: needs(...VARIABLE_STOPS.map((s) => s.id)),
+  run: (note) =>
+    scene(note, () => {
+      variableStop(0);
+    }),
+});
+
 // ─── Phenomena (sim/phenomena) ──────────────────────────────────────────────────────────
 
 /** A supernova seen from Earth at the time: each one's scene and what its note says (the curve's sources are on its card). */
@@ -2096,6 +2380,155 @@ defineScene('aurora', {
       controller.goTo('earth', { distance: 16_400, direction: overNightOval() });
     }),
 });
+
+// ─── Eclipses (sim/eclipses.ts; the shadows are drawn per pixel by the planet shader) ──────
+
+/** The next total eclipse after the date shown (after today outside 1700–2200, where the Moon is checked). */
+function eclipseSearchStart(): number {
+  const YEARS_3 = 3 * 365.25 * 86_400_000;
+  return sim.timeMs >= PRECISE_START_MS && sim.timeMs < PRECISE_END_MS - YEARS_3 ? sim.timeMs : Date.now();
+}
+
+/** "2 August 2027" */
+const longDate = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+defineScene('solar-eclipse', {
+  label: PENDING_LABELS['solar-eclipse'],
+  note: 'The Moon’s shadow on Earth at the next total solar eclipse: the small dark spot is the umbra, where the Sun is wholly hidden; the wide grey round it the penumbra, where it is partly hidden. Worked out from the app’s own Sun, Moon and Earth, which put the 2017 and 2024 eclipses within a few km of NASA’s tracks.',
+  unavailable: needs('earth', 'moon', 'sun'),
+  run: (fallbackNote) => {
+    if (!ready()) return false;
+    let e = SearchGlobalSolarEclipse(astroTimeAt(eclipseSearchStart()));
+    for (let i = 0; i < 20 && e.kind !== EclipseKind.Total; i++) e = NextGlobalSolarEclipse(e.peak);
+    if (e.kind !== EclipseKind.Total) return false;
+    const peakMs = msFromAstroTime(e.peak);
+    // Half an hour before greatest eclipse, at 60 times real time: the umbra crosses the day side in a few minutes.
+    if (!setEpoch(peakMs - 30 * 60_000)) return false;
+    updateEphemeris();
+    setWarp(1);
+    setPaused(true);
+    const lat = e.latitude ?? 0;
+    const lon = e.longitude ?? 0;
+    const where = `${Math.abs(lat).toFixed(0)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(0)}° ${lon >= 0 ? 'E' : 'W'}`;
+    const note = `The total solar eclipse of ${longDate(peakMs)}, greatest at ${where}. ${fallbackNote} Here a second is a minute.`;
+    useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'true', showLabels: true, selected: 'earth' });
+    // From the Sun's side, a little off the line so the Moon is not in the way: the day side, the shadow on it.
+    const earth = sim.bodies.earth.pos;
+    const toSun = sim.bodies.sun.pos.clone().sub(earth).normalize();
+    const toMoon = sim.bodies.moon.pos.clone().sub(earth).normalize();
+    const dir = toSun.multiplyScalar(0.85).add(toMoon.multiplyScalar(0.15)).addScaledVector(UP, 0.12).normalize();
+    controller.goTo('earth', { distance: 42_000, direction: dir });
+    afterSlew('earth', () => {
+      setWarp(60);
+      setPaused(false);
+    });
+    return true;
+  },
+});
+
+defineScene('lunar-eclipse', {
+  label: PENDING_LABELS['lunar-eclipse'],
+  note: 'The Moon passes through Earth’s shadow: first the penumbra’s faint dimming, then the umbra creeps across it, and in totality it glows copper with sunlight bent through Earth’s atmosphere, the light of every sunrise and sunset on Earth at once (drawn a few hundred times brighter than it is, as a long exposure shows it). Contacts as NASA predicts them, to a few seconds.',
+  unavailable: needs('earth', 'moon', 'sun'),
+  run: (fallbackNote) => {
+    if (!ready()) return false;
+    let e = SearchLunarEclipse(astroTimeAt(eclipseSearchStart()));
+    for (let i = 0; i < 20 && e.kind !== EclipseKind.Total; i++) e = NextLunarEclipse(e.peak);
+    if (e.kind !== EclipseKind.Total) return false;
+    const peakMs = msFromAstroTime(e.peak);
+    // From before the umbra arrives (sd_partial minutes before the peak), at 60 times real time.
+    if (!setEpoch(peakMs - (e.sd_partial + 6) * 60_000)) return false;
+    updateEphemeris();
+    setWarp(1);
+    setPaused(true);
+    const note = `The total lunar eclipse of ${longDate(peakMs)}: totality lasts ${Math.round(2 * e.sd_total)} minutes. ${fallbackNote} Here a second is a minute.`;
+    useUI.setState({ journeyNote: note, journeysOpen: false, sizeMode: 'true', showLabels: true, selected: 'moon' });
+    // From Earth's side of the Moon, a little off the shadow's axis.
+    const moon = sim.bodies.moon.pos;
+    const toEarth = sim.bodies.earth.pos.clone().sub(moon).normalize();
+    controller.goTo('moon', { distance: 9_000, direction: toEarth.addScaledVector(UP, 0.25).normalize() });
+    afterSlew('moon', () => {
+      setWarp(60);
+      setPaused(false);
+    });
+    return true;
+  },
+});
+
+// ─── Dark matter (sim/galaxy/darkLayer.ts, darkMatter.ts; sim/cosmos/bulletCluster.ts) ─────────
+
+/**
+ * The rotation scene's pace for the tracers' own clock: 30 million years a second (the Sun goes round in 7 s). The rest of
+ * the view keeps its date: run the clock at home that far and the Magellanic Clouds would fly past the camera.
+ */
+export const ROTATION_PACE_MYR_S = 30;
+/** How far out the halo's view stands from the Galaxy's centre (300 kpc), and the rotation scene's (100 kpc, above the pole). */
+export const HALO_VIEW_KM = 300 * KPC_KM;
+export const ROTATION_VIEW_KM = 100 * KPC_KM;
+/** The Bullet Cluster's view: 2.2 Mpc out on our side of it, the X-ray picture's 2.2 Mpc filling the width. */
+export const BULLET_VIEW_KM = 2.2 * MPC_KM;
+
+defineScene('milky-way-dark-halo', {
+  label: PENDING_LABELS['milky-way-dark-halo'],
+  note: 'The Milky Way from 300 kpc (a million light-years) out, its dark halo drawn as a faint blue fog: the halo’s density summed along each line of sight, in McMillan’s (2017) mass model. It reaches far beyond the stars and holds about 95 % of the Galaxy’s mass within 200 kpc, yet gives out no light: the fog shows where the mass is, not anything an eye could see. How heavy the halo is, is uncertain by a factor of several.',
+  unavailable: needs('milky-way', 'sgr-a-star'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ darkMatter: true, selected: 'milky-way' });
+      // Tipped 35° from the Galaxy's pole towards the Sun's side: the disc as an oval inside its halo.
+      const tilt = (35 * Math.PI) / 180;
+      const dir = GALACTIC_NORTH.clone().multiplyScalar(Math.cos(tilt)).addScaledVector(galacticToWorld(180, 0), Math.sin(tilt)).normalize();
+      controller.goTo('sgr-a-star', { distance: HALO_VIEW_KM, direction: dir });
+    }),
+});
+
+defineScene('galaxy-rotation', {
+  label: PENDING_LABELS['galaxy-rotation'],
+  note: 'The Milky Way from above its north pole, its stars’ clock running 30 million years a second (the rest of the view keeps today’s date). Gold stars go round at the circular speed of McMillan’s (2017) mass model, close to what Eilers et al. (2019) measured: about 230 km/s at the Sun, still about 220 km/s at 30 kpc. Beside each a grey star goes round as it would if the Galaxy were only its stars and gas: far out it falls further and further behind. The difference is the dark halo’s pull; the card’s chart has both curves and the measurements.',
+  unavailable: needs('milky-way', 'sgr-a-star'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ darkMatter: true, selected: null });
+      // On the spokes while the camera flies there, then turning.
+      restartTracers();
+      controller.goTo('sgr-a-star', { distance: ROTATION_VIEW_KM, direction: GALACTIC_NORTH.clone().addScaledVector(galacticToWorld(180, 0), 0.05).normalize() });
+      afterSlew('sgr-a-star', () => restartTracers(ROTATION_PACE_MYR_S));
+    }),
+});
+
+defineScene('bullet-cluster-mass', {
+  label: PENDING_LABELS['bullet-cluster-mass'],
+  note: 'The Bullet Cluster, about 4 billion light-years away, from our side: two clusters of galaxies that passed through each other. Pink is their hot gas in X-rays (Chandra), most of their ordinary matter, slowed by the collision into a bullet-shaped cloud behind a shock. Blue, with the paper’s contours, is the mass that bends the light of the galaxies behind it (a model of Clowe et al.’s 2006 lensing map). The mass went on with the galaxies, ahead of the gas: most of it is dark matter.',
+  unavailable: needs('bullet-cluster'),
+  run: (note) =>
+    scene(note, () => {
+      useUI.setState({ darkMatter: true, selected: 'bullet-cluster', showLabels: true });
+      const at = sim.bodies['bullet-cluster'];
+      const toEarth = sim.bodies.earth.pos.clone().sub(at.pos).normalize();
+      controller.goTo('bullet-cluster', { distance: BULLET_VIEW_KM, direction: toEarth });
+    }),
+});
+
+/** Dark matter in "Where to?": the halo, the rotation and the Bullet Cluster's mass. */
+const DARK_VIEWS: readonly Destination[] = (
+  [
+    ['dark-halo-view', 'The Milky Way’s dark halo', ['dark matter', 'dark halo', 'dark matter halo', 'galactic halo', 'missing mass'], 'Where the Galaxy’s mass is', 'milky-way-dark-halo', 'milky-way'],
+    ['rotation-curve-view', 'How the Galaxy turns', ['rotation curve', 'galaxy rotation', 'flat rotation curve', 'circular velocity'], 'With and without dark matter', 'galaxy-rotation', 'milky-way'],
+    ['bullet-mass-view', 'Where the mass is: the Bullet Cluster', ['Bullet Cluster dark matter', 'lensing map', 'mass map', '1E 0657-56 mass'], 'Gas and lensing mass', 'bullet-cluster-mass', 'bullet-cluster'],
+  ] as const
+).map(([id, name, aliases, kind, spec, body]) => ({
+  id,
+  name,
+  aliases,
+  kind,
+  group: 'galaxies' as const,
+  distanceKm: () => NaN,
+  unavailable: () => (isBody(body) ? null : 'Loading…'),
+  go: () => {
+    runScene(spec);
+  },
+}));
+registerDestinations(() => DARK_VIEWS);
 
 /** The phenomena that are views rather than bodies, for "Where to?": the aurora and the jets. */
 const PHENOMENA_VIEWS: readonly Destination[] = (

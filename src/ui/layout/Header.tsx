@@ -266,9 +266,12 @@ function ViewMenu() {
       pulsars: u.pulsars,
       gwEvents: u.gwEvents,
       showCmb: u.showCmb,
+      darkMatter: u.darkMatter,
       aurora: u.aurora,
       cmes: u.cmes,
       jets: u.jets,
+      satellites: u.satellites,
+      satelliteDebris: u.satelliteDebris,
       fieldLines: u.fieldLines,
       retarded: u.retarded,
       showFps: u.showFps,
@@ -353,7 +356,7 @@ function ViewMenu() {
           </Check>
           <Check
             checked={!s.notesHidden}
-            onChange={(v) => useUI.setState({ hiddenNotes: v ? [] : ['cmb', 'web', 'surveys', 'flow', 'belts', 'nsc'] })}
+            onChange={(v) => useUI.setState({ hiddenNotes: v ? [] : ['cmb', 'web', 'surveys', 'flow', 'belts', 'nsc', 'sats', 'dark'] })}
             hint="The short notes on the data layers (the cosmic web, the galaxy surveys…) in the top left. Hide on a note puts that note away; this brings them all back"
           >
             Layer notes
@@ -368,6 +371,18 @@ function ViewMenu() {
           <Check checked={s.showBelts} onChange={() => t('showBelts')} kbd="B" hint="The named asteroids, the large ones and every comet (JPL SBDB), with a sample of the rest">
             Small bodies
           </Check>
+          <Check
+            checked={s.satellites}
+            onChange={() => t('satellites')}
+            hint="Every active satellite round Earth, about 15,000, from CelesTrak’s orbital elements: a map of the orbits people use. The ISS, Tiangong and Hubble are always shown"
+          >
+            Satellites
+          </Check>
+          {s.satellites && (
+            <Check checked={s.satelliteDebris} onChange={() => t('satelliteDebris')} hint="The tracked fragments of four break-ups: Fengyun-1C (2007), Cosmos 2251 and Iridium 33 (2009), Cosmos 1408 (2021)">
+              <span className="pl-4">Debris</span>
+            </Check>
+          )}
           <Check checked={s.showGrid} onChange={() => t('showGrid')} kbd="J">
             Ecliptic grid
           </Check>
@@ -451,6 +466,13 @@ function ViewMenu() {
           </Check>
           <Check checked={s.showCmb} onChange={() => t('showCmb')} hint="The cosmic microwave background over the sky: WMAP’s map, contrast enhanced about 10,000 times">
             CMB map
+          </Check>
+          <Check
+            checked={s.darkMatter}
+            onChange={() => t('darkMatter')}
+            hint="Where the mass is, not light: the Milky Way’s dark halo as a faint fog of its density (seen from outside the Galaxy), stars orbiting with and without it, and the Bullet Cluster’s gas and lensing mass"
+          >
+            Dark matter
           </Check>
           <Check
             checked={s.aurora}

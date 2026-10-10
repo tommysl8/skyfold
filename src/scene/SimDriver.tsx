@@ -20,7 +20,7 @@ import { onArrival } from '../ui/tripActions';
 import { pickAt, pickedBody } from './picking';
 import { pickSmallBody } from './asteroidPick';
 import { ensureSmallBody } from '../sim/asteroids/bodies';
-import { updateNearbyStars } from '../sim/stars';
+import { updateNearbyStars, updateStarTime } from '../sim/stars';
 import { updateExoplanets } from '../sim/exoplanets';
 import { updateDeepSky } from '../sim/deepsky';
 import { deepSkyLayersNow } from '../ui/deepSkyLayers';
@@ -29,6 +29,8 @@ import { updateCosmicSky } from '../sim/cosmos/expansion';
 import { nscPointsGate } from '../sim/galaxy/nuclearCluster';
 import { updatePhenomena } from '../sim/phenomena';
 import { updateSpaceWeather } from '../sim/spaceWeather';
+import { updateDarkLayer } from '../sim/galaxy/darkLayer';
+import { satellites } from '../sim/satellites';
 
 // The nuclear star cluster's points are drawn only once the lensed programs have compiled (scene/NuclearCluster.tsx):
 // until then their light stays in the glow (sim/galaxy/nuclearCluster.ts updateNuclear).
@@ -75,6 +77,14 @@ export function SimDriver() {
       const px = b ? Math.hypot(b.screen.x - x, b.screen.y - y) : Infinity;
       if (b && (px < 2 || (b.radiusPx > 2 && px < b.radiusPx))) return id;
       const small = pickSmallBody(gl, camera as PerspectiveCamera, x, y);
+      // A satellite of the swarm (scene/Satellites.tsx), when it is nearer than both.
+      const sat = satellites.pick?.(x, y);
+      if (sat && sat.px < px && (!small || sat.px < small.px) && satellites.ensure) {
+        void satellites.ensure(sat.index).then((sid) => {
+          if (sid && click === clicks) then(sid);
+        });
+        return null;
+      }
       if (!small || small.px >= px) return id;
       void ensureSmallBody(small).then((sid) => {
         if (sid && click === clicks) then(sid);
@@ -114,6 +124,8 @@ export function SimDriver() {
     updateEphemeris();
     // The supernovae's and the kilonova's light at this date, and which of the phenomena's models are near (sim/phenomena)
     updatePhenomena();
+    // The variable stars' light at this date, and the Sun at the age it is shown (sim/stars)
+    updateStarTime();
     // The CMEs in flight at this date and their load on Earth's magnetosphere, the measured Kp (sim/spaceWeather)
     updateSpaceWeather();
     if (!initialised.current) {
@@ -140,6 +152,8 @@ export function SimDriver() {
     updateExoplanets(keepStar, ui.focus);
     // The deep-sky catalogues load when their layer first shows; their objects chosen as bodies go when let go of.
     updateDeepSky(keepStar, deepSkyLayersNow());
+    // How much of the dark-matter layer shows (View › Dark matter), from the camera (sim/galaxy/darkLayer.ts).
+    updateDarkLayer(dtReal);
     // The observer's rapidity, exact at any γ (from the trip model while flying)
     updateShipKinematics();
     // The black hole that matters from here, if any: its exact distance, clocks and frames (sim/gravity.ts)
