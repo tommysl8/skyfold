@@ -11,7 +11,9 @@
  *    edges of the oval of discrete aurora (where it is seen 75 % of the time) as a Fourier series in magnetic local time,
  *    each coefficient a cubic in log₁₀|AL|, and AL from Kp (Starkov 1994b). At Kp 3 the oval runs from 63.8° to 71.9°
  *    geomagnetic latitude at midnight and from 73.3° to 75.7° at noon. Starkov's latitudes are corrected geomagnetic
- *    ones; they are laid here about the centred dipole, which differs from them by a degree or two in places.
+ *    ones; they are laid here about the centred dipole, which differs from them by a degree or two in places. Above
+ *    Kp 6, where Starkov's ovals stop moving, they are stretched towards the equator as far as the oval of May 2024
+ *    reached (stormStretch below).
  *  - How it shines: the green 557.7 nm line of atomic oxygen, peaking near 114 km (Whiter et al. 2023, Ann. Geophys.
  *    41, 1), the red 630.0 nm line peaking near 250–270 km (Hayakawa et al. 2018, ApJ 869, 57), and the blue N₂⁺ band,
  *    which peaks with the green. Arcs average 15 kR in the green (Knudsen et al. 2001, via Karlsson et al. 2020).
@@ -130,6 +132,30 @@ export function edgeColatitude(edge: OvalEdge, kp: number, mltH: number): number
   return a[0] + a[1] * Math.cos(15 * (mltH + alpha[0]) * d) + a[2] * Math.cos(15 * (2 * mltH + alpha[1]) * d) + a[3] * Math.cos(15 * (3 * mltH + alpha[2]) * d);
 }
 
+// ─── Storms: beyond Starkov ───────────────────────────────────────────────────────────
+
+/**
+ * Starkov's ovals hardly move above Kp 6 (his AL from Kp levels off near 650 nT; at Kp 9 the equatorward edge is still
+ * at 59.7° at midnight), while in great storms the oval comes much further south. Above Kp 6 the ovals here are those
+ * of Kp 6, their colatitudes stretched so that at Kp 9 the equatorward edge reaches 35.5° at midnight: the edge of the
+ * northern oval reconstructed from naked-eye reports in the storm of 10–11 May 2024, when Kp was 9 (Hayakawa et al.
+ * 2025, ApJ 979, 49; 29.8° in the south). A model of the stretch, anchored on that storm.
+ */
+export const STARKOV_TOP_KP = 6;
+export const STORM_EDGE_LAT_KP9 = 35.5;
+
+/** How much the ovals' colatitudes are stretched at an activity: 1 to Kp 6, linear in Kp to the May 2024 edge at 9. */
+export function stormStretch(kp: number): number {
+  if (kp <= STARKOV_TOP_KP) return 1;
+  const s9 = (90 - STORM_EDGE_LAT_KP9) / edgeColatitude('equatorward', STARKOV_TOP_KP, 0);
+  return 1 + ((Math.min(9, kp) - STARKOV_TOP_KP) / (9 - STARKOV_TOP_KP)) * (s9 - 1);
+}
+
+/** An edge's colatitude as drawn, degrees: Starkov's to Kp 6, stretched for storms above it. */
+export function ovalEdge(edge: OvalEdge, kp: number, mltH: number): number {
+  return edgeColatitude(edge, Math.min(kp, STARKOV_TOP_KP), mltH) * stormStretch(kp);
+}
+
 /**
  * Magnetic local time, hours, of a direction n from Earth's centre, with the dipole axis m and the direction to the Sun
  * s (unit vectors, any one frame): 12 under the Sun, 0 opposite, 18 at dusk (east of noon).
@@ -157,13 +183,13 @@ export function arcStrength(mltH: number): number {
   return 0.3 + 0.7 * Math.exp(-(d * d) / (2 * 4 * 4));
 }
 
-/** The table the shader reads: for each of `n` MLT bins, the poleward and equatorward colatitudes (degrees / 90) and the arc strength. */
+/** The table the shader reads: for each of `n` MLT bins, the poleward and equatorward colatitudes as drawn (degrees / 90) and the arc strength. */
 export function ovalTable(kp: number, n = 48): Float32Array {
   const out = new Float32Array(4 * n);
   for (let i = 0; i < n; i++) {
     const t = ((i + 0.5) * 24) / n;
-    out[4 * i] = edgeColatitude('poleward', kp, t) / 90;
-    out[4 * i + 1] = edgeColatitude('equatorward', kp, t) / 90;
+    out[4 * i] = ovalEdge('poleward', kp, t) / 90;
+    out[4 * i + 1] = ovalEdge('equatorward', kp, t) / 90;
     out[4 * i + 2] = arcStrength(t);
     out[4 * i + 3] = 1;
   }

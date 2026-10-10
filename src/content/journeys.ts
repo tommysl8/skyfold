@@ -144,6 +144,8 @@ export const JOURNEYS: Journey[] = [
   journey({ id: 'sgr-a-star-field', title: 'Sgr A*’s magnetic field', sub: 'An ordered field wound by the hole’s spin (a model)', scene: 'sgr-a-star-field' }),
   journey({ id: 'm87-jet', title: 'The jet of M87', sub: 'A jet at nearly the speed of light, its far side beamed out of sight', scene: 'm87-jet' }),
   journey({ id: 'aurora', title: 'The northern lights from space', sub: 'Earth’s auroral oval on the night side', scene: 'aurora' }),
+  journey({ id: 'gannon-storm', title: 'The Gannon storm, May 2024', sub: 'Real CMEs cross to Earth, squeeze its magnetosphere and spread the aurora far south', scene: 'gannon-storm', clock: '8–11 May 2024 · 1 s here = 1 hour, then slower' }),
+  journey({ id: 'carrington-event', title: 'The Carrington event, 1859', sub: 'The great storm of 1859, its CME a model fitted to the 17.6-hour crossing', scene: 'carrington-event', clock: '1–2 September 1859 · 1 s here = 30 min, then slower' }),
   journey({ id: 'galactic-field', title: 'The Milky Way’s magnetic field', sub: 'Field lines of the disc, the halo and the X-field, from far above', scene: 'galactic-field' }),
   journey({ id: 'galactic-field-sky', title: 'The Galaxy’s field across our sky', sub: 'From Earth: the field’s direction, measured from polarised radio light', scene: 'galactic-field-sky' }),
   journey({ id: 'magnetic-uranus', title: 'Uranus’s tipped magnetic field', sub: 'Tilted 60° and off centre, wobbling round as the planet turns', scene: 'magnetic-uranus', clock: '1 s here = 17 min' }),

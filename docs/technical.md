@@ -113,6 +113,14 @@ papers (the cards label the others as estimates or colour temperatures); any sta
   typical solar wind; the Sun's corona as a potential field to 2.5 solar radii from SDO/HMI's map of the date's
   Carrington rotation (2010–2026), with Parker spirals and the current sheet out to 3 au. The tails and the currents in
   space are not modelled; `docs/data/fields.md` writes it up.
+- **Space weather.** View › Solar eruptions (on by default) draws the coronal mass ejections in flight on the date
+  as faint fronts: 1,086 from NASA's DONKI catalogue (2010–2026: every one of 1,000 km/s or more, and every one
+  linked to a shock at Earth or a storm) and the Carrington event of 1859 (a model on published values), each in its
+  measured direction, width and speed and flown by the drag-based model (Vršnak et al. 2013), fitted to the measured
+  shock at Earth where there is one. As a front passes Earth its sheath's estimated pressure pushes the magnetopause
+  in (Shue et al. 1998), and the aurora follows the Kp index measured at the date (GFZ, since 1932; Kp "Auto", the
+  default), its ovals stretched south in great storms as far as May 2024's. `docs/data/space-weather.md` writes it
+  up.
 - **Two size modes.** *True scale* shows specks, as reality does (planets still shine at their real apparent
   magnitude). *Enlarged* draws bodies at least a few pixels across while keeping every distance true.
 - **Travel.** Enter β exactly, or use a logit-scaled fader (0.00001c to 0.99999c) and presets (Voyager 1, Parker
@@ -295,6 +303,7 @@ first, at most 50.
 | The supernovae, the kilonova, the jets and the aurora (`src/sim/phenomena/`) | Light curves, speeds and sizes from the papers cited in the code and `docs/data/phenomena.md`; the IGRF-14 dipole (IAGA, via NOAA NCEI); Starkov's auroral oval (Starkov 1994, via Sigernes et al. 2011) | Facts quoted with citation; IGRF free to use; the code MIT |
 | The Milky Way's magnetic field (`src/sim/galaxy/magneticField.ts`, `public/textures/field-sky-wmap.png`) | The UF23 "base" model of [Unger & Farrar 2024](https://doi.org/10.3847/1538-4357/ad4a54); WMAP nine-year K-band polarisation, NASA / WMAP Science Team | Numbers quoted with citation; NASA data, public domain; the derived texture CC BY 4.0 |
 | The Sun's field harmonics and the planets' field models (`public/data/fields/sun-hmi-pfss.bin`, `src/sim/fields/`) | Computed from SDO/HMI synoptic maps (NASA/SDO and the HMI science team); IGRF-14 (IAGA, NOAA NCEI); JRM33, Cassini 11+, AH5, O8 and the other papers in `docs/data/fields.md` | NASA data with credit; coefficients quoted with citation |
+| Coronal mass ejections and the Kp index (`public/data/space-weather/`, `src/sim/spaceWeather/`) | NASA DONKI (CCMC; Moon to Mars Space Weather Analysis Office), acknowledged as CCMC asks; GFZ Potsdam's Kp index (Matzka et al. 2021); the drag-based model of Vršnak et al. 2013 and the other papers in `docs/data/space-weather.md` | US Government work, public; Kp [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); facts quoted with citation |
 | Typefaces | IBM Plex Sans (IBM), JetBrains Mono (JetBrains), Source Serif 4 (Adobe) | SIL OFL 1.1 |
 
 
@@ -348,6 +357,9 @@ npm run data:blackhole-fixtures
 # The Sun's magnetic field (docs/data/fields.md): HMI's synoptic maps downloaded into data-raw/hmi/ (the command is in
 # the script's header), then the harmonics (numpy)
 python scripts/build-sun-field.py
+# Space weather (docs/data/space-weather.md): DONKI's CMEs, shocks and storms (60-day requests) and GFZ's Kp file
+# downloaded into data-raw/space-weather/ when missing, then the CME table and the Kp index
+node scripts/build-space-weather.mjs
 # Checks on the GPU (a development server on port 5190): every shader compiled cold in a headless Chrome, and the
 # standard views' frame times; the lens's pictures against the references are scripts/lens-check/lens-check.js, run
 # in a tab (docs/data/blackholes.md §11)

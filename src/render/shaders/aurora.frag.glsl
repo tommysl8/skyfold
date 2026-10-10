@@ -31,6 +31,7 @@ uniform float uEffBlue;
 uniform float uScale;     // uStarGain² Ω_psf 10^(0.4 m0): luminance = √(uScale · S)
 uniform float uTime;      // s (wall clock): the curtains' slow motion
 uniform float uOpacity;
+uniform float uMinSinLat; // sin of the lowest geomagnetic latitude the oval reaches, less a margin (sin 50° but in great storms)
 uniform vec3 uGreen;      // the lines' colours, luminance 1 (linear sRGB)
 uniform vec3 uRed;
 uniform vec3 uBlue;
@@ -127,12 +128,13 @@ void main() {
   vec2 ground = sphereHit(ro, rd, 1.0);
   if (ground.x <= ground.y && ground.x > 0.0) t1 = min(t1, ground.x);
   if (t1 <= t0) discard;
-  // Quick rejection: no aurora equatorward of 50° geomagnetic latitude, nor over sunlit ground, anywhere on the ray.
+  // Quick rejection: no aurora equatorward of the oval's lowest latitude (50° but in great storms), nor over sunlit
+  // ground, anywhere on the ray.
   vec3 pa = normalize(ro + rd * t0);
   vec3 pb = normalize(ro + rd * t1);
   vec3 pm = normalize(ro + rd * (0.5 * (t0 + t1)));
   float lat = max(abs(sinMagLat(pa)), max(abs(sinMagLat(pb)), abs(sinMagLat(pm))));
-  if (lat < 0.766) discard; // sin 50°
+  if (lat < uMinSinLat) discard;
   if (min(dot(pa, uSun), min(dot(pb, uSun), dot(pm, uSun))) > 0.15) discard;
 
   // The magnetic frame: e1 towards magnetic noon, e2 towards dusk (18 MLT).

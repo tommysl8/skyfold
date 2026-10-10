@@ -316,6 +316,8 @@ export const NAMED_SCENES = [
   'magnetic-neptune',
   'magnetic-sun',
   'heliospheric-current-sheet',
+  'gannon-storm',
+  'carrington-event',
 ] as const;
 export type NamedSceneId = (typeof NAMED_SCENES)[number];
 
@@ -464,6 +466,8 @@ const PENDING_LABELS: Record<NamedSceneId, string> = {
   'magnetic-neptune': 'Neptune’s magnetic field',
   'magnetic-sun': 'The Sun’s magnetic field on the date',
   'heliospheric-current-sheet': 'The Sun’s field in the solar wind',
+  'gannon-storm': 'The Gannon storm, May 2024',
+  'carrington-event': 'The Carrington event, 1859',
 };
 
 /** Define (or replace) a named scene. */
@@ -1027,11 +1031,11 @@ function start(s: Scene, note: string): boolean {
  * relativistic view (split, or with its Doppler colours), the cosmic web, and near a black hole
  * its lens, the accretion flow and the flow's band and blur (the scenes made to show the lens
  * switch the flow off), the thin accretion discs (whose scenes hide the orbit lines, which run through the
- * disc's plane), and the magnetic field lines. What one scene turned on, the next scene turns back (unless the visitor
+ * disc's plane), the magnetic field lines, and the solar eruptions and the aurora's activity. What one scene turned on, the next scene turns back (unless the visitor
  * has changed it since), so the CMB map does not stay over Jupiter after the CMB scene, nor the
  * flow stay hidden after a lens scene.
  */
-const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines'] as const;
+const SCENE_VIEWS = ['showCmb', 'showOrbits', 'retarded', 'relMode', 'relDoppler', 'cosmicWeb', 'lensing', 'accretionFlow', 'accretionDisks', 'accretionBand', 'ehtBlur', 'fieldLines', 'cmes', 'aurora', 'auroraKp'] as const;
 type SceneView = (typeof SCENE_VIEWS)[number];
 type SceneViews = Partial<Pick<UIState, SceneView>>;
 
@@ -1053,6 +1057,9 @@ function currentViews(): Pick<UIState, SceneView> {
     accretionBand: s.accretionBand,
     ehtBlur: s.ehtBlur,
     fieldLines: s.fieldLines,
+    cmes: s.cmes,
+    aurora: s.aurora,
+    auroraKp: s.auroraKp,
   };
 }
 
@@ -2066,23 +2073,27 @@ defineScene('centaurus-a-jets', {
   run: (note) => jetView('centaurus-a', note, 650 * KPC_KM, 25, 55),
 });
 
+/** Above the northern oval's midnight side (world, from Earth): over the geomagnetic pole of the date, tipped away from the Sun. */
+function overNightOval(): Vector3 {
+  const e = sim.bodies.earth;
+  const sun = sim.bodies.sun.pos.clone().sub(e.pos).normalize();
+  const year = 1970 + sim.timeMs / (365.2425 * 86_400_000);
+  const p = geomagneticPole(year);
+  const b = bodyFixedDir(p.latDeg, p.lonDeg);
+  const pole = new Vector3(b[0], b[1], b[2]).applyQuaternion(e.quat).normalize();
+  return pole.multiplyScalar(0.75).addScaledVector(sun, -0.65).normalize();
+}
+
 defineScene('aurora', {
   label: PENDING_LABELS.aurora,
-  note: 'The northern auroral oval from 10,000 km above the night side: green light of oxygen 100–150 km up, red above it, round the geomagnetic pole of the date (IGRF), where Starkov’s model puts the oval for the activity chosen in View › Aurora (Kp 3, a moderate night, by default). The ovals stay facing the Sun as Earth turns beneath them; the curtains’ folds and motion are a model.',
+  note: 'The northern auroral oval from 10,000 km above the night side: green light of oxygen 100–150 km up, red above it, round the geomagnetic pole of the date (IGRF), where Starkov’s model puts the oval for the activity chosen in View › Aurora (by default the Kp measured at the date). The ovals stay facing the Sun as Earth turns beneath them; the curtains’ folds and motion are a model.',
   unavailable: needs('earth', 'sun'),
   run: (note) =>
     scene(note, () => {
       setWarp(1);
       setPaused(false);
       useUI.setState({ aurora: true, selected: null });
-      const e = sim.bodies.earth;
-      const sun = sim.bodies.sun.pos.clone().sub(e.pos).normalize();
-      const year = 1970 + sim.timeMs / (365.2425 * 86_400_000);
-      const p = geomagneticPole(year);
-      const b = bodyFixedDir(p.latDeg, p.lonDeg);
-      const pole = new Vector3(b[0], b[1], b[2]).applyQuaternion(e.quat).normalize();
-      // Above the oval's midnight side: over the pole, tipped away from the Sun.
-      controller.goTo('earth', { distance: 16_400, direction: pole.multiplyScalar(0.75).addScaledVector(sun, -0.65).normalize() });
+      controller.goTo('earth', { distance: 16_400, direction: overNightOval() });
     }),
 });
 
@@ -2397,6 +2408,133 @@ const SOLAR_FIELD_VIEWS: readonly Destination[] = (
   },
 }));
 registerDestinations(() => SOLAR_FIELD_VIEWS);
+
+// ─── Space weather ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Run a scene's next step once the simulated clock reaches `ms` (looked at four times a second). Like afterSlew's, the
+ * step is dropped if the visitor moves the camera or another scene starts first.
+ */
+function atSimTime(ms: number, fn: () => void): void {
+  cancelSceneStep();
+  const move = controller.moves;
+  const timer = setInterval(() => {
+    if (controller.moves !== move || useUI.getState().tripActive) {
+      cancelSceneStep();
+      return;
+    }
+    if (sim.timeMs < ms) return;
+    cancelSceneStep();
+    fn();
+  }, 250);
+  pendingStep = () => clearInterval(timer);
+}
+
+/** The Sun and Earth from above the ecliptic: the Sun in the middle, Earth off to one side. */
+function sunEarthView(): Vector3 {
+  const e = sim.bodies.earth.pos.clone().sub(sim.bodies.sun.pos).normalize();
+  const side = new Vector3().crossVectors(UP, e).normalize();
+  return new Vector3().addScaledVector(UP, 0.8).addScaledVector(side, 0.45).addScaledVector(e, -0.4).normalize();
+}
+
+/** Beside Earth, square to the Sun's direction and a little above: the magnetosphere's day side and night side in profile. */
+function besideEarth(): Vector3 {
+  const e = sim.bodies.earth;
+  const sun = sim.bodies.sun.pos.clone().sub(e.pos).normalize();
+  return new Vector3().crossVectors(UP, sun).normalize().multiplyScalar(0.95).addScaledVector(UP, 0.3).normalize();
+}
+
+const EARTH_RADIUS_KM = 6_371;
+
+/**
+ * A storm in three stops: the CMEs leaving the Sun and crossing to Earth, seen from above the planets; Earth's
+ * magnetosphere squeezed as the first arrives (with the field lines); the aurora over the night side.
+ */
+function stormScene(
+  note: string,
+  o: { startMs: number; crossWarp: number; nearMs: number; nearNote: string; auroraMs: number; auroraNote: string; kp?: number },
+): boolean {
+  if (!ready() || !setEpoch(o.startMs)) return false;
+  updateEphemeris();
+  return scene(note, () => {
+    setWarp(1);
+    setPaused(false);
+    useUI.setState({ cmes: true, aurora: true, showOrbits: true, ...(o.kp !== undefined ? { auroraKp: o.kp } : {}) });
+    controller.goTo('sun', { distance: 1.7 * AU_KM, direction: sunEarthView() });
+    afterSlew('sun', () => {
+      setWarp(o.crossWarp);
+      atSimTime(o.nearMs, () => {
+        setWarp(1);
+        useUI.setState({ fieldLines: true, journeyNote: o.nearNote });
+        controller.goTo('earth', { distance: 45 * EARTH_RADIUS_KM, direction: besideEarth() });
+        afterSlew('earth', () => {
+          setWarp(600);
+          atSimTime(o.auroraMs, () => {
+            setWarp(1);
+            useUI.setState({ journeyNote: o.auroraNote });
+            controller.goTo('earth', { distance: 16_400, direction: overNightOval() });
+            afterSlew('earth', () => setWarp(300));
+          });
+        });
+      });
+    });
+  });
+}
+
+defineScene('gannon-storm', {
+  label: PENDING_LABELS['gannon-storm'],
+  note: 'May 2024, from above the planets, an hour a second: from 8 May the Sun’s active region 13664 sends out one CME after another (their directions, speeds and widths from NASA’s DONKI catalogue), each slowed by the solar wind as the drag-based model has it. The first reaches Earth on the afternoon of 10 May; then the camera goes to Earth.',
+  unavailable: needs('earth', 'sun'),
+  run: (note) =>
+    stormScene(note, {
+      startMs: Date.UTC(2024, 4, 8, 4),
+      crossWarp: 3600,
+      nearMs: Date.UTC(2024, 4, 10, 14),
+      nearNote:
+        'Earth’s magnetic field, ten minutes a second. At 16:36 UT the shock ahead of the CMEs reached Earth: its sheath presses the magnetopause in from about 10 Earth radii to 7 here (an estimate from the CME’s modelled speed and a typical density; the real one came in to about 5). Then the night side, where the aurora spreads.',
+      auroraMs: Date.UTC(2024, 4, 10, 21),
+      auroraNote:
+        'The night of 10–11 May 2024, five minutes a second: Kp reached 9, the top of the scale, and the ovals spread far south (to the edge reconstructed from sightings, 35° magnetic latitude in the north). Aurora was seen from Mexico, Namibia and northern Australia.',
+    }),
+});
+
+defineScene('carrington-event', {
+  label: PENDING_LABELS['carrington-event'],
+  note: 'The Carrington event, from above the planets, half an hour a second: on 1 September 1859 at 11:18 UT Carrington and Hodgson saw a flare in a great sunspot group; 17.6 hours later the largest geomagnetic storm on record began. No one measured the CME: its 2,650 km/s is the speed that crosses in 17.6 hours, and its width is assumed.',
+  unavailable: needs('earth', 'sun'),
+  run: (note) =>
+    stormScene(note, {
+      startMs: Date.UTC(1859, 8, 1, 10, 30),
+      crossWarp: 1800,
+      nearMs: Date.UTC(1859, 8, 2, 3, 30),
+      nearNote:
+        'Earth’s magnetic field (IGRF, held at 1900), ten minutes a second, as the front arrives near 04:54 UT on 2 September; Bombay’s magnetometer plunged from about 04:20. The squeeze is an estimate from the modelled speed and a typical density.',
+      auroraMs: Date.UTC(1859, 8, 2, 7),
+      auroraNote:
+        'The night after: Kp was not measured in 1859, so the aurora is drawn at Kp 9, as far south as in May 2024. The real ovals went further, to about 29–31° magnetic latitude, and aurora was seen as near the equator as about 21° magnetic latitude (Hayakawa et al. 2019).',
+      kp: 9,
+    }),
+});
+
+/** Solar storms, for "Where to?". */
+const SPACE_WEATHER_VIEWS: readonly Destination[] = (
+  [
+    ['solar-storms-view', 'Solar storms', ['CME', 'CMEs', 'coronal mass ejection', 'solar storm', 'geomagnetic storm', 'space weather', 'solar eruption', 'Gannon storm', 'May 2024 storm'], 'The Gannon storm, May 2024', 'gannon-storm'],
+    ['carrington-event-view', 'The Carrington event', ['Carrington event', 'Carrington storm', '1859 solar storm', 'Carrington flare'], 'The great storm of 1859', 'carrington-event'],
+  ] as const
+).map(([id, name, aliases, kind, spec]) => ({
+  id,
+  name,
+  aliases,
+  kind,
+  group: 'sun-planets',
+  distanceKm: () => NaN,
+  unavailable: () => (isBody('earth') && isBody('sun') ? null : 'Loading…'),
+  go: () => {
+    runScene(spec);
+  },
+}));
+registerDestinations(() => SPACE_WEATHER_VIEWS);
 
 // ─── Cygnus X-1's disc ──────────────────────────────────────────────────────────────────
 

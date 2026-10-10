@@ -66,10 +66,12 @@ export interface UIState {
   gwEvents: 'auto' | 'on' | 'off';
   /**
    * Earth's auroral ovals (sim/phenomena/aurora.ts), on the night side, and the geomagnetic activity they are drawn
-   * for: the Kp index, 0 (quiet) to 9 (an extreme storm); 3 is a typical moderate night.
+   * for: the Kp index, 0 (quiet) to 9 (an extreme storm), or 'auto', the Kp measured at the date (GFZ; sim/spaceWeather).
    */
   aurora: boolean;
-  auroraKp: number;
+  auroraKp: number | 'auto';
+  /** Coronal mass ejections in flight on the date, as faint fronts (sim/spaceWeather). */
+  cmes: boolean;
   /** Relativistic jets: M87's and Centaurus A's (sim/phenomena/jets.ts). */
   jets: boolean;
   /** Magnetic field lines: the Sun's and the planets' measured fields, and the Milky Way's (sim/fields). */
@@ -192,6 +194,7 @@ export interface UIState {
       | 'accretionDisks'
       | 'holePanelAuto'
       | 'aurora'
+      | 'cmes'
       | 'jets'
       | 'fieldLines',
   ) => void;
@@ -236,6 +239,8 @@ export const savedPrefs = (s: UIState) => ({
   // New in this version with their defaults (on, Kp 3): a saved state without them keeps them, so no migration.
   aurora: s.aurora,
   auroraKp: s.auroraKp,
+  // New in this version with its default (on), and Kp's new default 'auto': a saved state without them keeps them.
+  cmes: s.cmes,
   jets: s.jets,
   // New in this version with its default (off): a saved state without it keeps it, so no migration.
   fieldLines: s.fieldLines,
@@ -283,7 +288,8 @@ export const useUI = create<UIState>()(
       pulsars: 'auto',
       gwEvents: 'auto',
       aurora: true,
-      auroraKp: 3,
+      auroraKp: 'auto',
+      cmes: true,
       jets: true,
       fieldLines: false,
       showCmb: false,
